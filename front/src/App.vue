@@ -2,7 +2,7 @@
   <v-app>
     
     <v-app-bar color="primary">
-      <v-toolbar-title @click="this.$router.push(`/`);">Статистика</v-toolbar-title>
+      <v-toolbar-title @click="this.$router.push(`/`);">SimaDancing</v-toolbar-title>
 
       <v-spacer></v-spacer>
 

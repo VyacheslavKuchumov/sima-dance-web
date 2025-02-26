@@ -1,172 +1,123 @@
 <template>
-    <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
-      <v-card-title
-        align="center">
-        Профессии
-      </v-card-title>
-    
-    </v-card>
+  <v-container>
     <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="800">
       <v-toolbar flat>
-        <v-btn icon="mdi-keyboard-backspace" color="primary" to="/"></v-btn>
-        
-        <v-spacer></v-spacer>
-        <v-btn icon="mdi-plus" color="primary" @click="openCreateDialog">
-        </v-btn>
+        <v-toolbar-title>Выберите место в зале</v-toolbar-title>
       </v-toolbar>
 
-      <v-container v-if="professions() && professions().length">
-        <v-row
-          v-for="item in professions()"
-          :key="item.profession_id"
-          >
-          <v-col>
-            <v-card class="ma-2">
-              <v-card-title class="text-h6">
-                {{ item.profession_name }}
-              </v-card-title>
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-card-text>
+            <v-row>
+              <v-col
+                v-for="(row, rowIndex) in seats"
+                :key="rowIndex"
+                cols="12"
+                md="auto"
+              >
+                <div class="d-flex">
+                  <v-btn
+                    v-for="(seat, seatIndex) in row"
+                    :key="seatIndex"
+                    :color="seat.selected ? 'green' : (seat.occupied ? 'red' : 'grey')"
+                    class="ma-2"
+                    @click="selectSeat(rowIndex, seatIndex)"
+                  >
+                    {{ seat.label }}
+                  </v-btn>
+                </div>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-col>
+      </v-row>
 
-              <v-card-actions class="justify-end">
-                <v-btn
-                  icon="mdi-pencil"
-                  color="blue-darken-1"
-                  variant="text"
-                  @click="openEditDialog(item)"
-                ></v-btn>
-                <v-btn
-                  icon="mdi-delete"
-                  color="red-darken-1"
-                  variant="text"
-                  @click="confirmDelete(item)"
-                ></v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
-
-      <v-alert v-else type="info" class="ma-4">
-        Нет данных
-      </v-alert>
+      <v-card-actions>
+        <v-btn color="warning" @click="clearSelection">Очистить выбор</v-btn>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" @click="confirmSelection">Подтвердить</v-btn>
+      </v-card-actions>
     </v-card>
-  
-    <!-- Диалог создания/редактирования -->
-    <v-dialog v-model="editDialog" max-width="450px">
+
+    <!-- Диалог для показа выбранного места -->
+    <v-dialog v-model="dialog" max-width="400">
       <v-card>
-        <v-card-title class="text-h5">
-          {{ editingProfession ? "Редактировать" : "Создать" }}
-        </v-card-title>
+        <v-card-title class="headline">Уведомление</v-card-title>
         <v-card-text>
-          <v-form ref="professionForm" v-model="valid" @submit.prevent="saveProfession">
-            <v-text-field
-              v-model="professionForm.profession_name"
-              label="Название профессии"
-              clearable
-              :rules="[rules.required]"
-            ></v-text-field>
-          </v-form>
+          <div v-if="selectedSeat">
+            Вы выбрали место: <strong>{{ selectedSeat }}</strong>
+          </div>
+          <div v-else>
+            Место не выбрано.
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="closeEditDialog()">Отмена</v-btn>
-          <v-btn color="primary" :disabled="!valid" @click="saveProfession()">
-            Сохранить
-          </v-btn>
+          <v-btn color="primary" text @click="dialog = false">Закрыть</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  
-    <!-- Диалог подтверждения удаления -->
-    <v-dialog v-model="confirmDeleteDialog" max-width="400px">
-      <v-card>
-        <v-card-title class="text-h5">Подтвердите удаление</v-card-title>
-        <v-card-text>
-          Вы уверены, что хотите удалить "{{ professionToDelete?.profession_name }}"?
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn text @click="closeConfirmDialog()">Отмена</v-btn>
-          <v-btn color="red" @click="deleteConfirmed()">Удалить</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </template>
-  
-  <script>
-  import { mapActions, mapState } from "vuex";
-  
-  export default {
-    data() {
-      return {
-        confirmDeleteDialog: false,
-        editDialog: false,
-        professionToDelete: null,
-        editingProfession: null,
-        professionForm: {
-          profession_name: "",
-        },
-        valid: false,
-        rules: {
-          required: (value) => !!value || "Это поле обязательно",
-        },
-      };
+  </v-container>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      seats: [
+        [
+          { label: 'A1', selected: false, occupied: false },
+          { label: 'A2', selected: false, occupied: false },
+          { label: 'A3', selected: false, occupied: true },
+        ],
+        [
+          { label: 'B1', selected: false, occupied: false },
+          { label: 'B2', selected: false, occupied: true },
+          { label: 'B3', selected: false, occupied: false },
+        ],
+        // Дополнительные ряды можно добавить по необходимости
+      ],
+      dialog: false,
+    };
+  },
+  computed: {
+    selectedSeat() {
+      // Поиск выбранного места
+      for (let row of this.seats) {
+        for (let seat of row) {
+          if (seat.selected) return seat.label;
+        }
+      }
+      return null;
     },
-    methods: {
-        ...mapActions({
-            getProfessions: "professions/getProfessions",
-            createProfession: "professions/createProfession",
-            updateProfession: "professions/updateProfession",
-            deleteProfession: "professions/deleteProfession",
-        }),
-    
-        professions() {
-            return this.$store.state.professions.data;
-        },
-        
-        openCreateDialog() {
-            this.editingProfession = null;
-            this.professionForm = { profession_name: "" };
-            this.editDialog = true;
-        },
-        openEditDialog(item) {
-            this.editingProfession = item;
-            this.professionForm = { profession_name: item.profession_name };
-            this.editDialog = true;
-        },
-        closeEditDialog() {
-            this.editDialog = false;
-            this.professionForm = { profession_name: "" };
-        },
-        async saveProfession() {
-            const professionData = { ...this.professionForm };
-            if (this.editingProfession) {
-                professionData.profession_id = this.editingProfession.profession_id;
-                await this.updateProfession(professionData);
-                await this.getProfessions();
-            } else {
-                await this.createProfession(professionData);
-                await this.getProfessions();
-            }
-            this.closeEditDialog();
-        },
-        confirmDelete(item) {
-            this.professionToDelete = item;
-            this.confirmDeleteDialog = true;
-        },
-        closeConfirmDialog() {
-            this.confirmDeleteDialog = false;
-            this.professionToDelete = null;
-        },
-        async deleteConfirmed() {
-            if (this.professionToDelete) {
-            await this.deleteProfession(this.professionToDelete.profession_id);
-            await this.getProfessions();
-            this.closeConfirmDialog();
-            }
-        },
+  },
+  methods: {
+    selectSeat(rowIndex, seatIndex) {
+      // Если место занято, не реагировать на выбор
+      if (this.seats[rowIndex][seatIndex].occupied) return;
+
+      // Сбросить выбор всех мест (если требуется выбирать только одно место)
+      this.seats.forEach(row => {
+        row.forEach(seat => (seat.selected = false));
+      });
+
+      // Отметить выбранное место
+      this.seats[rowIndex][seatIndex].selected = true;
     },
-    async created() {
-        await this.getProfessions();
+    clearSelection() {
+      // Очистить выбор всех мест
+      this.seats.forEach(row => {
+        row.forEach(seat => (seat.selected = false));
+      });
     },
-  };
-  </script>
+    confirmSelection() {
+      // Открыть диалоговое окно для подтверждения выбора
+      this.dialog = true;
+    },
+  },
+};
+</script>
+
+<style scoped>
+/* Дополнительное оформление при необходимости */
+</style>

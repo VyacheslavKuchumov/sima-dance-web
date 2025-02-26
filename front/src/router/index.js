@@ -79,7 +79,7 @@ const routes = [
     path: "/professions",
     name: "professions",
     component: ProfessionsView,
-    meta: { auth: true },
+    
   },
   
 ];
