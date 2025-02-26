@@ -1,0 +1,34 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "@date-io/core": "^3.0.0",
+    "@date-io/dayjs": "^3.0.0",
+    "@mdi/font": "^7.4.47",
+    "axios": "^1.6.7",
+    "dayjs": "^1.11.13",
+    "vue": "^3.2.13",
+    "vue-router": "^4.0.3",
+    "vuex": "^4.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-router": "~5.0.0",
+    "@vue/cli-plugin-vuex": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "vite-plugin-vuetify": "^2.0.4",
+    "vue-cli-plugin-vuetify": "~2.5.8",
+    "vuetify": "^3.7.1"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
+}
