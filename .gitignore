@@ -1,1 +1,3 @@
+backend/.env
+front/.env
 /backend/.venv
