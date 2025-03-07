@@ -1,7 +1,10 @@
 <template>
-  <v-card  v-if="user()" class="mx-auto" max-width="400">
+  <v-card  v-if="user()" class="mx-auto" max-width="400" prepend-icon="mdi-account">
     <template v-slot:title>
-      <span class="font-black">Главная страница</span>
+      <span class="font-black">Пользователь {{ user().name }}</span>
+    </template>
+    <template v-if="user().role === 'admin'" v-slot:subtitle>
+      {{ user().role }}
     </template>
 
     <v-card-text>

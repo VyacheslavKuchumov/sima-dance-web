@@ -20,3 +20,5 @@ class User(Base):
 
     # Establishes the association to the Auth model
     auth = relationship("Auth", back_populates="user", uselist=False)
+    
+    booking = relationship("Booking", uselist=False, back_populates="user")

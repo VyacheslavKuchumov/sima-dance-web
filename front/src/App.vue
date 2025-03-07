@@ -20,11 +20,12 @@
             <v-list-item-title>Главная</v-list-item-title>
           </v-list-item>
           
-          <v-list-item v-if="isAuth" to="/okved">
-            <v-list-item-title>ОКВЭД</v-list-item-title>
+          <v-list-item v-if="isAuth" to="/admin/events">
+            <v-list-item-title>Концерты (админ)</v-list-item-title>
           </v-list-item>
-          <v-list-item v-if="isAuth" to="/employment_minstat">
-            <v-list-item-title class="text-wrap">Среднегодовая численность занятых</v-list-item-title>
+
+          <v-list-item v-if="isAuth" to="/admin/archived-events">
+            <v-list-item-title>Архив концертов (админ)</v-list-item-title>
           </v-list-item>
          
           <v-list-item v-if="isAuth" @click="logout()">

@@ -1,9 +1,9 @@
 import { createStore } from "vuex";
 import auth from "@/store/auth";
 import user from "@/store/user";
-import okved from "@/store/okved";
-import professions from "@/store/professions";
-import employment_minstat from "@/store/employment_minstat";
+import events from "@/store/events";
+
+
 
 
 
@@ -15,8 +15,9 @@ export default createStore({
   modules: {
     auth: auth,
     user: user,
-    okved: okved,
-    professions: professions,
-    employment_minstat: employment_minstat,
+    events: events,
+
+
+
   },
 });
