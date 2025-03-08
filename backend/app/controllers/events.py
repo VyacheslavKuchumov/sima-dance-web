@@ -2,33 +2,8 @@ from sqlalchemy.orm import Session
 from app.models.events import Event
 from app.schemas.events import EventCreate, EventUpdate
 
-# # event create schema
-# class EventCreate(BaseModel):
-#     event_name: str
-#     event_date: str
-#     img_url: str
-
-# # event update schema
-# class EventUpdate(BaseModel):
-#     event_name: str
-#     event_date: str
-#     img_url: str
-#     archived: bool
-
-# # event out schema
-# class EventOut(BaseModel):
-#     event_id: int
-#     event_name: str
-#     event_date: str
-#     img_url: str
-#     archived: bool
-
-#     model_config = ConfigDict(from_attributes=True)
 
 
-# # function for getting all events
-# def get_events(db: Session):
-#     return db.query(Event).order_by(Event.event_id).all()
 
 # function for getting unarchived events ASC
 def get_events(db: Session):

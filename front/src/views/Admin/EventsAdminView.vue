@@ -28,7 +28,7 @@
               gradient="to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5)">
               
             </v-img>
-            <v-card-title>{{ item.event_name }}</v-card-title>
+            <v-card-title class="text-wrap">{{ item.event_name }}</v-card-title>
             <!-- Event Details -->
             <v-card-text>
               <div>
@@ -40,10 +40,10 @@
             <!-- Action Buttons -->
             <v-card-actions class="justify-end">
               <v-btn small color="primary" @click="openEditDialog(item)">
-                <v-icon left>mdi-pencil</v-icon>
+                <v-icon>mdi-pencil</v-icon>
               </v-btn>
               <v-btn small color="red" @click="confirmDelete(item)">
-                <v-icon left>mdi-delete</v-icon>
+                <v-icon>mdi-delete</v-icon>
               </v-btn>
             </v-card-actions>
           </v-card>

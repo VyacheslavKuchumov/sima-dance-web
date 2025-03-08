@@ -27,7 +27,8 @@
               gradient="to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5)">
               
             </v-img>
-            <v-card-title>{{ item.event_name }}</v-card-title>
+            <v-card-title class="text-wrap">{{ item.event_name }}</v-card-title>
+            <v-card-subtitle>Архив</v-card-subtitle>
             <!-- Event Details -->
             <v-card-text>
               <div>

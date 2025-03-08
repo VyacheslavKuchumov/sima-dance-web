@@ -17,7 +17,7 @@
             type="password"
             ></v-text-field>
             <v-text-field
-            label="Введите имя"
+            label="Введите ФИО"
             v-model="name"
             :rules="nameRules"
             required

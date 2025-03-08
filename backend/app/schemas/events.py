@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import date
+from uuid import UUID
+
 
 # schema for events
 # event table
@@ -29,9 +31,11 @@ class EventUpdate(BaseModel):
 # event out schema
 class EventOut(BaseModel):
     event_id: int
+    event_uid: UUID
     event_name: str
     event_date: date
     img_url: str
     archived: bool
+
 
     model_config = ConfigDict(from_attributes=True)

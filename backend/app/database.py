@@ -9,6 +9,8 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+from app import models
+
 # Dependency for database session
 def get_db():
     db = SessionLocal()
