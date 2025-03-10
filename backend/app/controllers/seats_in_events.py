@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models.seats_in_events import SeatInEvent
+from app.models.seats import Seat
 from app.schemas.seats_in_events import SeatInEventCreate, SeatInEventUpdate
-
+from uuid import UUID
 
 
 # from enum import Enum
@@ -44,10 +45,16 @@ from app.schemas.seats_in_events import SeatInEventCreate, SeatInEventUpdate
 
 #     model_config = ConfigDict(from_attributes=True)
 
+# initialize seats in event by venue_id and event_uid
+def initialize_seats_in_event(db: Session, venue_id: int, event_uid: UUID):
+    # get all seats in venue
+    seats = db.query(Seat).filter(Seat.venue_id == venue_id).all()
+    # create seats in event for each seat
+    for seat in seats:
+        create_seat_in_event(db, SeatInEventCreate(seat_id=seat.seat_id, event_uid=event_uid, price=500))
 
-# function for getting all seats in events
-def get_seats_in_events(db: Session):
-    return db.query(SeatInEvent).order_by(SeatInEvent.seat_in_event_id).all()
+def get_seats_in_event(db: Session, event_uid: UUID):
+    return db.query(SeatInEvent).filter(SeatInEvent.event_uid == event_uid).order_by(SeatInEvent.seat_in_event_id).all()
 
 # function for creating a new seat in an event
 def create_seat_in_event(db: Session, seat_in_event: SeatInEventCreate):

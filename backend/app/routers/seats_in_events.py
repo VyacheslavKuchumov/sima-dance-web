@@ -1,17 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.seats_in_events import SeatInEventCreate, SeatInEventUpdate, SeatInEventOut
-from app.controllers.seats_in_events import create_seat_in_event, get_seats_in_events, update_seat_in_event, delete_seat_in_event
+from app.controllers.seats_in_events import create_seat_in_event, get_seats_in_event, update_seat_in_event, delete_seat_in_event, initialize_seats_in_event
+from uuid import UUID
 
 from app.database import get_db
 
 router = APIRouter()
 
+# initialize seats in event by venue_id and event_uid
+@router.post("/initialize/{venue_id}/{event_uid}", response_model=list[SeatInEventOut])
+def initialize_seats_in_event_route(venue_id: int, event_uid: UUID, db: Session = Depends(get_db)):
+    return initialize_seats_in_event(db, venue_id, event_uid)
 
 # get all seats in events
-@router.get("/", response_model=list[SeatInEventOut])
-def get_all_seats_in_events(db: Session = Depends(get_db)):
-    return get_seats_in_events(db)
+@router.get("/{event_uid}", response_model=list[SeatInEventOut])
+def get_seats_in_event_route(event_uid: UUID, db: Session = Depends(get_db)):
+    return get_seats_in_event(db, event_uid)
 
 # create a new seat in an event
 @router.post("/", response_model=SeatInEventOut)

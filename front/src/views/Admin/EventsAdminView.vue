@@ -19,9 +19,7 @@
         v-for="item in events()"
         :key="item.event_id"
       >
-        <v-col
-
-        >
+        <v-col>
           <v-card class="ma-2" >
             <!-- Event Image with Title Overlay -->
             <v-img :src="item.img_url" min-height="150px"  class="white--text align-end"
@@ -39,6 +37,9 @@
 
             <!-- Action Buttons -->
             <v-card-actions class="justify-end">
+              <v-btn small color="secondary" @click="goToAdminEventSeats(item)">
+                <v-icon>mdi-dots-horizontal-circle-outline</v-icon>
+              </v-btn>
               <v-btn small color="primary" @click="openEditDialog(item)">
                 <v-icon>mdi-pencil</v-icon>
               </v-btn>
@@ -169,6 +170,9 @@ export default {
     goBack() {
       this.$router.go(-1);
     },
+    goToAdminEventSeats(item) {
+        this.$router.push(`/admin/event/${item.event_uid}`);
+      },
     isoToRussianDate(isoDate) {
       if (!isoDate || typeof isoDate !== "string") {
         throw new Error("Invalid input. Please provide a valid ISO date string.");

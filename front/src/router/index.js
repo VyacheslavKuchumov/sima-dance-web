@@ -8,7 +8,7 @@ import Login from "@/views/Auth/Login.vue";
 import ArchivedEventsAdminView from "@/views/Admin/ArchivedEventsAdminView.vue";
 import EventsAdminView from "@/views/Admin/EventsAdminView.vue";
 import EventsView from "@/views/User/EventsView.vue";
-import AdminSeatsView from "@/views/Admin/AdminSeatsView.vue";
+import AdminSeatsInEventView from "@/views/Admin/AdminSeatsInEventView.vue";
 import SeatsBookingView from "@/views/User/SeatsBookingView.vue";
 
 
@@ -48,14 +48,15 @@ const routes = [
     meta: { auth: true },
   },
   {
-    path: "/admin/seats",
-    name: "admin-seats",
-    component: AdminSeatsView,
+    path: "/admin/event/:uid",
+    name: "seats-admin",
+    component: AdminSeatsInEventView,
     meta: { auth: true },
+    props: true,
   },
   {
     path: "/event/:uid",
-    name: "equipment-in-draft",
+    name: "booking-seats",
     component: SeatsBookingView,
     meta: { auth: true },
     props: true,

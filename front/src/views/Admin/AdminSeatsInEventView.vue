@@ -6,47 +6,51 @@
     </v-card-title>
   </v-card>
 
-  <!-- Main Card with Toolbar and Venue Layout -->
-  <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1200">
+  <!-- Main Card with Toolbar -->
+  <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1400">
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
       <v-spacer></v-spacer>
-      <!-- <v-btn icon="mdi-plus" color="primary" @click="openCreateDialog"></v-btn> -->
+      <v-btn icon="mdi-plus" color="primary" @click="openCreateDialog"></v-btn>
     </v-toolbar>
-
-    <v-container v-if="seats() && seats().length" class="venue-layout">
-      <!-- Loop through each section -->
-      <div v-for="(rows, section) in groupedSeats" :key="section" class="section-container">
-        <h3>{{ section }}</h3>
-        <!-- Loop through each row in the section in descending order -->
-        <div v-for="rowNumber in sortedRowKeys(rows)" :key="rowNumber" class="row-container">
-          <!-- Row label on the left -->
-          <div class="row-label">{{ rowNumber }}</div>
-          <!-- Seats in the current row -->
-          <div class="seats-row">
-            <div
-              v-for="seat in rows[rowNumber]"
-              :key="seat.seat_id"
-              class="seat"
-              :class="{
-                'seat-available': seat.status === 'available',
-                'seat-held': seat.status === 'held',
-                'seat-booked': seat.status === 'booked',
-                'seat-unavailable': seat.status === 'unavailable'
-              }"
-              @click="openEditDialog(seat)"
-            >
-              <v-icon small>mdi-seat</v-icon>
-              <span class="seat-number">{{ seat.number }}</span>
+    <v-card class="ma-2" max-height="600">
+      <!-- Zoomable Container -->
+      <div class="zoom-window" ref="zoomContainer">
+        <div class="pan-zoom-area">
+          <v-container v-if="seats() && seats().length" class="venue-layout">
+            <!-- Venue plan content: Sections, rows, and seats -->
+            <div v-for="(rows, section) in groupedSeats" :key="section" class="section-container">
+              <h3>{{ section }}</h3>
+              <div v-for="rowNumber in sortedRowKeys(rows)" :key="rowNumber" class="row-container">
+                <div class="row-label">{{ rowNumber }}</div>
+                <div class="seats-row">
+                  <div
+                    v-for="seat in rows[rowNumber]"
+                    :key="seat.seat_id"
+                    class="seat"
+                    :class="{
+                      'seat-available': seat.status === 'available',
+                      'seat-held': seat.status === 'held',
+                      'seat-booked': seat.status === 'booked',
+                      'seat-unavailable': seat.status === 'unavailable'
+                    }"
+                    @click="openEditDialog(seat)"
+                  >
+                    <v-icon small>mdi-seat</v-icon>
+                    <span class="seat-number">{{ seat.number }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </v-container>
+
+          <v-alert v-else type="info" class="ma-4">
+            Нет данных
+          </v-alert>
         </div>
       </div>
-    </v-container>
-
-    <v-alert v-else type="info" class="ma-4">
-      Нет данных
-    </v-alert>
+    </v-card>
+    
   </v-card>
 
   <!-- Dialog for Creating/Editing a Seat -->
@@ -61,36 +65,32 @@
             v-model="seatForm.section"
             label="Секция"
             clearable
-            disabled
             :rules="[rules.required]"
           ></v-text-field>
           <v-text-field
             v-model="seatForm.row"
             label="Ряд"
             clearable
-            disabled
             :rules="[rules.required]"
           ></v-text-field>
           <v-text-field
             v-model="seatForm.number"
             label="Номер"
             clearable
-            disabled
             :rules="[rules.required]"
           ></v-text-field>
-          <!-- :items="['available', 'held', 'booked', 'unavailable']" -->
           <v-select
             v-if="editingSeat"
             v-model="seatForm.status"
             label="Статус"
-            :items="['available', 'unavailable']"
+            :items="['available', 'held', 'booked', 'unavailable']"
             :rules="[rules.required]"
           ></v-select>
           <v-text-field
             v-model="seatForm.price"
             label="Цена"
             type="number"
-            
+            clearable
             :rules="[rules.required]"
           ></v-text-field>
         </v-form>
@@ -121,6 +121,7 @@
 
 <script>
 import { mapActions } from "vuex";
+import panzoom from 'panzoom'; // Install via npm: npm install panzoom
 
 export default {
   data() {
@@ -140,6 +141,7 @@ export default {
       rules: {
         required: (value) => !!value || "Это поле обязательно",
       },
+      panzoomInstance: null,
     };
   },
   computed: {
@@ -225,10 +227,39 @@ export default {
   async created() {
     await this.getSeats();
   },
+  mounted() {
+    // Initialize panzoom on the zoom container for panning and zooming
+    this.panzoomInstance = panzoom(this.$refs.zoomContainer, {
+      maxZoom: 3,
+      minZoom: 0.5,
+      smoothScroll: true,
+    });
+  },
+  beforeDestroy() {
+    if (this.panzoomInstance) {
+      this.panzoomInstance.dispose();
+    }
+  },
 };
 </script>
 
 <style scoped>
+.zoom-window {
+  width: 1400px;      /* Visible window width */
+  height: 1600px;      /* Visible window height */
+  overflow: hidden;
+  border: 1px solid #ccc;
+  margin: 20px auto;
+  position: relative;
+}
+
+.pan-zoom-area {
+  /* Overall dimensions of the venue plan */
+  width: 1400px;
+  height: 1600px;
+}
+
+/* Venue layout and plan styling */
 .venue-layout {
   padding: 20px;
 }

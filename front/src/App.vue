@@ -32,10 +32,7 @@
           <v-list-item v-if="isAuth" to="/admin/archived-events">
             <v-list-item-title>Архив концертов (админ)</v-list-item-title>
           </v-list-item>
-          
-          <v-list-item v-if="isAuth" to="/admin/seats">
-            <v-list-item-title>Места в зале (админ)</v-list-item-title>
-          </v-list-item>
+
           
          
           <v-list-item v-if="isAuth" @click="logout()">
