@@ -57,13 +57,12 @@ export default {
     },
 
     // Update an existing seat in an event by id
-    async updateSeatInEvent({}, { id, seatInEvent }) {
+    async updateSeatInEvent({}, {id, status, price}) {
       try {
         const response = await instance.put(`/api/seats_in_events/${id}`, {
-          seat_id: seatInEvent.seat_id,
-          event_uid: seatInEvent.event_uid,
-          status: seatInEvent.status,
-          price: seatInEvent.price,
+          
+          status: status,
+          price: price,
         });
         if (response) {
           console.log("Seat in event updated:", response.data);

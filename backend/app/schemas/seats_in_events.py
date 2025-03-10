@@ -15,8 +15,6 @@ class SeatInEventCreate(BaseModel):
 
 # Schema for updating a seat in an event.
 class SeatInEventUpdate(BaseModel):
-    seat_id: int
-    event_uid: UUID
     status: str
     price: int
 

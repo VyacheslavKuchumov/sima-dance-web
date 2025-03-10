@@ -8,11 +8,11 @@
         size="64"
         indeterminate
       ></v-progress-circular>
-    </v-overlay>
+  </v-overlay>
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Список мест (админ) 
+      Список мест (админ)
     </v-card-title>
   </v-card>
   
@@ -21,18 +21,12 @@
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
       <v-spacer></v-spacer>
-      <v-tooltip
-          :location="location"
-          :origin="origin"
-          no-click-animation
-        >
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" v-if="seats_in_events().length === 0" icon="mdi-plus-box-multiple" color="primary" @click="initializeSeatsInEvents"></v-btn>
-          </template>
-
-          <div>Инициализировать места</div>
-        </v-tooltip>
-      
+      <v-tooltip :location="location" :origin="origin" no-click-animation>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" v-if="seats_in_events().length === 0" icon="mdi-plus-box-multiple" color="primary" @click="initializeSeatsInEvents"></v-btn>
+        </template>
+        <div>Инициализировать места</div>
+      </v-tooltip>
     </v-toolbar>
     <v-card max-height="600">
       <!-- Zoomable Container -->
@@ -57,21 +51,24 @@
                     }"
                     @click="openEditDialog(seat)"
                   >
-                    <v-icon small>mdi-seat</v-icon>
-                    <span class="seat-number">{{ seat.number }}</span>
+                    <div class="seat-top">
+                      <span class="seat-number">{{ seat.number }}</span>
+                      <v-icon small>mdi-seat</v-icon>
+                    </div>
+                    <div class="seat-bottom">
+                      <span class="seat-price">{{ seat.price }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </v-container>
-
           <v-alert v-else type="info" class="ma-4">
-            Нет данных 
+            Нет данных
           </v-alert>
         </div>
       </div>
     </v-card>
-    
   </v-card>
 
   <!-- Dialog for Creating/Editing a Seat -->
@@ -101,38 +98,32 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="closeEditDialog">Отмена</v-btn>
-        <v-btn color="primary" :disabled="!valid" @click="saveSeat">Сохранить</v-btn>
+        <!-- Fixed button click to call saveSeatInEvent -->
+        <v-btn color="primary" :disabled="!valid" @click="saveSeatInEvent">Сохранить</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
-
-  
-  
 </template>
 
 <script>
 import { mapActions } from "vuex";
 import panzoom from 'panzoom'; // Install via npm: npm install panzoom
 
-
 export default {
   data() {
     return {
       overlay: false,
       editDialog: false,
-      
       editingSeatInEvent: null,
       seatInEventForm: {
         status: "",
         price: null,
       },
-      
       valid: false,
       rules: {
         required: (value) => !!value || "Это поле обязательно",
       },
       panzoomInstance: null,
-      
     };
   },
   computed: {
@@ -150,14 +141,11 @@ export default {
       });
       return groups;
     },
-    
   },
   methods: {
-    
     seats_in_events() {
-      return this.$store.state.seats_in_events.data;
+      return this.$store.state.seats_in_events.data || [];
     },
-    
     // Helper method to sort row keys in descending order
     sortedRowKeys(rows) {
       return Object.keys(rows).sort((a, b) => Number(b) - Number(a));
@@ -196,12 +184,12 @@ export default {
     async saveSeatInEvent() {
       const formData = { ...this.seatInEventForm };
       if (this.editingSeatInEvent) {
-        formData.id = this.editingSeatInEvent.seat_id;
+        formData.id = this.editingSeatInEvent.seat_in_event_id;
         await this.updateSeatInEvent(formData);
       } else {
         await this.createSeatInEvent(formData);
       }
-      await this.getSeatsInEvents();
+      await this.getSeatsInEvent(this.$route.params.uid);
       this.closeEditDialog();
     },
     async loadVenues() {
@@ -235,7 +223,7 @@ export default {
 <style scoped>
 .zoom-window {
   width: 1400px;      /* Visible window width */
-  height: 1600px;      /* Visible window height */
+  height: 1600px;     /* Visible window height */
   overflow: hidden;
   border: 1px solid #ccc;
   margin: 20px auto;
@@ -243,7 +231,6 @@ export default {
 }
 
 .pan-zoom-area {
-  /* Overall dimensions of the venue plan */
   width: 1400px;
   height: 1600px;
 }
@@ -280,13 +267,14 @@ export default {
   display: flex;
 }
 
-/* Individual seat styling */
+/* Updated seat styling */
 .seat {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   margin-right: 5px;
   cursor: pointer;
   border: 1px solid transparent;
@@ -297,10 +285,24 @@ export default {
   border: 1px solid #888;
 }
 
-/* Seat number styling */
+/* Seat top row: number and icon */
+.seat-top {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Seat number styling: positioned to the left */
 .seat-number {
   font-size: 10px;
-  margin-left: 2px;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+/* Price styling: beneath the icon */
+.seat-bottom {
+  font-size: 10px;
+  margin-top: 2px;
 }
 
 /* Optional: Color coding for seat status */

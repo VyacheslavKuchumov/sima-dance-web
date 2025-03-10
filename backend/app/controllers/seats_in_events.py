@@ -73,8 +73,6 @@ def create_seat_in_event(db: Session, seat_in_event: SeatInEventCreate):
 # function for updating an existing seat in an event by id
 def update_seat_in_event(db: Session, seat_in_event_id: int, seat_in_event: SeatInEventUpdate):
     db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == seat_in_event_id).first()
-    db_seat_in_event.seat_id = seat_in_event.seat_id
-    db_seat_in_event.event_uid = seat_in_event.event_uid
     db_seat_in_event.status = seat_in_event.status
     db_seat_in_event.price = seat_in_event.price
     db.commit()
