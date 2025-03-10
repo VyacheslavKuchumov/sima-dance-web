@@ -21,7 +21,18 @@
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
       <v-spacer></v-spacer>
-      <v-btn v-if="seats_in_events().length === 0" icon="mdi-plus-box-multiple" color="primary" @click="initializeSeatsInEvents"></v-btn>
+      <v-tooltip
+          :location="location"
+          :origin="origin"
+          no-click-animation
+        >
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" v-if="seats_in_events().length === 0" icon="mdi-plus-box-multiple" color="primary" @click="initializeSeatsInEvents"></v-btn>
+          </template>
+
+          <div>Инициализировать места</div>
+        </v-tooltip>
+      
     </v-toolbar>
     <v-card max-height="600">
       <!-- Zoomable Container -->
