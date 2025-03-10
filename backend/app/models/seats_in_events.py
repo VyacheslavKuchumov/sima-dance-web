@@ -20,7 +20,7 @@ class SeatInEvent(Base):
     status = Column(Enum(SeatStatus), default=SeatStatus.available, nullable=False)
     price = Column(Integer, nullable=True)
     
-    seat = relationship("Seat", back_populates="seat_in_event")
+    seat = relationship("Seat", uselist=False, back_populates="seat_in_event")
     event = relationship("Event", back_populates="seat_in_event")
     # Updated back_populates to match the attribute in Booking
     booking = relationship("Booking", uselist=False, back_populates="seat_in_event")

@@ -51,7 +51,8 @@ def initialize_seats_in_event(db: Session, venue_id: int, event_uid: UUID):
     seats = db.query(Seat).filter(Seat.venue_id == venue_id).all()
     # create seats in event for each seat
     for seat in seats:
-        create_seat_in_event(db, SeatInEventCreate(seat_id=seat.seat_id, event_uid=event_uid, price=500))
+        create_seat_in_event(db, SeatInEventCreate(seat_id=seat.seat_id, event_uid=event_uid, status="available", price=500))
+    return get_seats_in_event(db, event_uid)
 
 def get_seats_in_event(db: Session, event_uid: UUID):
     return db.query(SeatInEvent).filter(SeatInEvent.event_uid == event_uid).order_by(SeatInEvent.seat_in_event_id).all()

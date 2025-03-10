@@ -13,7 +13,7 @@ export default {
   actions: {
 
     // Initialize seats in event by venue_id and event_uid
-    async initializeSeatsInEvent({ commit }, { venue_id, event_uid }) {
+    async initSeatsInEvent({ commit }, { venue_id, event_uid }) {
       try {
         const response = await instance.post(`/api/seats_in_events/initialize/${venue_id}/${event_uid}`);
         if (response) {
@@ -28,7 +28,7 @@ export default {
     // Get all seats in events
     async getSeatsInEvent({ commit }, uid) {
       try {
-        const response = await instance.get(`/api/seats_in_event/${uid}`);
+        const response = await instance.get(`/api/seats_in_events/${uid}`);
         if (response) {
           commit("setData", response.data);
           return response.data;

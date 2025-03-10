@@ -1,4 +1,14 @@
 <template>
+  <v-overlay
+      :model-value="overlay"
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
@@ -38,7 +48,7 @@
             <!-- Action Buttons -->
             <v-card-actions class="justify-end">
               <v-btn small color="secondary" @click="goToAdminEventSeats(item)">
-                <v-icon>mdi-dots-horizontal-circle-outline</v-icon>
+                <v-icon>mdi-cog</v-icon>
               </v-btn>
               <v-btn small color="primary" @click="openEditDialog(item)">
                 <v-icon>mdi-pencil</v-icon>
@@ -139,6 +149,7 @@ import { mapActions } from "vuex";
 export default {
   data() {
     return {
+      overlay: false,
       dateDialog: false,
       datePickerDate: new Date().toISOString().substr(0, 10),
       confirmDeleteDialog: false,
@@ -226,12 +237,16 @@ export default {
       const formData = { ...this.eventForm };
       formData.event_date = this.russianDateToIso(formData.event_date);
       if (this.editingEvent) {
+        this.overlay = true;
         formData.id = this.editingEvent.event_id;
         await this.updateEvent(formData);
+        this.overlay = false;
       } else {
+        this.overlay = true;
         // Remove archived property when creating a new event since it's not part of the creation schema.
         delete formData.archived;
         await this.createEvent(formData);
+        this.overlay = false;
       }
       await this.getEvents();
       this.closeEditDialog();
@@ -246,14 +261,18 @@ export default {
     },
     async deleteConfirmed() {
       if (this.eventToDelete) {
+        this.overlay = true;
         await this.deleteEvent(this.eventToDelete.event_id);
         await this.getEvents();
         this.closeConfirmDialog();
+        this.overlay = false;
       }
     },
   },
   async created() {
+    this.overlay = true;
     await this.getEvents();
+    this.overlay = false;
   },
 };
 </script>

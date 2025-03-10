@@ -15,4 +15,4 @@ class Event(Base):
     archived = Column(Boolean, default=False, nullable=False)
     img_url = Column(String, nullable=True)
     
-    seat_in_event = relationship("SeatInEvent", back_populates="event")
+    seat_in_event = relationship("SeatInEvent", back_populates="event", cascade="all, delete")

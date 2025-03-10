@@ -55,6 +55,7 @@
       <!-- No Data Alert -->
       <v-alert v-else type="info" class="ma-4">
         Нет данных
+        
       </v-alert>
     </v-card>
   

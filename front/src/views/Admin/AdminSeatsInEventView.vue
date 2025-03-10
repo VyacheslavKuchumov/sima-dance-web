@@ -1,23 +1,33 @@
 <template>
+  <v-overlay
+      :model-value="overlay"
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Список мест (админ)
+      Список мест (админ) 
     </v-card-title>
   </v-card>
-
+  
   <!-- Main Card with Toolbar -->
   <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1400">
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
       <v-spacer></v-spacer>
-      <v-btn icon="mdi-plus" color="primary" @click="openCreateDialog"></v-btn>
+      <v-btn v-if="seats_in_events().length === 0" icon="mdi-plus-box-multiple" color="primary" @click="initializeSeatsInEvents"></v-btn>
     </v-toolbar>
-    <v-card class="ma-2" max-height="600">
+    <v-card max-height="600">
       <!-- Zoomable Container -->
       <div class="zoom-window" ref="zoomContainer">
         <div class="pan-zoom-area">
-          <v-container v-if="seats() && seats().length" class="venue-layout">
+          <v-container v-if="seats_in_events() && seats_in_events().length" class="venue-layout">
             <!-- Venue plan content: Sections, rows, and seats -->
             <div v-for="(rows, section) in groupedSeats" :key="section" class="section-container">
               <h3>{{ section }}</h3>
@@ -45,7 +55,7 @@
           </v-container>
 
           <v-alert v-else type="info" class="ma-4">
-            Нет данных
+            Нет данных 
           </v-alert>
         </div>
       </div>
@@ -60,39 +70,21 @@
         {{ editingSeat ? "Редактировать место" : "Создать место" }}
       </v-card-title>
       <v-card-text>
-        <v-form ref="seatForm" v-model="valid" @submit.prevent="saveSeat">
-          <v-text-field
-            v-model="seatForm.section"
-            label="Секция"
-            clearable
-            :rules="[rules.required]"
-          ></v-text-field>
-          <v-text-field
-            v-model="seatForm.row"
-            label="Ряд"
-            clearable
-            :rules="[rules.required]"
-          ></v-text-field>
-          <v-text-field
-            v-model="seatForm.number"
-            label="Номер"
-            clearable
-            :rules="[rules.required]"
-          ></v-text-field>
+        <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
           <v-select
-            v-if="editingSeat"
-            v-model="seatForm.status"
+            v-if="editingSeatInEvent"
+            v-model="seatInEventForm.status"
             label="Статус"
             :items="['available', 'held', 'booked', 'unavailable']"
             :rules="[rules.required]"
           ></v-select>
           <v-text-field
-            v-model="seatForm.price"
+            v-model="seatInEventForm.price"
             label="Цена"
             type="number"
             clearable
             :rules="[rules.required]"
-          ></v-text-field>
+          ></v-text-field>          
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -103,129 +95,115 @@
     </v-card>
   </v-dialog>
 
-  <!-- Delete Confirmation Dialog -->
-  <v-dialog v-model="confirmDeleteDialog" max-width="400px">
-    <v-card>
-      <v-card-title class="text-h5">Подтвердите удаление</v-card-title>
-      <v-card-text>
-        Вы уверены, что хотите удалить место (Ряд: {{ seatToDelete?.row }}, Номер: {{ seatToDelete?.number }})?
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text @click="closeConfirmDialog">Отмена</v-btn>
-        <v-btn color="red" @click="deleteConfirmed">Удалить</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  
+  
 </template>
 
 <script>
 import { mapActions } from "vuex";
 import panzoom from 'panzoom'; // Install via npm: npm install panzoom
 
+
 export default {
   data() {
     return {
-      confirmDeleteDialog: false,
+      overlay: false,
       editDialog: false,
-      seatToDelete: null,
-      editingSeat: null,
-      seatForm: {
-        section: "",
-        row: "",
-        number: "",
+      
+      editingSeatInEvent: null,
+      seatInEventForm: {
         status: "",
         price: null,
       },
+      
       valid: false,
       rules: {
         required: (value) => !!value || "Это поле обязательно",
       },
       panzoomInstance: null,
+      
     };
   },
   computed: {
     // Group seats by section and then by row
     groupedSeats() {
       const groups = {};
-      this.seats().forEach((seat) => {
-        if (!groups[seat.section]) {
-          groups[seat.section] = {};
+      this.seats_in_events().forEach((seatInEvent) => {
+        if (!groups[seatInEvent.seat.section]) {
+          groups[seatInEvent.seat.section] = {};
         }
-        if (!groups[seat.section][seat.row]) {
-          groups[seat.section][seat.row] = [];
+        if (!groups[seatInEvent.seat.section][seatInEvent.seat.row]) {
+          groups[seatInEvent.seat.section][seatInEvent.seat.row] = [];
         }
-        groups[seat.section][seat.row].push(seat);
+        groups[seatInEvent.seat.section][seatInEvent.seat.row].push(seatInEvent);
       });
       return groups;
     },
+    
   },
   methods: {
-    seats() {
-      return this.$store.state.seats.data;
+    
+    seats_in_events() {
+      return this.$store.state.seats_in_events.data;
     },
+    
     // Helper method to sort row keys in descending order
     sortedRowKeys(rows) {
       return Object.keys(rows).sort((a, b) => Number(b) - Number(a));
     },
     ...mapActions({
-      getSeats: "seats/getSeats",
-      createSeat: "seats/createSeat",
-      updateSeat: "seats/updateSeat",
-      deleteSeat: "seats/deleteSeat",
+      initSeatsInEvent: "seats_in_events/initSeatsInEvent",
+      getSeatsInEvent: "seats_in_events/getSeatsInEvent",
+      createSeatInEvent: "seats_in_events/createSeatInEvent",
+      updateSeatInEvent: "seats_in_events/updateSeatInEvent",
+      deleteSeatInEvent: "seats_in_events/deleteSeatInEvent",
+      getVenues: "venues/getVenues",
     }),
     goBack() {
       this.$router.go(-1);
     },
-    openCreateDialog() {
-      this.editingSeat = null;
-      this.seatForm = { section: "", row: "", number: "", status: "", price: null };
-      this.editDialog = true;
+    async initializeSeatsInEvents() {
+      this.overlay = true;
+      console.log("initializing seats in events");
+      const eventUid = this.$route.params.uid;
+      await this.initSeatsInEvent({venue_id: 1, event_uid: eventUid});
+      console.log("seats in events initialized");
+      this.overlay = false;
     },
-    openEditDialog(seat) {
-      this.editingSeat = seat;
-      this.seatForm = {
-        section: seat.section,
-        row: seat.row,
-        number: seat.number,
-        status: seat.status,
-        price: seat.price,
+    openEditDialog(seatInEvent) {
+      this.editingSeatInEvent = seatInEvent;
+      this.seatInEventForm = {
+        status: seatInEvent.status,
+        price: seatInEvent.price,
       };
       this.editDialog = true;
     },
     closeEditDialog() {
       this.editDialog = false;
-      this.seatForm = { section: "", row: "", number: "", status: "", price: null };
+      this.seatInEventForm = { status: "", price: null };
     },
-    async saveSeat() {
-      const formData = { ...this.seatForm };
-      if (this.editingSeat) {
-        formData.id = this.editingSeat.seat_id;
-        await this.updateSeat(formData);
+    async saveSeatInEvent() {
+      const formData = { ...this.seatInEventForm };
+      if (this.editingSeatInEvent) {
+        formData.id = this.editingSeatInEvent.seat_id;
+        await this.updateSeatInEvent(formData);
       } else {
-        await this.createSeat(formData);
+        await this.createSeatInEvent(formData);
       }
-      await this.getSeats();
+      await this.getSeatsInEvents();
       this.closeEditDialog();
     },
-    confirmDelete(seat) {
-      this.seatToDelete = seat;
-      this.confirmDeleteDialog = true;
-    },
-    closeConfirmDialog() {
-      this.confirmDeleteDialog = false;
-      this.seatToDelete = null;
-    },
-    async deleteConfirmed() {
-      if (this.seatToDelete) {
-        await this.deleteSeat(this.seatToDelete.seat_id);
-        await this.getSeats();
-        this.closeConfirmDialog();
-      }
+    async loadVenues() {
+      await this.getVenues();
+      this.venues = this.$store.state.venues.data;
     },
   },
   async created() {
-    await this.getSeats();
+    const eventUid = this.$route.params.uid;
+    this.overlay = true;
+    await this.getSeatsInEvent(eventUid);
+    await this.loadVenues();
+    this.overlay = false;
   },
   mounted() {
     // Initialize panzoom on the zoom container for panning and zooming
