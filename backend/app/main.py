@@ -16,8 +16,9 @@ app = FastAPI(root_path="/api",
 origins = [
     "http://localhost",
     "http://localhost:8080",
-    "http://vyachik.ru",
-    "http://www.vyachik.ru",
+    "http://www.simadancing.ru",
+    "http://simadancing.ru",
+    
 ]
 
 # Add CORS middleware to the FastAPI app
