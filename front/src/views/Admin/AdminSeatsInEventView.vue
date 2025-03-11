@@ -52,11 +52,11 @@
                     @click="openEditDialog(seat)"
                   >
                     <div class="seat-top">
-                      <span class="seat-number">{{ seat.number }}</span>
-                      <v-icon small>mdi-seat</v-icon>
+                      <span class="seat-number">{{ seat.seat.number }}</span>
+                      <v-icon small>mdi-seat </v-icon>
                     </div>
                     <div class="seat-bottom">
-                      <span class="seat-price">{{ seat.price }}</span>
+                      <span class="seat-price">{{ seat.price }}р </span>
                     </div>
                   </div>
                 </div>
@@ -75,7 +75,7 @@
   <v-dialog v-model="editDialog" max-width="450px">
     <v-card>
       <v-card-title class="text-h5">
-        {{ editingSeat ? "Редактировать место" : "Создать место" }}
+        {{ "Редактировать место"}}
       </v-card-title>
       <v-card-text>
         <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
@@ -139,6 +139,7 @@ export default {
         }
         groups[seatInEvent.seat.section][seatInEvent.seat.row].push(seatInEvent);
       });
+      console.log(groups);
       return groups;
     },
   },
