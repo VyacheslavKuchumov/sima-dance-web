@@ -183,6 +183,7 @@ export default {
       this.seatInEventForm = { status: "", price: null };
     },
     async saveSeatInEvent() {
+      this.overlay = true;
       const formData = { ...this.seatInEventForm };
       if (this.editingSeatInEvent) {
         formData.id = this.editingSeatInEvent.seat_in_event_id;
@@ -192,6 +193,7 @@ export default {
       }
       await this.getSeatsInEvent(this.$route.params.uid);
       this.closeEditDialog();
+      this.overlay = false;
     },
     async loadVenues() {
       await this.getVenues();
