@@ -48,7 +48,7 @@
             <!-- Action Buttons -->
             <v-card-actions class="justify-end">
               <v-btn small color="secondary" @click="goToAdminEventSeats(item)">
-                <v-icon>mdi-cog</v-icon>
+                <v-icon>mdi-seat</v-icon>
               </v-btn>
               <v-btn small color="primary" @click="openEditDialog(item)">
                 <v-icon>mdi-pencil</v-icon>

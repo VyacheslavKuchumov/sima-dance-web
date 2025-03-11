@@ -1,4 +1,14 @@
 <template>
+  <v-overlay
+      :model-value="overlay"
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
   <v-card  v-if="user()" class="mx-auto" max-width="400" prepend-icon="mdi-account">
     <template v-slot:title>
       <span class="font-black">Пользователь {{ user().name }}</span>
@@ -21,6 +31,7 @@ export default {
   name: "HomeView",
   data() {
     return {
+      overlay: false,
       hasUserInfo: false,
 
     };
@@ -38,12 +49,14 @@ export default {
   },
   watch: {},
   async mounted() {
+    this.overlay = true;
     this.uid = localStorage.getItem("uid");
 
     if (this.uid) {
       await this.getUser();
 
     }
+    this.overlay = false;
   },
 };
 </script>

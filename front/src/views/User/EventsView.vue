@@ -1,4 +1,14 @@
 <template>
+  <v-overlay
+      :model-value="overlay"
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
     <!-- Header Card -->
     <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
       <v-card-title class="text-wrap" align="center">
@@ -140,6 +150,7 @@
   export default {
     data() {
       return {
+        overlay: false,
         dateDialog: false,
         datePickerDate: new Date().toISOString().substr(0, 10),
         confirmDeleteDialog: false,
@@ -254,7 +265,9 @@
       },
     },
     async created() {
+      this.overlay = true;
       await this.getEvents();
+      this.overlay = false;
     },
   };
   </script>
