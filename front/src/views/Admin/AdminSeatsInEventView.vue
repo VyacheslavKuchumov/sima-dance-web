@@ -227,8 +227,8 @@ export default {
 
 <style scoped>
 .zoom-window {
-  width: 1400px;      /* Visible window width */
-  height: 1600px;     /* Visible window height */
+  width: 1900px;      /* Visible window width */
+  height: 2100px;     /* Visible window height */
   overflow: hidden;
   border: 1px solid #ccc;
   margin: 20px auto;
@@ -236,8 +236,8 @@ export default {
 }
 
 .pan-zoom-area {
-  width: 1400px;
-  height: 1600px;
+  width: 1800px;
+  height: 2100px;
 }
 
 /* Venue layout and plan styling */
