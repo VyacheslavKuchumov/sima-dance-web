@@ -213,6 +213,8 @@ export default {
       maxZoom: 3,
       minZoom: 0.5,
       smoothScroll: true,
+      bounds: true,           // Restrict panning to within the content bounds
+      boundsPadding: 0.5,
     });
   },
   beforeDestroy() {
