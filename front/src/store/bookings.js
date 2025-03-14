@@ -37,6 +37,19 @@ export default {
       }
     },
 
+    // Confirm a booking
+    async confirmBooking({}, booking_id) {
+      try {
+        const response = await instance.put(`/api/bookings/confirm/${booking_id}`);
+        if (response) {
+          console.log("Booking confirmed:", response.data);
+          return response.data;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
     // Update an existing booking by id
     async updateBooking({}, { id, booking }) {
       try {

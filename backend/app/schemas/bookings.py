@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from app.schemas.user import UserOut
-from app.schemas.seats_in_events import SeatInEventOut
-
+# from app.schemas.seats_in_events import SeatInEventOut
+from datetime import datetime
 
 from uuid import UUID
 
@@ -22,28 +22,29 @@ from uuid import UUID
     
 # booking create schema
 class BookingCreate(BaseModel):
-    user_uid: int
+    user_uid: UUID
     seat_in_event_id: int
-    
+
+# booking_date = Column(DateTime, default=datetime.now(timezone.utc))
 # booking update schema
 class BookingUpdate(BaseModel):
-    user_uid: int
+    user_uid: UUID
     seat_in_event_id: int
-    booking_date: str
+    booking_date: datetime
     confirmed: bool
     paid: bool
     
 # booking out schema
 class BookingOut(BaseModel):
     booking_id: int
-    user_uid: int
+    user_uid: UUID
     seat_in_event_id: int
-    booking_date: str
+    booking_date: datetime
     confirmed: bool
     paid: bool
     
     user: UserOut
-    seat_in_event: SeatInEventOut
+    # seat_in_event: SeatInEventOut
 
     model_config = ConfigDict(from_attributes=True)
 

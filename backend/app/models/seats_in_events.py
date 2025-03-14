@@ -21,6 +21,6 @@ class SeatInEvent(Base):
     price = Column(Integer, nullable=True)
     
     seat = relationship("Seat", uselist=False, back_populates="seat_in_event")
-    event = relationship("Event", back_populates="seat_in_event")
+    event = relationship("Event", uselist=False, back_populates="seat_in_event")
     # Updated back_populates to match the attribute in Booking
-    booking = relationship("Booking", uselist=False, back_populates="seat_in_event")
+    booking = relationship("Booking", uselist=False, back_populates="seat_in_event", cascade="all, delete")

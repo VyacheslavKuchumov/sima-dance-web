@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, user, bookings, events, seats, seats_in_events, venues
+from app.routers import auth, user, events, seats, seats_in_events, venues,  bookings
 from fastapi.openapi.utils import get_openapi
 
 # Create all tables (in production, use Alembic for migrations)

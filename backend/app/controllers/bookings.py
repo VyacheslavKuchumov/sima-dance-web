@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.bookings import Booking
 from app.schemas.bookings import BookingCreate, BookingUpdate
+from app.models.seats_in_events import SeatInEvent
 
 # # # booking table
 # # class Booking(Base):
@@ -48,16 +49,36 @@ from app.schemas.bookings import BookingCreate, BookingUpdate
 def get_bookings(db: Session):
     return db.query(Booking).all()
 
-# create a new booking
+# create a new booking and set seat_in_event status to held
 def create_booking(db: Session, booking: BookingCreate):
     db_booking = Booking(
         user_uid=booking.user_uid,
         seat_in_event_id=booking.seat_in_event_id,
     )
     db.add(db_booking)
+    db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "held"})
     db.commit()
     db.refresh(db_booking)
     return db_booking
+
+# confirm a booking and set seat_in_event status to booked
+def confirm_booking(db: Session, booking_id: int):
+    # Retrieve the booking first
+    db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+
+    if not db_booking:
+        raise ValueError("Booking not found")
+
+    # Update booking confirmation
+    db_booking.confirmed = True
+
+    # Update seat status
+    db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "booked"})
+
+    db.commit()
+    db.refresh(db_booking)
+    return db_booking
+
 
 # update an existing booking by id
 def update_booking(db: Session, booking_id: int, booking: BookingUpdate):
@@ -71,9 +92,10 @@ def update_booking(db: Session, booking_id: int, booking: BookingUpdate):
     db.refresh(db_booking)
     return db_booking
 
-# delete an existing booking by id
+# delete an existing booking by id and set seat_in_event status to available
 def delete_booking(db: Session, booking_id: int):
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == booking.seat_in_event_id).update({"status": "available"})
     db.delete(booking)
     db.commit()
     return booking

@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.seats import SeatOut
 from app.schemas.events import EventOut
 from uuid import UUID
+from app.schemas.bookings import BookingOut
+from typing import Optional
 
 
 
@@ -25,7 +27,9 @@ class SeatInEventOut(BaseModel):
     event_uid: UUID
     status: str
     price: int
+    
     seat: SeatOut
     event: EventOut
+    booking: Optional[BookingOut] = None
 
     model_config = ConfigDict(from_attributes=True)

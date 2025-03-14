@@ -83,8 +83,9 @@
             v-if="editingSeatInEvent"
             v-model="seatInEventForm.status"
             label="Статус"
-            :items="['available', 'held', 'booked', 'unavailable']"
+            :items="['available', 'unavailable']"
             :rules="[rules.required]"
+            :disabled="editingSeatInEvent.status === 'booked' || editingSeatInEvent.status === 'held'"
           ></v-select>
           <v-text-field
             v-model="seatInEventForm.price"
