@@ -47,6 +47,9 @@
 
             <!-- Action Buttons -->
             <v-card-actions class="justify-end">
+              <v-btn small color="green" @click="goToAdminEventBookings(item)">
+                <v-icon>mdi-account-multiple</v-icon>
+              </v-btn>
               <v-btn small color="secondary" @click="goToAdminEventSeats(item)">
                 <v-icon>mdi-seat</v-icon>
               </v-btn>

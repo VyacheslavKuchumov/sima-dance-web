@@ -43,8 +43,10 @@
                     class="seat"
                     :class="{
                       'seat-available': seat.status === 'available',
-                      'seat-held': seat.status === 'held',
-                      'seat-booked': seat.status === 'booked',
+                      'seat-held': seat.status === 'held' && !isCurrentUserSeat(seat),
+                      'seat-held-current': seat.status === 'held' && isCurrentUserSeat(seat),
+                      'seat-booked': seat.status === 'booked' && !isCurrentUserSeat(seat),
+                      'seat-booked-current': seat.status === 'booked' && isCurrentUserSeat(seat),
                       'seat-unavailable': seat.status === 'unavailable'
                     }"
                     @click="bookSeat(seat)"
@@ -70,9 +72,9 @@
   </v-card>
 
   <!-- Dialog for Creating/Editing a Seat -->
-  <v-dialog v-model="bookingDialog" max-width="450px">
+  <v-dialog v-model="bookingDialog" persistent max-width="450px">
     <v-card>
-      <v-card-title class="text-h5">
+      <v-card-title class="text-h5 text-wrap">
         Подтверждение бронирования
       </v-card-title>
       <v-card-text>
@@ -130,6 +132,10 @@ export default {
     // Helper method to sort row keys in descending order
     sortedRowKeys(rows) {
       return Object.keys(rows).sort((a, b) => Number(b) - Number(a));
+    },
+    // Check if the seat belongs to the current user
+    isCurrentUserSeat(seat) {
+      return seat.booking && seat.booking.user_uid === this.$store.state.user.user.user_uid;
     },
     ...mapActions({
       initSeatsInEvent: "seats_in_events/initSeatsInEvent",
@@ -322,16 +328,33 @@ export default {
   margin-top: 2px;
 }
 
-/* Optional: Color coding for seat status */
+/* Color coding for seat status */
+/* Blue: Available Seats */
 .seat-available {
-  color: green;
+  color: #428af5;
 }
+
+/* For seats held by others (if needed) */
 .seat-held {
   color: orange;
 }
+
+/* Orange: Current User's Held Seats */
+.seat-held-current {
+  color: orange;
+}
+
+/* Red: Other Users' Booked Seats */
 .seat-booked {
   color: red;
 }
+
+/* Green: Current User's Booked Seats */
+.seat-booked-current {
+  color: green;
+}
+
+/* Gray: Unavailable Seats */
 .seat-unavailable {
   color: gray;
 }
