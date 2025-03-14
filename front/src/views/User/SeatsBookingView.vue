@@ -37,19 +37,19 @@
               >
                 <div class="row-label">{{ rowNumber }}</div>
                 <div class="seats-row">
-                  <div
+                  <v-btn
                     v-for="seat in rows[rowNumber]"
                     :key="seat.seat_id"
                     class="seat"
                     :class="{
                       'seat-available': seat.status === 'available',
-                      'seat-held': seat.status === 'held' && !isCurrentUserSeat(seat),
-                      'seat-held-current': seat.status === 'held' && isCurrentUserSeat(seat),
+                      'seat-held': seat.status === 'held',
                       'seat-booked': seat.status === 'booked' && !isCurrentUserSeat(seat),
                       'seat-booked-current': seat.status === 'booked' && isCurrentUserSeat(seat),
                       'seat-unavailable': seat.status === 'unavailable'
                     }"
                     @click="bookSeat(seat)"
+                    :disabled="seat.status === 'unavailable' || seat.status === 'held' || seat.status === 'booked' && !isCurrentUserSeat(seat)"
                   >
                     <div class="seat-top">
                       <span class="seat-number">{{ seat.seat.number }}</span>
@@ -58,7 +58,7 @@
                     <div class="seat-bottom">
                       <span class="seat-price">{{ seat.price }}р</span>
                     </div>
-                  </div>
+                  </v-btn>
                 </div>
               </div>
             </div>
@@ -126,6 +126,9 @@ export default {
     },
   },
   methods: {
+    user() {
+      return this.$store.state.user.user;
+    },
     seats_in_events() {
       return this.$store.state.seats_in_events.data || [];
     },
@@ -135,7 +138,10 @@ export default {
     },
     // Check if the seat belongs to the current user
     isCurrentUserSeat(seat) {
-      return seat.booking && seat.booking.user_uid === this.$store.state.user.user.user_uid;
+      if (this.user()) {
+        return seat.booking && seat.booking.user_uid === this.$store.state.user.user.user_uid;
+      }
+      return false;
     },
     ...mapActions({
       initSeatsInEvent: "seats_in_events/initSeatsInEvent",
