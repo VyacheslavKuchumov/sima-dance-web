@@ -9,7 +9,7 @@ import EventsAdminView from "@/views/Admin/EventsAdminView.vue";
 import EventsView from "@/views/User/EventsView.vue";
 import AdminSeatsInEventView from "@/views/Admin/AdminSeatsInEventView.vue";
 import SeatsBookingView from "@/views/User/SeatsBookingView.vue";
-
+import AdminBookingsView from "@/views/Admin/AdminBookingsView.vue";
 const routes = [
   {
     path: "/",
@@ -43,6 +43,13 @@ const routes = [
     path: "/admin/event/:uid",
     name: "seats-admin",
     component: AdminSeatsInEventView,
+    // meta: { auth: true, admin: true },
+    props: true,
+  },
+  {
+    path: "/admin/bookings/:event_uid",
+    name: "bookings-admin",
+    component: AdminBookingsView,
     // meta: { auth: true, admin: true },
     props: true,
   },

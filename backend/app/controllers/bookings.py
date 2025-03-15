@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.bookings import Booking
 from app.schemas.bookings import BookingCreate, BookingUpdate
 from app.models.seats_in_events import SeatInEvent
+from uuid import UUID
 
 # # # booking table
 # # class Booking(Base):
@@ -45,9 +46,18 @@ from app.models.seats_in_events import SeatInEvent
 #     model_config = ConfigDict(from_attributes=True)
 
 
-# get all bookings
-def get_bookings(db: Session):
-    return db.query(Booking).all()
+# # get all bookings
+# def get_bookings(db: Session):
+#     return db.query(Booking).all()
+
+# get bookings by event_uid (event_uid is in seats_in_events table that relates to bookings table)
+def get_bookings_by_event_uid(db: Session, event_uid: UUID):
+    # get all seats_in_events by event_uid
+    seats_in_events = db.query(SeatInEvent).filter(SeatInEvent.event_uid == event_uid).order_by(SeatInEvent.seat_in_event_id).all()
+    # get all bookings by seat_in_event_id
+    bookings = db.query(Booking).filter(Booking.seat_in_event_id.in_([seat.seat_in_event_id for seat in seats_in_events])).all()
+    return bookings
+    
 
 # create a new booking and set seat_in_event status to held
 def create_booking(db: Session, booking: BookingCreate):
@@ -75,6 +85,14 @@ def confirm_booking(db: Session, booking_id: int):
     # Update seat status
     db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "booked"})
 
+    db.commit()
+    db.refresh(db_booking)
+    return db_booking
+
+# toggle paid status
+def toggle_paid_status(db: Session, booking_id: int):
+    db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    db_booking.paid = not db_booking.paid
     db.commit()
     db.refresh(db_booking)
     return db_booking

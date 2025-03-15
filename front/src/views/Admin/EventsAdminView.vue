@@ -187,6 +187,9 @@ export default {
     goToAdminEventSeats(item) {
         this.$router.push(`/admin/event/${item.event_uid}`);
       },
+    goToAdminEventBookings(item) {
+      this.$router.push(`/admin/bookings/${item.event_uid}`);
+    },
     isoToRussianDate(isoDate) {
       if (!isoDate || typeof isoDate !== "string") {
         throw new Error("Invalid input. Please provide a valid ISO date string.");

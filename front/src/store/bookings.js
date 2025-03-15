@@ -11,11 +11,31 @@ export default {
     },
   },
   actions: {
-    // Get all bookings
-    async getBookings({ commit }) {
+    // // Get all bookings
+    // async getBookings({ commit }) {
+    //   try {
+    //     const response = await instance.get("/api/bookings");
+    //     if (response) return commit("setData", response.data);
+    //   } catch (error) {
+    //     console.error(error);
+    //   }
+    // },
+
+    // Get bookings by event_uid
+    async getBookingsByEventUid({ commit }, event_uid) {
       try {
-        const response = await instance.get("/api/bookings");
+        const response = await instance.get(`/api/bookings/event/${event_uid}`);
         if (response) return commit("setData", response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    
+    // Toggle booking status
+    async togglePaidStatus({}, booking_id) {
+      try {
+        const response = await instance.put(`/api/bookings/payment/${booking_id}`);
+        if (response) return  response.data;
       } catch (error) {
         console.error(error);
       }
