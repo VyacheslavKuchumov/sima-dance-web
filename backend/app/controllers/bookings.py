@@ -69,7 +69,8 @@ def create_booking(db: Session, booking: BookingCreate):
         seat_in_event_id=booking.seat_in_event_id,
     )
     db.add(db_booking)
-    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "held"})
+    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).first()
+    db_seat_in_event.status = "held"
     db.commit()
     
     db.refresh(db_booking)
@@ -77,7 +78,7 @@ def create_booking(db: Session, booking: BookingCreate):
     sse_payload = {
         "event": "booking_created",
         "data": {
-            "status": "held",
+            "status": db_seat_in_event.status,
             "booking_id": db_booking.booking_id,
             "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
@@ -99,7 +100,7 @@ def confirm_booking(db: Session, booking_id: int):
     db_booking.confirmed = True
 
     # Update seat status
-    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id)
+    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).first()
     # Prepare the SSE message payload
     db_seat_in_event.status = "booked"
 
