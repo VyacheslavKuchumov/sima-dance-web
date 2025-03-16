@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, user, events, seats, seats_in_events, venues,  bookings
+from app.routers import auth, user, events, seats, seats_in_events, venues,  bookings, sse
 from fastapi.openapi.utils import get_openapi
 
 # Create all tables (in production, use Alembic for migrations)
@@ -38,3 +38,6 @@ app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(seats.router, prefix="/seats", tags=["seats"])
 app.include_router(seats_in_events.router, prefix="/seats_in_events", tags=["seats_in_events"])
 app.include_router(venues.router, prefix="/venues", tags=["venues"])
+
+# SSE router
+app.include_router(sse.router, prefix="/sse", tags=["sse"])

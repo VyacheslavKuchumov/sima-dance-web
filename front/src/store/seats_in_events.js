@@ -9,8 +9,20 @@ export default {
     setData(state, data) {
       state.data = data;
     },
+    updateSeatsInEventStatus(state, payload) {
+      const { seat_in_event_id, status } = payload;
+      const seat = state.data.find(
+        item => item.seat_in_event_id === seat_in_event_id
+      );
+      if (seat) {
+        seat.status = status;
+      }
+    },
   },
   actions: {
+    async updateSeatInStore({ commit }, payload) {
+      commit("updateSeatsInEventStatus", payload);
+    },
 
     // Initialize seats in event by venue_id and event_uid
     async initSeatsInEvent({ commit }, { venue_id, event_uid }) {

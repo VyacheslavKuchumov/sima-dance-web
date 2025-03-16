@@ -5,9 +5,10 @@
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Список мест
+      Список мест {{ sse() }}
     </v-card-title>
   </v-card>
+  
   
   <!-- Main Card with Toolbar -->
   <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1400">
@@ -93,6 +94,7 @@
 import { mapActions } from "vuex";
 import panzoom from "panzoom"; // Install via npm: npm install panzoom
 
+
 export default {
   data() {
     return {
@@ -126,6 +128,9 @@ export default {
     },
   },
   methods: {
+    sse() {
+      return this.$store.state.sse.data;
+    },
     user() {
       return this.$store.state.user.user;
     },
@@ -155,6 +160,8 @@ export default {
       deleteBooking: "bookings/deleteBooking",
       
       getUser: "user/getUserByUid",
+
+      startListeningToBookingUpdates: "sse/startListeningToBookingUpdates",
     }),
     goBack() {
       this.$router.go(-1);
@@ -229,9 +236,13 @@ export default {
     if (this.uid) {
       await this.getUser();
     }
+
     this.overlay = false;
+
   },
-  mounted() {
+  async mounted() {
+    
+    
     // Initialize panzoom on the zoom container for panning and zooming
     this.panzoomInstance = panzoom(this.$refs.zoomContainer, {
       maxZoom: 3,
@@ -240,6 +251,7 @@ export default {
       bounds: true,
       boundsPadding: 0.5,
     });
+    await this.startListeningToBookingUpdates();
   },
   beforeDestroy() {
     if (this.panzoomInstance) {

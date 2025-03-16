@@ -20,12 +20,13 @@
     <v-card-text>
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel nisl sed massa venenatis consequat. Integer auctor mollis ex eu imperdiet. Praesent at vehicula sem. Nulla facilisi. Sed ultrices scelerisque ex eu maximus. Duis vulputate lobortis nisl a ullamcorper. Nullam ultrices ultrices lectus, quis varius ex porta nec.
     </v-card-text>
-    
+
   </v-card>
 </template>
 
 <script>
 import { mapActions, mapState } from "vuex";
+
 
 export default {
   name: "HomeView",
@@ -48,11 +49,15 @@ export default {
 
   },
   watch: {},
+
+  
   async mounted() {
     this.overlay = true;
+    
     this.uid = localStorage.getItem("uid");
 
     if (this.uid) {
+
       await this.getUser();
 
     }
