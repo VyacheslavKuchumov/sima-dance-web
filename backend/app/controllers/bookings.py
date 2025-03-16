@@ -15,16 +15,15 @@ import app.controllers.sse as sse
 # #     booking_date = Column(DateTime, default=datetime.now(timezone.utc))
 # #     confirmed = Column(Boolean, default=False)
 # #     paid = Column(Boolean, default=False)
-    
+# #     
 # #     user = relationship("User", back_populates="booking")
 # #     seat_in_event = relationship("SeatInEvent", back_populates="booking")
-
-    
+# 
 # # booking create schema
 # class BookingCreate(BaseModel):
 #     user_uid: int
 #     seat_in_event_id: int
-    
+# 
 # # booking update schema
 # class BookingUpdate(BaseModel):
 #     user_uid: int
@@ -32,7 +31,7 @@ import app.controllers.sse as sse
 #     booking_date: str
 #     confirmed: bool
 #     paid: bool
-    
+# 
 # # booking out schema
 # class BookingOut(BaseModel):
 #     booking_id: int
@@ -41,26 +40,32 @@ import app.controllers.sse as sse
 #     booking_date: str
 #     confirmed: bool
 #     paid: bool
-    
+# 
 #     user: UserOut
 #     seat_in_event: SeatInEventOut
-
+# 
 #     model_config = ConfigDict(from_attributes=True)
 
-
-# # get all bookings
-# def get_bookings(db: Session):
-#     return db.query(Booking).all()
+# get all bookings
+def get_bookings(db: Session):
+    return db.query(Booking).all()
 
 # get bookings by event_uid (event_uid is in seats_in_events table that relates to bookings table)
 def get_bookings_by_event_uid(db: Session, event_uid: UUID):
     # get all seats_in_events by event_uid
-    seats_in_events = db.query(SeatInEvent).filter(SeatInEvent.event_uid == event_uid).order_by(SeatInEvent.seat_in_event_id).all()
+    seats_in_events = (
+        db.query(SeatInEvent)
+        .filter(SeatInEvent.event_uid == event_uid)
+        .order_by(SeatInEvent.seat_in_event_id)
+        .all()
+    )
     # get all bookings by seat_in_event_id
-    bookings = db.query(Booking).filter(Booking.seat_in_event_id.in_([seat.seat_in_event_id for seat in seats_in_events])).all()
+    bookings = db.query(Booking).filter(
+        Booking.seat_in_event_id.in_(
+            [seat.seat_in_event_id for seat in seats_in_events]
+        )
+    ).all()
     return bookings
-
-
 
 # create a new booking and set seat_in_event status to held
 def create_booking(db: Session, booking: BookingCreate):
@@ -69,7 +74,11 @@ def create_booking(db: Session, booking: BookingCreate):
         seat_in_event_id=booking.seat_in_event_id,
     )
     db.add(db_booking)
-    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).first()
+    
+    # Retrieve the actual SeatInEvent record using .first()
+    db_seat_in_event = db.query(SeatInEvent).filter(
+        SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id
+    ).first()
     db_seat_in_event.status = "held"
     db.commit()
     
@@ -78,7 +87,7 @@ def create_booking(db: Session, booking: BookingCreate):
     sse_payload = {
         "event": "booking_created",
         "data": {
-            "status": db_seat_in_event.status,
+            "status": db_seat_in_event.status.value,
             "booking_id": db_booking.booking_id,
             "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
@@ -99,9 +108,10 @@ def confirm_booking(db: Session, booking_id: int):
     # Update booking confirmation
     db_booking.confirmed = True
 
-    # Update seat status
-    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).first()
-    # Prepare the SSE message payload
+    # Retrieve the SeatInEvent instance with .first() and update its status
+    db_seat_in_event = db.query(SeatInEvent).filter(
+        SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id
+    ).first()
     db_seat_in_event.status = "booked"
 
     db.commit()
@@ -110,7 +120,7 @@ def confirm_booking(db: Session, booking_id: int):
     sse_payload = {
         "event": "booking_confirmed",
         "data": {
-            "status": db_seat_in_event.status,
+            "status": db_seat_in_event.status.value,
             "booking_id": db_booking.booking_id,
             "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
@@ -121,22 +131,21 @@ def confirm_booking(db: Session, booking_id: int):
     
     return db_booking
 
-
 # delete an existing booking by id and set seat_in_event status to available
 def delete_booking(db: Session, booking_id: int):
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
-    seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == booking.seat_in_event_id).first()
+    seat_in_event = db.query(SeatInEvent).filter(
+        SeatInEvent.seat_in_event_id == booking.seat_in_event_id
+    ).first()
     seat_in_event.status = "available"
     db.delete(booking)
     db.commit()
-    
-    db.refresh(booking)
+
     # Prepare the SSE message payload
     sse_payload = {
         "event": "booking_deleted",
         "data": {
-            "status": seat_in_event.status,
-            "booking_id": booking.booking_id,
+            "status": seat_in_event.status.value,
             "seat_in_event_id": seat_in_event.seat_in_event_id,
         },
     }
@@ -153,7 +162,6 @@ def toggle_paid_status(db: Session, booking_id: int):
     db.refresh(db_booking)
     return db_booking
 
-
 # update an existing booking by id
 def update_booking(db: Session, booking_id: int, booking: BookingUpdate):
     db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
@@ -165,4 +173,3 @@ def update_booking(db: Session, booking_id: int, booking: BookingUpdate):
     db.commit()
     db.refresh(db_booking)
     return db_booking
-
