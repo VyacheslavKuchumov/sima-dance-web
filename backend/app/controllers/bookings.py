@@ -87,7 +87,7 @@ def create_booking(db: Session, booking: BookingCreate):
     sse_payload = {
         "event": "booking_created",
         "data": {
-            "status": db_seat_in_event.status.value,
+            "status": "held",
             "booking_id": db_booking.booking_id,
             "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
@@ -120,7 +120,7 @@ def confirm_booking(db: Session, booking_id: int):
     sse_payload = {
         "event": "booking_confirmed",
         "data": {
-            "status": db_seat_in_event.status.value,
+            "status": "booked",
             "booking_id": db_booking.booking_id,
             "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
@@ -145,7 +145,7 @@ def delete_booking(db: Session, booking_id: int):
     sse_payload = {
         "event": "booking_deleted",
         "data": {
-            "status": seat_in_event.status.value,
+            "status": "available",
             "seat_in_event_id": seat_in_event.seat_in_event_id,
         },
     }
