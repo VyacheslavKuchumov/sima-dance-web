@@ -18,7 +18,7 @@ origins = [
     "http://localhost:8080",
     "http://www.simadancing.ru",
     "http://simadancing.ru",
-    
+    "http://192.168.50.223",
 ]
 
 # Add CORS middleware to the FastAPI app
