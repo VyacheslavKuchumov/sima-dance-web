@@ -69,8 +69,9 @@ def create_booking(db: Session, booking: BookingCreate):
         seat_in_event_id=booking.seat_in_event_id,
     )
     db.add(db_booking)
-    db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "held"})
+    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "held"})
     db.commit()
+    
     db.refresh(db_booking)
     # Prepare the SSE message payload
     sse_payload = {
@@ -78,7 +79,7 @@ def create_booking(db: Session, booking: BookingCreate):
         "data": {
             "status": "held",
             "booking_id": db_booking.booking_id,
-            "seat_in_event_id": db_booking.seat_in_event_id,
+            "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
     }
     
@@ -98,40 +99,44 @@ def confirm_booking(db: Session, booking_id: int):
     db_booking.confirmed = True
 
     # Update seat status
-    db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id).update({"status": "booked"})
+    db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id)
     # Prepare the SSE message payload
-    
+    db_seat_in_event.status = "booked"
 
     db.commit()
+    db.refresh(db_booking)
+    
     sse_payload = {
         "event": "booking_confirmed",
         "data": {
-            "status": "booked",
+            "status": db_seat_in_event.status,
             "booking_id": db_booking.booking_id,
-            "seat_in_event_id": db_booking.seat_in_event_id,
+            "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
     }
     
     # Push the SSE notification to the queue
     sse.message(sse_payload)
     
-    db.refresh(db_booking)
     return db_booking
 
 
 # delete an existing booking by id and set seat_in_event status to available
 def delete_booking(db: Session, booking_id: int):
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
-    db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == booking.seat_in_event_id).update({"status": "available"})
+    seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == booking.seat_in_event_id).first()
+    seat_in_event.status = "available"
     db.delete(booking)
     db.commit()
+    
+    db.refresh(booking)
     # Prepare the SSE message payload
     sse_payload = {
         "event": "booking_deleted",
         "data": {
-            "status": "available",
+            "status": seat_in_event.status,
             "booking_id": booking.booking_id,
-            "seat_in_event_id": booking.seat_in_event_id,
+            "seat_in_event_id": seat_in_event.seat_in_event_id,
         },
     }
     
