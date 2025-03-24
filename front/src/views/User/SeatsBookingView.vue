@@ -65,7 +65,7 @@
             </div>
           </v-container>
           <v-alert v-else type="info" class="ma-4">
-            Администратор не инициализировал места
+            <p v-if="!overlay">Администратор не инициализировал места</p>
           </v-alert>
         </div>
       </div>
