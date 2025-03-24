@@ -15,16 +15,7 @@ app = FastAPI(root_path="/api",
 
 # Define allowed origins (adjust the list to your requirements)
 origins = [
-    "http://localhost",
-    "http://localhost:8080",
-    "http://www.simadancing.ru",
-    "http://simadancing.ru",
-    "http://192.168.50.223",
-    "ws://localhost",
-    "ws://192.168.50.223",
-    "ws://simadancing.ru",
-    "ws://www.simadancing.ru",
-    
+    "*"
 ]
 
 # Add CORS middleware to the FastAPI app
