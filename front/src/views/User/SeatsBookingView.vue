@@ -93,11 +93,12 @@
 <script>
 import { mapActions } from "vuex";
 import panzoom from "panzoom"; // Install via npm: npm install panzoom
-
+import WebSocketService from '@/websocket/WebSocketService.js';
 
 export default {
   data() {
     return {
+      wsService: null,
       overlay: false,
       bookingDialog: false,
       bookingData: null,
@@ -128,9 +129,7 @@ export default {
     },
   },
   methods: {
-    sse() {
-      return this.$store.state.sse.data;
-    },
+
     user() {
       return this.$store.state.user.user;
     },
@@ -161,7 +160,7 @@ export default {
       
       getUser: "user/getUserByUid",
 
-      startListeningToBookingUpdates: "sse/startListeningToBookingUpdates",
+      updateSeatInStore: "seats_in_events/updateSeatInStore",
     }),
     goBack() {
       this.$router.go(-1);
@@ -176,7 +175,7 @@ export default {
         // Capture the booking response
         const bookingResponse = await this.createBooking(data);
         // Refresh the seat data
-        await this.getSeatsInEvent(this.$route.params.uid);
+        // await this.getSeatsInEvent(this.$route.params.uid);
         // Try to locate the updated seat that should now include booking info
         const updatedSeat = this.seats_in_events().find(
           (seat) => seat.seat_in_event_id === item.seat_in_event_id
@@ -203,7 +202,7 @@ export default {
           throw new Error("Booking ID not found.");
         }
         await this.deleteBooking(bookingId);
-        await this.getSeatsInEvent(this.$route.params.uid);
+        // await this.getSeatsInEvent(this.$route.params.uid);
         this.bookingDialog = false;
       } catch (error) {
         console.error("Error cancelling booking:", error);
@@ -227,6 +226,26 @@ export default {
         this.overlay = false;
       }
     },
+    async initWebSocket() {
+      // Initialize the WebSocket service with your backend URL
+    this.wsService = new WebSocketService();
+      try {
+        await this.wsService.connect();
+        // Listen for incoming messages
+        this.wsService.onMessage((raw_data) => {
+          console.log("Message received:", raw_data);
+          const payload = JSON.parse(raw_data)
+          this.updateSeatInStore(payload.data)
+          
+        });
+        // Optionally, handle the close event
+        this.wsService.onClose((event) => {
+          console.log("WebSocket closed:", event);
+        });
+      } catch (error) {
+        console.error("Failed to connect:", error);
+      }
+    }
   },
   async created() {
     const eventUid = this.$route.params.uid;
@@ -236,6 +255,8 @@ export default {
     if (this.uid) {
       await this.getUser();
     }
+
+    await this.initWebSocket();
 
     this.overlay = false;
 
@@ -251,13 +272,27 @@ export default {
       bounds: true,
       boundsPadding: 0.5,
     });
-    await this.startListeningToBookingUpdates();
+    
   },
   beforeDestroy() {
     if (this.panzoomInstance) {
       this.panzoomInstance.dispose();
     }
+    if (this.wsService && typeof this.wsService.disconnect === 'function') {
+        this.wsService.disconnect();
+      }
+
   },
+  beforeRouteLeave(to, from, next) {
+      if (this.wsService && typeof this.wsService.disconnect === 'function') {
+        this.wsService.disconnect();
+      }
+      if (this.panzoomInstance) {
+      this.panzoomInstance.dispose();
+    }
+      next();
+    },
+    
 };
 </script>
 

@@ -21,6 +21,7 @@ export default {
   },
   actions: {
     async updateSeatInStore({ commit }, payload) {
+      console.log("updateSeatInStore", payload);
       commit("updateSeatsInEventStatus", payload);
     },
 
