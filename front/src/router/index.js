@@ -6,10 +6,11 @@ import Register from "@/views/Auth/Register.vue";
 import Login from "@/views/Auth/Login.vue";
 import ArchivedEventsAdminView from "@/views/Admin/ArchivedEventsAdminView.vue";
 import EventsAdminView from "@/views/Admin/EventsAdminView.vue";
-import EventsView from "@/views/User/EventsView.vue";
+// import EventsView from "@/views/User/EventsView.vue";
 import AdminSeatsInEventView from "@/views/Admin/AdminSeatsInEventView.vue";
 import SeatsBookingView from "@/views/User/SeatsBookingView.vue";
 import AdminBookingsView from "@/views/Admin/AdminBookingsView.vue";
+import ProfileView from "@/views/User/ProfileView.vue";
 
 import WebSocketTest from "@/views/WebsocketTest.vue";
 
@@ -24,6 +25,12 @@ const routes = [
     path: "/",
     name: "home",
     component: HomeView,
+    meta: { auth: true },
+  },
+  {
+    path: "/profile",
+    name: "profile",
+    component: ProfileView,
     meta: { auth: true },
   },
   {
@@ -62,12 +69,12 @@ const routes = [
     // meta: { auth: true, admin: true },
     props: true,
   },
-  {
-    path: "/events",
-    name: "events",
-    component: EventsView,
-    meta: { auth: true },
-  },
+  // {
+  //   path: "/events",
+  //   name: "events",
+  //   component: EventsView,
+  //   meta: { auth: true },
+  // },
   {
     path: "/event/:uid",
     name: "booking-seats",

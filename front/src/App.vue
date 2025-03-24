@@ -19,18 +19,21 @@
           <v-list-item v-if="isAuth" to="/">
             <v-list-item-title>Главная</v-list-item-title>
           </v-list-item>
-
+<!-- 
           <v-list-item v-if="isAuth" to="/events">
             <v-list-item-title>Концерты</v-list-item-title>
-          </v-list-item>
+          </v-list-item> -->
 
+          <v-list-item v-if="isAuth" to="/profile">
+            <v-list-item-title>Личный кабинет</v-list-item-title>
+          </v-list-item>
           
           <v-list-item v-if="isAuth" to="/admin/events">
-            <v-list-item-title>Концерты (админ)</v-list-item-title>
+            <v-list-item-title>Управление концертами</v-list-item-title>
           </v-list-item>
 
           <v-list-item v-if="isAuth" to="/admin/archived-events">
-            <v-list-item-title>Архив концертов (админ)</v-list-item-title>
+            <v-list-item-title>Архив концертов</v-list-item-title>
           </v-list-item>
 
           
