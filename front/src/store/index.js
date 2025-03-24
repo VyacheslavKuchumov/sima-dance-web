@@ -6,7 +6,7 @@ import seats from "@/store/seats";
 import bookings from "@/store/bookings";
 import seats_in_events from "@/store/seats_in_events";
 import venues from "@/store/venues";
-import sse from "@/store/sse";
+
 
 
 export default createStore({
@@ -22,6 +22,5 @@ export default createStore({
     bookings: bookings,
     seats_in_events: seats_in_events,
     venues: venues,
-    sse: sse,
   },
 });

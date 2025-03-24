@@ -1,50 +1,10 @@
+import json
 from sqlalchemy.orm import Session
 from app.models.bookings import Booking
 from app.schemas.bookings import BookingCreate, BookingUpdate
 from app.models.seats_in_events import SeatInEvent
 from uuid import UUID
-
-import app.controllers.sse as sse
-
-# # # booking table
-# # class Booking(Base):
-# #     __tablename__ = 'bookings'
-# #     booking_id = Column(BigInteger, primary_key=True)
-# #     user_uid = Column(BigInteger, ForeignKey('users.user_uid'), nullable=False)
-# #     seat_in_event_id = Column(BigInteger, ForeignKey('seats_in_events.seat_in_event_id'), nullable=False)
-# #     booking_date = Column(DateTime, default=datetime.now(timezone.utc))
-# #     confirmed = Column(Boolean, default=False)
-# #     paid = Column(Boolean, default=False)
-# #     
-# #     user = relationship("User", back_populates="booking")
-# #     seat_in_event = relationship("SeatInEvent", back_populates="booking")
-# 
-# # booking create schema
-# class BookingCreate(BaseModel):
-#     user_uid: int
-#     seat_in_event_id: int
-# 
-# # booking update schema
-# class BookingUpdate(BaseModel):
-#     user_uid: int
-#     seat_in_event_id: int
-#     booking_date: str
-#     confirmed: bool
-#     paid: bool
-# 
-# # booking out schema
-# class BookingOut(BaseModel):
-#     booking_id: int
-#     user_uid: int
-#     seat_in_event_id: int
-#     booking_date: str
-#     confirmed: bool
-#     paid: bool
-# 
-#     user: UserOut
-#     seat_in_event: SeatInEventOut
-# 
-#     model_config = ConfigDict(from_attributes=True)
+from app.websocket.connectionManager import manager  # Import your WebSocket connection manager
 
 # get all bookings
 def get_bookings(db: Session):
@@ -68,7 +28,7 @@ def get_bookings_by_event_uid(db: Session, event_uid: UUID):
     return bookings
 
 # create a new booking and set seat_in_event status to held
-def create_booking(db: Session, booking: BookingCreate):
+async def create_booking(db: Session, booking: BookingCreate):
     db_booking = Booking(
         user_uid=booking.user_uid,
         seat_in_event_id=booking.seat_in_event_id,
@@ -83,8 +43,9 @@ def create_booking(db: Session, booking: BookingCreate):
     db.commit()
     
     db.refresh(db_booking)
-    # Prepare the SSE message payload
-    sse_payload = {
+    
+    # Prepare the WebSocket message payload
+    payload = {
         "event": "booking_created",
         "data": {
             "status": "held",
@@ -93,12 +54,13 @@ def create_booking(db: Session, booking: BookingCreate):
         },
     }
     
-    # Push the SSE notification to the queue
-    sse.message(sse_payload)
+    # Broadcast the notification to all connected WebSocket clients
+    await manager.broadcast(json.dumps(payload))
+    
     return db_booking
 
 # confirm a booking and set seat_in_event status to booked
-def confirm_booking(db: Session, booking_id: int):
+async def confirm_booking(db: Session, booking_id: int):
     # Retrieve the booking first
     db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
 
@@ -117,7 +79,7 @@ def confirm_booking(db: Session, booking_id: int):
     db.commit()
     db.refresh(db_booking)
     
-    sse_payload = {
+    payload = {
         "event": "booking_confirmed",
         "data": {
             "status": "booked",
@@ -126,13 +88,12 @@ def confirm_booking(db: Session, booking_id: int):
         },
     }
     
-    # Push the SSE notification to the queue
-    sse.message(sse_payload)
+    await manager.broadcast(json.dumps(payload))
     
     return db_booking
 
 # delete an existing booking by id and set seat_in_event status to available
-def delete_booking(db: Session, booking_id: int):
+async def delete_booking(db: Session, booking_id: int):
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
     seat_in_event = db.query(SeatInEvent).filter(
         SeatInEvent.seat_in_event_id == booking.seat_in_event_id
@@ -141,8 +102,7 @@ def delete_booking(db: Session, booking_id: int):
     db.delete(booking)
     db.commit()
 
-    # Prepare the SSE message payload
-    sse_payload = {
+    payload = {
         "event": "booking_deleted",
         "data": {
             "status": "available",
@@ -150,8 +110,7 @@ def delete_booking(db: Session, booking_id: int):
         },
     }
     
-    # Push the SSE notification to the queue
-    sse.message(sse_payload)
+    await manager.broadcast(json.dumps(payload))
     return booking
 
 # toggle paid status

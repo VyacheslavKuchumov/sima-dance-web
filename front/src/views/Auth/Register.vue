@@ -17,7 +17,7 @@
             type="password"
             ></v-text-field>
             <v-text-field
-            label="Введите ФИО"
+            label="Введите ФИО ребенка"
             v-model="name"
             :rules="nameRules"
             required

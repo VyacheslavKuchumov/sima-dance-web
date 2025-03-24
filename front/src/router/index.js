@@ -10,7 +10,16 @@ import EventsView from "@/views/User/EventsView.vue";
 import AdminSeatsInEventView from "@/views/Admin/AdminSeatsInEventView.vue";
 import SeatsBookingView from "@/views/User/SeatsBookingView.vue";
 import AdminBookingsView from "@/views/Admin/AdminBookingsView.vue";
+
+import WebSocketTest from "@/views/WebsocketTest.vue";
+
+
 const routes = [
+  {
+    path: "/test",
+    name: "websocket-test",
+    component: WebSocketTest,
+  },
   {
     path: "/",
     name: "home",
