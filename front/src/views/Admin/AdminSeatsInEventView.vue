@@ -605,8 +605,8 @@ export default {
 }
 
 .zoom-window {
-  width: 1900px;
-  height: 2100px;
+  width: 1200px;
+  height: 1700px;
   overflow: hidden;
   border: 1px solid #ccc;
   margin: 20px auto;
@@ -614,8 +614,8 @@ export default {
 }
 
 .pan-zoom-area {
-  width: 1800px;
-  height: 2100px;
+  width: 1200px;
+  height: 1700px;
 }
 
 .venue-layout {
