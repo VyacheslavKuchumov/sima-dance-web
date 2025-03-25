@@ -2,14 +2,13 @@
   <v-overlay :model-value="overlay" class="align-center justify-center">
     <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
   </v-overlay>
-  <!-- Header Card -->
+  
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
       Настройка посадки
     </v-card-title>
   </v-card>
-  
-  <!-- Main Card with Toolbar -->
+
   <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1400">
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
@@ -22,35 +21,37 @@
       </v-tooltip>
     </v-toolbar>
     <v-card max-height="600">
-      <!-- Zoomable Container -->
       <div class="zoom-window" ref="zoomContainer">
         <div class="pan-zoom-area">
           <v-container v-if="seats_in_events() && seats_in_events().length" class="venue-layout">
-            <!-- Venue plan content: Sections, rows, and seats -->
             <div v-for="(rows, section) in groupedSeats" :key="section" class="section-container">
               <h3>{{ section }}</h3>
               <div v-for="rowNumber in sortedRowKeys(rows)" :key="rowNumber" class="row-container">
                 <div class="row-label">{{ rowNumber }}</div>
                 <div class="seats-row">
-                  <!-- Здесь кнопки заменены на круги -->
                   <div
-                    v-for="seat in rows[rowNumber]"
-                    :key="seat.seat_id"
+                    v-for="(seat, index) in rows[rowNumber]"
+                    :key="seat ? seat.seat_id : `gap-${section}-${rowNumber}-${index}`"
                     class="seat-circle-wrapper"
                   >
-                    <div
-                      class="seat-circle"
-                      :class="{
-                        'seat-available': seat.status === 'available',
-                        'seat-held': seat.status === 'held',
-                        'seat-booked': seat.status === 'booked',
-                        'seat-unavailable': seat.status === 'unavailable'
-                      }"
-                      @click="openEditDialog(seat)"
-                    >
-                      <span class="seat-number">{{ seat.seat.number }}</span>
-                    </div>
-                    <div class="seat-price">{{ seat.price }}р</div>
+                    <template v-if="seat">
+                      <div
+                        class="seat-circle"
+                        :class="{
+                          'seat-available': seat.status === 'available',
+                          'seat-held': seat.status === 'held',
+                          'seat-booked': seat.status === 'booked',
+                          'seat-unavailable': seat.status === 'unavailable'
+                        }"
+                        @click="openEditDialog(seat)"
+                      >
+                        <span class="seat-number">{{ seat.seat.number }}</span>
+                      </div>
+                      <div class="seat-price">{{ seat.price }}р</div>
+                    </template>
+                    <template v-else>
+                      <div class="seat-gap"></div>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -64,11 +65,10 @@
     </v-card>
   </v-card>
 
-  <!-- Dialog for Creating/Editing a Seat -->
   <v-dialog v-model="editDialog" max-width="450px">
     <v-card>
       <v-card-title class="text-h5">
-        {{ "Редактировать место" }}
+        Редактировать место
       </v-card-title>
       <v-card-text>
         <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
@@ -100,7 +100,7 @@
 
 <script>
 import { mapActions } from "vuex";
-import panzoom from 'panzoom'; // Install via npm: npm install panzoom
+import panzoom from 'panzoom';
 
 export default {
   data() {
@@ -120,30 +120,411 @@ export default {
     };
   },
   computed: {
-    // Group seats by section and then by row
     groupedSeats() {
       const groups = {};
       this.seats_in_events().forEach((seatInEvent) => {
-        if (!groups[seatInEvent.seat.section]) {
-          groups[seatInEvent.seat.section] = {};
+        const section = seatInEvent.seat.section;
+        const row = seatInEvent.seat.row;
+        if (!groups[section]) {
+          groups[section] = {};
         }
-        if (!groups[seatInEvent.seat.section][seatInEvent.seat.row]) {
-          groups[seatInEvent.seat.section][seatInEvent.seat.row] = [];
+        if (!groups[section][row]) {
+          groups[section][row] = [];
         }
-        groups[seatInEvent.seat.section][seatInEvent.seat.row].push(seatInEvent);
+        groups[section][row].push(seatInEvent);
       });
-      console.log(groups);
+
+      // Добавляем пропуск между 13-м и 14-м местом в 7 ряду Балкона
+      if (groups["Балкон"] && groups["Балкон"]["7"]) {
+        let rowSeats = groups["Балкон"]["7"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 13);
+        if (index !== -1) {
+          // Вставляем null как пропуск после 13-го места
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+          rowSeats.splice(index + 4, 0, null);
+          rowSeats.splice(index + 5, 0, null);
+        }
+      }
+      if (groups["Балкон"] && groups["Балкон"]["6"]) {
+        let rowSeats = groups["Балкон"]["6"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 12);
+        if (index !== -1) {
+          // Вставляем null как пропуск после 12-го места
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+          rowSeats.splice(index + 4, 0, null);
+          rowSeats.splice(index + 5, 0, null);
+          rowSeats.splice(index + 6, 0, null);
+          rowSeats.splice(index + 7, 0, null);
+        }
+      }
+      if (groups["Балкон"] && groups["Балкон"]["5"]) {
+        let rowSeats = groups["Балкон"]["5"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 12);
+        if (index !== -1) {
+          // Вставляем null как пропуск после 12-го места
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+          rowSeats.splice(index + 4, 0, null);
+          rowSeats.splice(index + 5, 0, null);
+          rowSeats.splice(index + 6, 0, null);
+          rowSeats.splice(index + 7, 0, null);
+        }
+      }
+      if (groups["Балкон"] && groups["Балкон"]["4"]) {
+        let rowSeats = groups["Балкон"]["4"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 12);
+        if (index !== -1) {
+
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+          rowSeats.splice(index + 4, 0, null);
+          rowSeats.splice(index + 5, 0, null);
+          rowSeats.splice(index + 6, 0, null);
+          rowSeats.splice(index + 7, 0, null);
+        }
+      }
+      if (groups["Балкон"] && groups["Балкон"]["3"]) {
+        let rowSeats = groups["Балкон"]["3"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 12);
+        if (index !== -1) {
+
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+          rowSeats.splice(index + 4, 0, null);
+          rowSeats.splice(index + 5, 0, null);
+          rowSeats.splice(index + 6, 0, null);
+          rowSeats.splice(index + 7, 0, null);
+        }
+      }
+      if (groups["Балкон"] && groups["Балкон"]["2"]) {
+        let rowSeats = groups["Балкон"]["2"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 14);
+        if (index !== -1) {
+
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+        }
+      }
+      if (groups["Балкон"] && groups["Балкон"]["1"]) {
+        let rowSeats = groups["Балкон"]["1"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 14);
+        if (index !== -1) {
+
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+        }
+      }
+
+
+      /////
+
+
+      if (groups["Амфитеатр"] && groups["Амфитеатр"]["17"]) {
+        let rowSeats = groups["Амфитеатр"]["17"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 6);
+        if (index !== -1) {
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 17, 0, null);
+          rowSeats.splice(index + 18, 0, null);
+        }
+      }
+
+      if (groups["Амфитеатр"] && groups["Амфитеатр"]["16"]) {
+        let rowSeats = groups["Амфитеатр"]["16"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 6);
+        if (index !== -1) {
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 17, 0, null);
+          rowSeats.splice(index + 18, 0, null);
+        }
+      }
+      if (groups["Амфитеатр"] && groups["Амфитеатр"]["15"]) {
+        let rowSeats = groups["Амфитеатр"]["15"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 6);
+        if (index !== -1) {
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 17, 0, null);
+          rowSeats.splice(index + 18, 0, null);
+        }
+      }
+      if (groups["Амфитеатр"] && groups["Амфитеатр"]["14"]) {
+        let rowSeats = groups["Амфитеатр"]["14"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 6);
+        if (index !== -1) {
+          rowSeats.splice(index + 1, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 17, 0, null);
+          rowSeats.splice(index + 18, 0, null);
+        }
+      }
+
+      if (groups["Амфитеатр"] && groups["Амфитеатр"]["13"]) {
+        let rowSeats = groups["Амфитеатр"]["13"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 6);
+        if (index !== -1) {
+          rowSeats.splice(index - 4, 0, null);
+          rowSeats.splice(index + 2, 0, null);
+          rowSeats.splice(index + 3, 0, null);
+
+          rowSeats.splice(index + 9, 0, null);
+          rowSeats.splice(index + 9, 0, null);
+          rowSeats.splice(index + 10, 0, null);
+          rowSeats.splice(index + 11, 0, null);
+
+          rowSeats.splice(index + 18, 0, null);
+          rowSeats.splice(index + 18, 0, null);
+        }
+      }
+
+      //////
+
+      if (groups["Партер"] && groups["Партер"]["12"]) {
+        let rowSeats = groups["Партер"]["12"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["11"]) {
+        let rowSeats = groups["Партер"]["11"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["10"]) {
+        let rowSeats = groups["Партер"]["10"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["9"]) {
+        let rowSeats = groups["Партер"]["9"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["8"]) {
+        let rowSeats = groups["Партер"]["8"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["7"]) {
+        let rowSeats = groups["Партер"]["7"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["6"]) {
+        let rowSeats = groups["Партер"]["6"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["5"]) {
+        let rowSeats = groups["Партер"]["5"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["4"]) {
+        let rowSeats = groups["Партер"]["4"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["3"]) {
+        let rowSeats = groups["Партер"]["3"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["2"]) {
+        let rowSeats = groups["Партер"]["2"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+      if (groups["Партер"] && groups["Партер"]["1"]) {
+        let rowSeats = groups["Партер"]["1"];
+        // Сортируем по номеру места
+        rowSeats.sort((a, b) => Number(a.seat.number) - Number(b.seat.number));
+        const index = rowSeats.findIndex(seat => Number(seat.seat.number) === 1);
+        if (index !== -1) {
+          
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+          rowSeats.splice(index + 0, 0, null);
+
+          rowSeats.splice(index + 14, 0, null);
+          rowSeats.splice(index + 14, 0, null);
+
+        }
+      }
+
       return groups;
     },
   },
   methods: {
+    
+    
+
+    
+
     seats_in_events() {
       return this.$store.state.seats_in_events.data || [];
     },
-    // Helper method to sort row keys in descending order
+
     sortedRowKeys(rows) {
       return Object.keys(rows).sort((a, b) => Number(b) - Number(a));
     },
+
     ...mapActions({
       initSeatsInEvent: "seats_in_events/initSeatsInEvent",
       getSeatsInEvent: "seats_in_events/getSeatsInEvent",
@@ -152,17 +533,18 @@ export default {
       deleteSeatInEvent: "seats_in_events/deleteSeatInEvent",
       getVenues: "venues/getVenues",
     }),
+
     goBack() {
       this.$router.go(-1);
     },
+
     async initializeSeatsInEvents() {
       this.overlay = true;
-      console.log("initializing seats in events");
       const eventUid = this.$route.params.uid;
-      await this.initSeatsInEvent({venue_id: 1, event_uid: eventUid});
-      console.log("seats in events initialized");
+      await this.initSeatsInEvent({ venue_id: 1, event_uid: eventUid });
       this.overlay = false;
     },
+
     openEditDialog(seatInEvent) {
       this.editingSeatInEvent = seatInEvent;
       this.seatInEventForm = {
@@ -171,28 +553,27 @@ export default {
       };
       this.editDialog = true;
     },
+
     closeEditDialog() {
       this.editDialog = false;
       this.seatInEventForm = { status: "", price: null };
     },
+
     async saveSeatInEvent() {
       this.overlay = true;
       const formData = { ...this.seatInEventForm };
-      if (this.editingSeatInEvent) {
-        formData.id = this.editingSeatInEvent.seat_in_event_id;
-        await this.updateSeatInEvent(formData);
-      } else {
-        await this.createSeatInEvent(formData);
-      }
+      formData.id = this.editingSeatInEvent.seat_in_event_id;
+      await this.updateSeatInEvent(formData);
       await this.getSeatsInEvent(this.$route.params.uid);
       this.closeEditDialog();
       this.overlay = false;
     },
+
     async loadVenues() {
       await this.getVenues();
-      this.venues = this.$store.state.venues.data;
     },
   },
+
   async created() {
     const eventUid = this.$route.params.uid;
     this.overlay = true;
@@ -200,8 +581,8 @@ export default {
     await this.loadVenues();
     this.overlay = false;
   },
+
   mounted() {
-    // Initialize panzoom on the zoom container for panning and zooming
     this.panzoomInstance = panzoom(this.$refs.zoomContainer, {
       maxZoom: 3,
       minZoom: 0.5,
@@ -210,18 +591,22 @@ export default {
       boundsPadding: 0.5,
     });
   },
+
   beforeDestroy() {
-    if (this.panzoomInstance) {
-      this.panzoomInstance.dispose();
-    }
+    if (this.panzoomInstance) this.panzoomInstance.dispose();
   },
 };
 </script>
 
 <style scoped>
+.seat-gap {
+  width: 30px;
+  height: 30px;
+}
+
 .zoom-window {
-  width: 1900px;      /* Visible window width */
-  height: 2100px;     /* Visible window height */
+  width: 1900px;
+  height: 2100px;
   overflow: hidden;
   border: 1px solid #ccc;
   margin: 20px auto;
@@ -233,26 +618,22 @@ export default {
   height: 2100px;
 }
 
-/* Venue layout and plan styling */
 .venue-layout {
   padding: 20px;
 }
 
-/* Section container for each seating area */
 .section-container {
   margin-bottom: 30px;
   border: 1px solid #ccc;
   padding: 10px;
 }
 
-/* Each row in a section */
 .row-container {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-/* Left side row label */
 .row-label {
   width: 40px;
   text-align: right;
@@ -260,12 +641,10 @@ export default {
   font-weight: bold;
 }
 
-/* Container for the seats in a row */
 .seats-row {
   display: flex;
 }
 
-/* Wrapper for each seat circle and price */
 .seat-circle-wrapper {
   display: flex;
   flex-direction: column;
@@ -274,7 +653,6 @@ export default {
   cursor: pointer;
 }
 
-/* Стили для круга, отображающего место */
 .seat-circle {
   border-radius: 50%;
   width: 30px;
@@ -290,38 +668,31 @@ export default {
   border: 1px solid #888;
 }
 
-/* Стили для номера места внутри круга */
 .seat-number {
   font-size: 10px;
   white-space: nowrap;
 }
 
-/* Цена под кругом */
 .seat-price {
   font-size: 10px;
   margin-top: 2px;
 }
 
-/* Цветовое кодирование статуса места */
-/* Доступное (синий) */
 .seat-available {
   background-color: #428af5;
   color: white;
 }
 
-/* Занято (оранжевый) */
 .seat-held {
   background-color: orange;
   color: white;
 }
 
-/* Бронировано (красный) */
 .seat-booked {
   background-color: red;
   color: white;
 }
 
-/* Недоступно (серый) */
 .seat-unavailable {
   background-color: gray;
   color: white;
