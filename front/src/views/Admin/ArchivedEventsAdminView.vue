@@ -1,7 +1,7 @@
 <template>
     <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
       <v-card-title class="text-wrap" align="center">
-        Архив концертов (админ)
+        Архив концертов
       </v-card-title>
     </v-card>
   

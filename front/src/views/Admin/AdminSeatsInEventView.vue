@@ -1,18 +1,11 @@
 <template>
-  <v-overlay
-      :model-value="overlay"
-      class="align-center justify-center"
-    >
-      <v-progress-circular
-        color="primary"
-        size="64"
-        indeterminate
-      ></v-progress-circular>
+  <v-overlay :model-value="overlay" class="align-center justify-center">
+    <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
   </v-overlay>
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Настройка посадки (админ)
+      Настройка посадки
     </v-card-title>
   </v-card>
   
@@ -39,25 +32,25 @@
               <div v-for="rowNumber in sortedRowKeys(rows)" :key="rowNumber" class="row-container">
                 <div class="row-label">{{ rowNumber }}</div>
                 <div class="seats-row">
+                  <!-- Здесь кнопки заменены на круги -->
                   <div
                     v-for="seat in rows[rowNumber]"
                     :key="seat.seat_id"
-                    class="seat"
-                    :class="{
-                      'seat-available': seat.status === 'available',
-                      'seat-held': seat.status === 'held',
-                      'seat-booked': seat.status === 'booked',
-                      'seat-unavailable': seat.status === 'unavailable'
-                    }"
-                    @click="openEditDialog(seat)"
+                    class="seat-circle-wrapper"
                   >
-                    <div class="seat-top">
+                    <div
+                      class="seat-circle"
+                      :class="{
+                        'seat-available': seat.status === 'available',
+                        'seat-held': seat.status === 'held',
+                        'seat-booked': seat.status === 'booked',
+                        'seat-unavailable': seat.status === 'unavailable'
+                      }"
+                      @click="openEditDialog(seat)"
+                    >
                       <span class="seat-number">{{ seat.seat.number }}</span>
-                      <v-icon small>mdi-seat </v-icon>
                     </div>
-                    <div class="seat-bottom">
-                      <span class="seat-price">{{ seat.price }}р </span>
-                    </div>
+                    <div class="seat-price">{{ seat.price }}р</div>
                   </div>
                 </div>
               </div>
@@ -75,7 +68,7 @@
   <v-dialog v-model="editDialog" max-width="450px">
     <v-card>
       <v-card-title class="text-h5">
-        {{ "Редактировать место"}}
+        {{ "Редактировать место" }}
       </v-card-title>
       <v-card-text>
         <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
@@ -99,7 +92,6 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="closeEditDialog">Отмена</v-btn>
-        <!-- Fixed button click to call saveSeatInEvent -->
         <v-btn color="primary" :disabled="!valid" @click="saveSeatInEvent">Сохранить</v-btn>
       </v-card-actions>
     </v-card>
@@ -214,7 +206,7 @@ export default {
       maxZoom: 3,
       minZoom: 0.5,
       smoothScroll: true,
-      bounds: true,           // Restrict panning to within the content bounds
+      bounds: true,
       boundsPadding: 0.5,
     });
   },
@@ -273,55 +265,65 @@ export default {
   display: flex;
 }
 
-/* Updated seat styling */
-.seat {
+/* Wrapper for each seat circle and price */
+.seat-circle-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
   margin-right: 5px;
   cursor: pointer;
-  border: 1px solid transparent;
-  transition: border 0.2s;
 }
 
-.seat:hover {
+/* Стили для круга, отображающего место */
+.seat-circle {
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border 0.2s;
+  border: 1px solid transparent;
+}
+
+.seat-circle:hover {
   border: 1px solid #888;
 }
 
-/* Seat top row: number and icon */
-.seat-top {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-/* Seat number styling: positioned to the left */
+/* Стили для номера места внутри круга */
 .seat-number {
   font-size: 10px;
-  margin-right: 2px;
   white-space: nowrap;
 }
 
-/* Price styling: beneath the icon */
-.seat-bottom {
+/* Цена под кругом */
+.seat-price {
   font-size: 10px;
   margin-top: 2px;
 }
 
-/* Optional: Color coding for seat status */
+/* Цветовое кодирование статуса места */
+/* Доступное (синий) */
 .seat-available {
-  color: green;
+  background-color: #428af5;
+  color: white;
 }
+
+/* Занято (оранжевый) */
 .seat-held {
-  color: orange;
+  background-color: orange;
+  color: white;
 }
+
+/* Бронировано (красный) */
 .seat-booked {
-  color: red;
+  background-color: red;
+  color: white;
 }
+
+/* Недоступно (серый) */
 .seat-unavailable {
-  color: gray;
+  background-color: gray;
+  color: white;
 }
 </style>

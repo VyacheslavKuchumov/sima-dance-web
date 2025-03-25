@@ -11,7 +11,7 @@
     </v-overlay>
     <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
       <v-card-title class="text-wrap" align="center">
-        Список бронирований (админ)
+        Список бронирований
       </v-card-title>
     </v-card>
   

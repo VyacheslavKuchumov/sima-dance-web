@@ -9,19 +9,37 @@
           indeterminate
         ></v-progress-circular>
       </v-overlay>
-    <v-card  v-if="user()" class="mx-auto" max-width="400" prepend-icon="mdi-account">
-      <template v-slot:title>
-        <span class="font-black">Пользователь {{ user().name }}</span>
-      </template>
-      <template v-if="user().role === 'admin'" v-slot:subtitle>
-        {{ user().role }}
-      </template>
-  
-      <v-card-text>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel nisl sed massa venenatis consequat. Integer auctor mollis ex eu imperdiet. Praesent at vehicula sem. Nulla facilisi. Sed ultrices scelerisque ex eu maximus. Duis vulputate lobortis nisl a ullamcorper. Nullam ultrices ultrices lectus, quis varius ex porta nec.
-      </v-card-text>
-  
+    <!-- Header Card -->
+    <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
+      <v-card-title class="text-wrap" align="center">
+        Личный кабинет
+      </v-card-title>
     </v-card>
+    <!-- Main Card with Toolbar and Cards for each Event -->
+    <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="800">
+      <v-toolbar flat>
+        <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
+        <v-spacer></v-spacer>
+        <!-- <v-btn icon="mdi-plus" color="primary" @click="openCreateDialog"></v-btn> -->
+      </v-toolbar>
+      <v-container>
+        <v-card class="ma-2" >
+              
+              <v-card-title class="text-wrap"> <v-icon>mdi-account</v-icon> <strong> Пользователь: {{ user().name }}</strong> </v-card-title>
+              <!-- Event Details -->
+              <v-card-text>
+                Lorem ipsum dolor sit amet
+              </v-card-text>
+  
+              <!-- Action Buttons -->
+              <v-card-actions class="justify-center">
+                <v-btn color="primary" @click="">Редактировать</v-btn>
+
+              </v-card-actions>
+            </v-card>
+      </v-container>
+    </v-card>
+    
   </template>
   
   <script>
@@ -42,11 +60,13 @@
       ...mapActions({
         getUser: "user/getUserByUid",
       }),
-  
+
       user() {
-        return this.$store.state.user.user;
+        return this.$store.state.user.user || {};
       },
-  
+      goBack() {
+        this.$router.go(-1);
+      },
     },
     watch: {},
   

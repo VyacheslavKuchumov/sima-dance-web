@@ -12,7 +12,7 @@
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Список концертов (админ)
+      Управление концертами
     </v-card-title>
   </v-card>
 
@@ -37,6 +37,7 @@
               
             </v-img>
             <v-card-title class="text-wrap">{{ item.event_name }}</v-card-title>
+            <v-card-subtitle class="text-wrap">Панель администратора</v-card-subtitle>
             <!-- Event Details -->
             <v-card-text>
               <div>
