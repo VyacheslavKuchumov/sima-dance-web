@@ -5,7 +5,7 @@
   <!-- Header Card -->
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Список мест
+      Схема зала
     </v-card-title>
   </v-card>
   
@@ -657,7 +657,7 @@ export default {
 <style scoped>
 .zoom-window {
   width: 1200px;      /* Visible window width */
-  height: 2100px;     /* Visible window height */
+  height: 1700px;     /* Visible window height */
   overflow: hidden;
   border: 1px solid #ccc;
   margin: 20px auto;
@@ -666,7 +666,7 @@ export default {
 
 .pan-zoom-area {
   width: 1200px;
-  height: 2100px;
+  height: 1700px;
 }
 
 /* Venue layout and plan styling */
