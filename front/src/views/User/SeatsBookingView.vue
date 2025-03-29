@@ -87,7 +87,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="red" @click="cancelBooking">Отмена</v-btn>
+        <v-btn color="red" @click="cancelBooking">Отменить</v-btn>
         <v-btn color="primary" @click="saveBooking">Подтвердить</v-btn>
       </v-card-actions>
     </v-card>
