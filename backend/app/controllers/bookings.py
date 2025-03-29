@@ -6,6 +6,9 @@ from app.models.seats_in_events import SeatInEvent
 from uuid import UUID
 from app.websocket.connectionManager import manager  # Import your WebSocket connection manager
 
+from app.controllers.redis import update_seat_cache
+
+
 # get all bookings
 def get_bookings(db: Session):
     return db.query(Booking).all()
@@ -44,6 +47,9 @@ async def create_booking(db: Session, booking: BookingCreate):
     
     db.refresh(db_booking)
     
+    # Update the cache for this seat
+    update_seat_cache(db_seat_in_event)
+    
     # Prepare the WebSocket message payload
     payload = {
         "event": "booking_created",
@@ -53,6 +59,8 @@ async def create_booking(db: Session, booking: BookingCreate):
             "seat_in_event_id": db_seat_in_event.seat_in_event_id,
         },
     }
+    
+    
     
     # Broadcast the notification to all connected WebSocket clients
     await manager.broadcast(json.dumps(payload))
@@ -79,6 +87,9 @@ async def confirm_booking(db: Session, booking_id: int):
     db.commit()
     db.refresh(db_booking)
     
+    # Update the cache for this seat
+    update_seat_cache(db_seat_in_event)
+    
     payload = {
         "event": "booking_confirmed",
         "data": {
@@ -102,6 +113,9 @@ async def delete_booking(db: Session, booking_id: int):
     db.delete(booking)
     db.commit()
 
+    # Update the cache for this seat
+    update_seat_cache(seat_in_event)
+    
     payload = {
         "event": "booking_deleted",
         "data": {

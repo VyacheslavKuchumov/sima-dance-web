@@ -26,8 +26,8 @@ async def confirm_booking_route(booking_id: int, db: Session = Depends(get_db)):
 
 # toggle paid status
 @router.put("/payment/{booking_id}", response_model=BookingOut)
-async def toggle_paid_status_route(booking_id: int, db: Session = Depends(get_db)):
-    return await toggle_paid_status(db, booking_id)
+def toggle_paid_status_route(booking_id: int, db: Session = Depends(get_db)):
+    return toggle_paid_status(db, booking_id)
 
 # create a new booking
 @router.post("/", response_model=BookingOut)
