@@ -4,10 +4,14 @@ export default {
   name: "seats_in_events",
   state: () => ({
     data: null,
+    seat_in_event: null,
   }),
   mutations: {
     setData(state, data) {
       state.data = data;
+    },
+    setSeatInEvent(state, seat_in_event) {
+      state.seat_in_event = seat_in_event;
     },
     updateSeatsInEventStatus(state, payload) {
       const { seat_in_event_id, status } = payload;
@@ -35,6 +39,19 @@ export default {
         }
       } catch (error) {
         console.error("Error initializing seats in event:", error);
+      }
+    },
+
+    // get seats in event by id
+    async getSeatInEventById({ commit }, id) {
+      try {
+        const response = await instance.get(`/api/seats_in_events/id/${id}`);
+        if (response) {
+          commit("setSeatInEvent", response.data);
+          return response.data;
+        }
+      } catch (error) {
+        console.error("Error fetching seat in event by ID:", error);
       }
     },
 

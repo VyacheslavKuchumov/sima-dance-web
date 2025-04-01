@@ -1,4 +1,7 @@
 <template>
+  <v-overlay :model-value="overlay" class="align-center justify-center">
+    <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
+  </v-overlay>
     <v-container class="home" fluid>
         <v-card-title>Зарегистрироваться</v-card-title>
         <v-form @submit.prevent="go_register" ref="registerForm" v-model="valid" lazy-validation>
@@ -17,9 +20,18 @@
             type="password"
             ></v-text-field>
             <v-text-field
-            label="Введите ФИО ребенка"
+            label="Введите ФИО родителя"
             v-model="name"
             :rules="nameRules"
+            placeholder="Иванов И. И."
+            required
+            type="text"
+            ></v-text-field>
+            <v-text-field
+            label="Введите ФИО ребенка"
+            v-model="child_name"
+            :rules="nameRules"
+            placeholder="Иванов И. И."
             required
             type="text"
             ></v-text-field>
@@ -41,9 +53,11 @@
     name: "register",
     data() {
       return {
+        overlay: false,
         email: "",
         password: "",
         name: "",
+        child_name: "",
         valid: false,
         emailRules: [(v) => !!v || "Email обязателен", (v) => /.+@.+\..+/.test(v) || "Email должен быть действительным"],
         passwordRules: [(v) => !!v || "Пароль обязателен"],
@@ -54,15 +68,18 @@
       ...mapActions({
         register: "auth/register",
       }),
-      go_register() {
+      async go_register() {
+        this.overlay = true;
         if (this.$refs.registerForm.validate()) {
           const formData = {
             email: this.email,
             password: this.password,
             name: this.name,
+            child_name: this.child_name,
           };
-          this.register(formData);
+          await this.register(formData);
         }
+        this.overlay = false;
       },
     },
   };

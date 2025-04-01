@@ -100,7 +100,7 @@
 
 <script>
 import { mapActions } from "vuex";
-import panzoom from 'panzoom';
+import Panzoom from '@panzoom/panzoom'
 
 export default {
   data() {
@@ -583,7 +583,7 @@ export default {
   },
 
   mounted() {
-    this.panzoomInstance = panzoom(this.$refs.zoomContainer, {
+    this.panzoomInstance = Panzoom(this.$refs.zoomContainer, {
       maxZoom: 3,
       minZoom: 0.5,
       smoothScroll: true,

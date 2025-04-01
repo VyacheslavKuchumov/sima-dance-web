@@ -6,6 +6,7 @@ class UserOut(BaseModel):
     id: int
     user_uid: UUID
     name: str
+    child_name: str
     role: str
     
 

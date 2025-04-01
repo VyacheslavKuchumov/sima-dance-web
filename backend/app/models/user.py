@@ -14,6 +14,7 @@ class User(Base):
     user_uid = Column(UUID(as_uuid=True), ForeignKey("auths.auth_uid"), unique=True, index=True, default=uuid.uuid4)
     
     name = Column(Text, nullable=False)
+    child_name = Column(Text, nullable=False)
     role = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

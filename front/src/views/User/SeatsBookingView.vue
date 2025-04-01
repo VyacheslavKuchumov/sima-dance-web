@@ -76,7 +76,7 @@
     </v-card>
   </v-card>
 
-  <!-- Dialog for Creating/Editing a Seat -->
+  <!-- Dialog for confirming booking -->
   <v-dialog v-model="bookingDialog" persistent max-width="450px">
     <v-card>
       <v-card-title class="text-h5 text-wrap">
@@ -92,11 +92,50 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <!-- Dialog for showing booking info -->
+  <v-dialog v-model="bookingInfoDialog" max-width="450px">
+    <v-card>
+      <v-card-title class="text-h5 text-wrap">
+        Информация о бронировании
+      </v-card-title>
+      <v-card-text>
+
+        <p>Секция: {{ seat().seat.section }}</p>
+        <p>Место: {{ seat().seat.number }}</p>
+        <p>Ряд: {{ seat().seat.row }}</p>
+
+        <p>Цена: {{ seat().price }}р</p>
+        <p>ФИО: {{ seat().booking.user.name }}</p>
+        
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="red" @click="cancelBooking">Удалить бронь</v-btn>
+        <v-btn color="primary" @click="bookingInfoDialog = false">Ок</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+  <!-- Dialog for showing error messages -->
+  <v-dialog v-model="bookingErrorDialog" max-width="450px">
+    <v-card>
+      <v-card-title class="text-h5 text-wrap">
+        Ошибка
+      </v-card-title>
+      <v-card-text>
+        <p>Место недоступно</p>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="red" @click="bookingErrorDialog = false">Закрыть</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
 </template>
 
 <script>
 import { mapActions } from "vuex";
-import panzoom from "panzoom"; // Install via npm: npm install panzoom
+import Panzoom from '@panzoom/panzoom'
 import WebSocketService from '@/websocket/WebSocketService.js';
 
 export default {
@@ -105,6 +144,8 @@ export default {
       wsService: null,
       overlay: false,
       bookingDialog: false,
+      bookingInfoDialog: false,
+      bookingErrorDialog: false,
       bookingData: null,
       valid: false,
       rules: {
@@ -515,6 +556,11 @@ export default {
     seats_in_events() {
       return this.$store.state.seats_in_events.data || [];
     },
+
+    seat(){
+      return this.$store.state.seats_in_events.seat_in_event || null;
+    },
+
     // Сортировка ключей рядов в обратном порядке (по номеру ряда)
     sortedRowKeys(rows) {
       return Object.keys(rows).sort((a, b) => Number(b) - Number(a));
@@ -532,6 +578,7 @@ export default {
       createSeatInEvent: "seats_in_events/createSeatInEvent",
       updateSeatInEvent: "seats_in_events/updateSeatInEvent",
       deleteSeatInEvent: "seats_in_events/deleteSeatInEvent",
+      getSeatInEventById: "seats_in_events/getSeatInEventById",
       
       confirmBooking: "bookings/confirmBooking",
       createBooking: "bookings/createBooking",
@@ -544,13 +591,28 @@ export default {
       this.$router.go(-1);
     },
     async bookSeat(item) {
+      this.overlay = true;
+      console.log("Testing", item);
+      await this.getSeatInEventById(item.seat_in_event_id);
+      console.log(this.seat());
+      this.overlay = false;
+
       try {
+        if (this.seat().booking && this.seat().booking.user_uid === this.$store.state.user.user.user_uid) {
+          this.bookingInfoDialog = true;
+          return;
+        }
+        if (this.seat().status === "unavailable" || this.seat().status === "held" || this.seat().status === "booked") {
+          this.bookingErrorDialog = true;
+          return;
+        }
         this.overlay = true;
         const data = {
           user_uid: this.$store.state.user.user.user_uid,
           seat_in_event_id: item.seat_in_event_id,
         };
         const bookingResponse = await this.createBooking(data);
+        await this.getSeatInEventById(item.seat_in_event_id);
         const updatedSeat = this.seats_in_events().find(
           (seat) => seat.seat_in_event_id === item.seat_in_event_id
         );
@@ -569,12 +631,13 @@ export default {
     async cancelBooking() {
       try {
         this.overlay = true;
-        const bookingId = this.bookingData?.booking?.booking_id;
+        const bookingId = this.seat()?.booking?.booking_id;
         if (!bookingId) {
           throw new Error("Booking ID not found.");
         }
         await this.deleteBooking(bookingId);
         this.bookingDialog = false;
+        this.bookingInfoDialog = false;
       } catch (error) {
         console.error("Error cancelling booking:", error);
       } finally {
@@ -626,12 +689,14 @@ export default {
     this.overlay = false;
   },
   async mounted() {
-    this.panzoomInstance = panzoom(this.$refs.zoomContainer, {
-      maxZoom: 3,
-      minZoom: 0.5,
+    this.panzoomInstance = Panzoom(this.$refs.zoomContainer, {
+      maxScale: 3,
+      minScale: 0.5,
       smoothScroll: true,
       bounds: true,
       boundsPadding: 0.5,
+      disableDoubleTapZoom: true,
+      excludeClass: 'seat-circle'
     });
   },
   beforeDestroy() {

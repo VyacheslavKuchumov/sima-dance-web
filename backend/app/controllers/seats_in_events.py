@@ -85,3 +85,7 @@ def delete_seat_in_event(db: Session, seat_in_event_id: int):
     db.delete(seat_in_event)
     db.commit()
     return seat_in_event
+
+
+def get_seat_in_event_by_id(db: Session, seat_in_event_id: int):
+    return db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == seat_in_event_id).first()

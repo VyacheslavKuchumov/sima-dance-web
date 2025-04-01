@@ -1,4 +1,7 @@
 <template>
+  <v-overlay :model-value="overlay" class="align-center justify-center">
+    <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
+  </v-overlay>
     <v-container class="home" fluid>
         <v-card-title>Войти</v-card-title>
         <v-form @submit.prevent="go_login" ref="loginForm" v-model="valid" lazy-validation>
@@ -33,6 +36,7 @@
     name: "login",
     data() {
       return {
+        overlay: false,
         email: "",
         password: "",
         valid: false,
@@ -44,14 +48,16 @@
       ...mapActions({
         login: "auth/login",
       }),
-      go_login() {
+      async go_login() {
+        this.overlay = true;
         if (this.$refs.loginForm.validate()) {
           const formData = {
             email: this.email,
             password: this.password,
           };
-          this.login(formData);
+          await this.login(formData);
         }
+        this.overlay = false;
       },
     },
   };

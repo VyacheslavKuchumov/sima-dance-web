@@ -40,7 +40,7 @@ export default {
         }
     },
     actions: {
-        async register({ }, { email, password, name }) {
+        async register({ }, { email, password, name, child_name }) {
             const response = await fetch(`${process.env.VUE_APP_SERVER}/api/auth/signup`, {
                 method: 'POST',
                 headers: {
@@ -49,7 +49,8 @@ export default {
                 body: JSON.stringify({
                     email: email,
                     password: password,
-                    name: name
+                    name: name,
+                    child_name: child_name
                 })
             })
             if (!checkStatuses(response.status)) return

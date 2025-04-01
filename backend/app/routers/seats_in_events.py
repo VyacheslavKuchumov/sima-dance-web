@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.seats_in_events import SeatInEventCreate, SeatInEventUpdate, SeatInEventOut
-from app.controllers.seats_in_events import create_seat_in_event, get_seats_in_event, update_seat_in_event, delete_seat_in_event, initialize_seats_in_event
+from app.controllers.seats_in_events import create_seat_in_event, get_seats_in_event, update_seat_in_event, delete_seat_in_event, initialize_seats_in_event, get_seat_in_event_by_id
 from uuid import UUID
 import pickle
 
@@ -38,16 +38,17 @@ def get_seats_in_event_route(event_uid: UUID, db: Session = Depends(get_db)):
     # Convert SQLAlchemy objects to dictionaries using your schema
     seats_data = [SeatInEventOut.from_orm(seat).dict() for seat in seats]
     
-    # Cache each seat individually
-    seat_ids = []
-    pipeline = redis_client.pipeline()
-    for seat_dict in seats_data:
-        seat_id = seat_dict["seat_in_event_id"]
-        seat_ids.append(seat_id)
-        key = f"event:{event_uid}:seat:{seat_id}"
-        pipeline.setex(key, 300, pickle.dumps(seat_dict))
-    pipeline.setex(seat_ids_key, 300, pickle.dumps(seat_ids))
-    pipeline.execute()
+    if seats: 
+        # Cache each seat individually
+        seat_ids = []
+        pipeline = redis_client.pipeline()
+        for seat_dict in seats_data:
+            seat_id = seat_dict["seat_in_event_id"]
+            seat_ids.append(seat_id)
+            key = f"event:{event_uid}:seat:{seat_id}"
+            pipeline.setex(key, 300, pickle.dumps(seat_dict))
+        pipeline.setex(seat_ids_key, 300, pickle.dumps(seat_ids))
+        pipeline.execute()
     
     return seats_data
 
@@ -66,5 +67,11 @@ def update_seat_in_event_route(seat_in_event_id: int, seat_in_event: SeatInEvent
 def delete_seat_in_event_route(seat_in_event_id: int, db: Session = Depends(get_db)):
     return delete_seat_in_event(db, seat_in_event_id)
 
-
+# get seat in event by id
+@router.get("/id/{seat_in_event_id}", response_model=SeatInEventOut)
+def get_seat_in_event_by_id_route(seat_in_event_id: int, db: Session = Depends(get_db)):
+    seat_in_event = get_seat_in_event_by_id(db, seat_in_event_id)
+    if not seat_in_event:
+        raise HTTPException(status_code=404, detail="Seat in event not found")
+    return seat_in_event
 

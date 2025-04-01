@@ -30,6 +30,7 @@ def signup(auth_data: AuthSignup, db: Session):
     new_user = User(
         user_uid=new_auth.auth_uid,
         name=auth_data.name,
+        child_name=auth_data.child_name,
         role="user"
     )
     db.add(new_user)
