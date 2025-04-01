@@ -28,6 +28,12 @@ class WebSocketService {
         };
       }
     }
+    disconnect() {
+      if (this.socket) {
+        this.socket.close();
+        console.log("WebSocket connection closed");
+      }
+    }
   
     send(message) {
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {

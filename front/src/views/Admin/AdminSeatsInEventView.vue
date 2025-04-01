@@ -593,7 +593,7 @@ export default {
   },
 
   beforeDestroy() {
-    if (this.panzoomInstance) this.panzoomInstance.dispose();
+    if (this.panzoomInstance) this.panzoomInstance.destroy();
   },
 };
 </script>

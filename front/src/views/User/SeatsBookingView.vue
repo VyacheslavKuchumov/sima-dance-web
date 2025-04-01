@@ -701,7 +701,7 @@ export default {
   },
   beforeDestroy() {
     if (this.panzoomInstance) {
-      this.panzoomInstance.dispose();
+      this.panzoomInstance.destroy();
     }
     if (this.wsService && typeof this.wsService.disconnect === 'function') {
       this.wsService.disconnect();
@@ -712,7 +712,7 @@ export default {
       this.wsService.disconnect();
     }
     if (this.panzoomInstance) {
-      this.panzoomInstance.dispose();
+      this.panzoomInstance.destroy();
     }
     next();
   },

@@ -129,7 +129,8 @@
         search: false,
         headers: [
           { title: "Статус", key: "status" },
-          { title: "Пользователь", key: "user.name" },
+          { title: "Ребенок", key: "user.child_name" },
+          { title: "Родитель", key: "user.name" },
           { title: "", key: "payment", sortable: false },
           { title: "", key: "delete", sortable: false },
         ],
