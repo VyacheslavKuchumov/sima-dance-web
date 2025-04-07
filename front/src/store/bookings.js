@@ -60,7 +60,8 @@ export default {
     // Confirm a booking
     async confirmBooking({}, booking_id) {
       try {
-        const response = await instance.put(`/api/bookings/confirm/${booking_id}`);
+        const uid = localStorage.getItem("uid");
+        const response = await instance.put(`/api/bookings/confirm/${booking_id}/${uid}`);
         if (response) {
           console.log("Booking confirmed:", response.data);
           return response.data;
@@ -92,7 +93,8 @@ export default {
     // Delete an existing booking by id
     async deleteBooking({}, id) {
       try {
-        const response = await instance.delete(`/api/bookings/${id}`);
+        const uid = localStorage.getItem("uid");
+        const response = await instance.delete(`/api/bookings/${id}/${uid}`);
         if (response) {
           console.log("Booking deleted:", response.data);
           return response.data;

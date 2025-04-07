@@ -28,11 +28,11 @@
             <v-list-item-title>Личный кабинет</v-list-item-title>
           </v-list-item>
           
-          <v-list-item v-if="isAuth" to="/admin/events">
+          <v-list-item v-if="isAuth && isAdmin" to="/admin/events">
             <v-list-item-title>Управление концертами</v-list-item-title>
           </v-list-item>
 
-          <v-list-item v-if="isAuth" to="/admin/archived-events">
+          <v-list-item v-if="isAuth && isAdmin" to="/admin/archived-events">
             <v-list-item-title>Архив концертов</v-list-item-title>
           </v-list-item>
 
@@ -76,7 +76,9 @@ export default {
   computed: {
     ...mapState({
       isAuth: (state) => state.auth.isAuth,
+      isAdmin: (state) => state.auth.isAdmin,
     }),
+
   },
 };
 </script>

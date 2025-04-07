@@ -25,20 +25,43 @@
       <v-container>
         <v-card class="ma-2" >
               
-              <v-card-title class="text-wrap"> <v-icon>mdi-account</v-icon> <strong> Пользователь: {{ user().name }}</strong> </v-card-title>
+              <v-card-title class="text-wrap"> <v-icon>mdi-account</v-icon> <strong> {{ user().name }}</strong> </v-card-title>
               <!-- Event Details -->
               <v-card-text>
-                Lorem ipsum dolor sit amet
+                <p>ФИО ребенка: {{ user().child_name }}</p>
               </v-card-text>
   
               <!-- Action Buttons -->
               <v-card-actions class="justify-center">
-                <v-btn color="primary" @click="">Редактировать</v-btn>
+                <v-btn color="primary" @click="openDialog">Редактировать</v-btn>
 
               </v-card-actions>
-            </v-card>
+        </v-card>
       </v-container>
     </v-card>
+    <!-- Editing Dialog -->
+    <v-dialog v-model="dialog" max-width="500">
+      <v-card>
+        <v-card-title>
+          <span class="headline">Редактировать</span>
+        </v-card-title>
+        <v-card-text>
+          <v-text-field
+            label="User's Name"
+            v-model="userName"
+          ></v-text-field>
+          <v-text-field
+            label="Child's Name"
+            v-model="childName"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red" text @click="closeDialog">Отменить</v-btn>
+          <v-btn color="primary" text @click="saveChanges">Сохранить</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     
   </template>
   
@@ -52,7 +75,9 @@
       return {
         overlay: false,
         hasUserInfo: false,
-  
+        dialog: false,
+        userName: "",
+        childName: "",
       };
     },
     computed: {},
@@ -66,6 +91,31 @@
       },
       goBack() {
         this.$router.go(-1);
+      },
+        // Open dialog and pre-fill with current user data from the store
+      openDialog() {
+        // Assuming your Vuex store's module is named "user" and state.user contains the user details
+        if (this.$store.state.user.user) {
+          this.userName = this.$store.state.user.user.name || '';
+          this.childName = this.$store.state.user.user.child_name || '';
+        }
+        this.dialog = true;
+      },
+      // Close the dialog
+      closeDialog() {
+        this.dialog = false;
+      },
+      // Dispatch the updateUser action to update the user details in the store
+      async saveChanges() {
+        try {
+          await this.$store.dispatch('user/updateUser', {
+            name: this.userName,
+            child_name: this.childName,
+          });
+          this.closeDialog();
+        } catch (error) {
+          console.error('Error updating user:', error);
+        }
       },
     },
     watch: {},

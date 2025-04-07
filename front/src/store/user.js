@@ -28,6 +28,18 @@ export default {
       console.log(user.message);
     },
 
+    async updateUser({ commit }, { name, child_name }) {
+      const uid = localStorage.getItem("uid");
+      const response = await instance.put(`/api/users/${uid}`, {
+        name: name,
+        child_name: child_name,
+      });
+      if (response) {
+        console.log(response.data);
+        return commit("setUser", response.data);
+      }
+    }
+
   },
 
   namespaced: true,

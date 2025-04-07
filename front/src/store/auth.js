@@ -1,5 +1,6 @@
 import router from '@/router'
 import instance from "@/middlewares"
+
 const checkStatuses = (status) => {
     switch (status) {
         case 400:
@@ -30,13 +31,17 @@ const checkStatuses = (status) => {
 export default {
     name: 'auth',
     state: () => ({
-        isAuth: false
+        isAuth: false,
+        isAdmin: false,
     }),
     getters: {
     },
     mutations: {
         setAuth(state, isAuth) {
             state.isAuth = isAuth
+        },
+        setAdmin(state, isAdmin) {
+            state.isAdmin = isAdmin
         }
     },
     actions: {

@@ -19,10 +19,7 @@ router = APIRouter()
 def get_bookings_by_event_uid_route(event_uid: UUID, db: Session = Depends(get_db)):
     return get_bookings_by_event_uid(db, event_uid)
 
-# confirm booking
-@router.put("/confirm/{booking_id}", response_model=BookingOut)
-async def confirm_booking_route(booking_id: int, db: Session = Depends(get_db)):
-    return await confirm_booking(db, booking_id)
+
 
 # toggle paid status
 @router.put("/payment/{booking_id}", response_model=BookingOut)
@@ -34,15 +31,19 @@ def toggle_paid_status_route(booking_id: int, db: Session = Depends(get_db)):
 async def create_booking_route(booking: BookingCreate, db: Session = Depends(get_db)):
     return await create_booking(db, booking)
 
+# confirm booking
+@router.put("/confirm/{booking_id}/{user_uid}", response_model=BookingOut)
+async def confirm_booking_route(booking_id: int, user_uid: UUID, db: Session = Depends(get_db)):
+    return await confirm_booking(db, booking_id, user_uid)
+
+
+# delete an existing booking by id
+@router.delete("/{booking_id}/{user_uid}", response_model=BookingOut)
+async def delete_booking_route(booking_id: int, user_uid: UUID, db: Session = Depends(get_db)):
+    return await delete_booking(db, booking_id, user_uid)
 
 
 # update an existing booking by id
 @router.put("/{booking_id}", response_model=BookingOut)
 def update_booking_route(booking_id: int, booking: BookingUpdate, db: Session = Depends(get_db)):
     return update_booking(db, booking_id, booking)
-
-
-# delete an existing booking by id
-@router.delete("/{booking_id}", response_model=BookingOut)
-async def delete_booking_route(booking_id: int, db: Session = Depends(get_db)):
-    return await delete_booking(db, booking_id)

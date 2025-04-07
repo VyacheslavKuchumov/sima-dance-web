@@ -42,6 +42,8 @@ async def create_booking(db: Session, booking: BookingCreate):
     db_seat_in_event = db.query(SeatInEvent).filter(
         SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id
     ).first()
+    if db_seat_in_event.status != "available":
+        raise ValueError("Seat is not available")
     db_seat_in_event.status = "held"
     db.commit()
     
@@ -68,12 +70,14 @@ async def create_booking(db: Session, booking: BookingCreate):
     return db_booking
 
 # confirm a booking and set seat_in_event status to booked
-async def confirm_booking(db: Session, booking_id: int):
+async def confirm_booking(db: Session, booking_id: int, user_uid: UUID):
     # Retrieve the booking first
     db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
 
     if not db_booking:
         raise ValueError("Booking not found")
+    if db_booking.user_uid != user_uid:
+        raise ValueError("User not authorized to confirm this booking")
 
     # Update booking confirmation
     db_booking.confirmed = True
@@ -82,6 +86,8 @@ async def confirm_booking(db: Session, booking_id: int):
     db_seat_in_event = db.query(SeatInEvent).filter(
         SeatInEvent.seat_in_event_id == db_booking.seat_in_event_id
     ).first()
+    if db_seat_in_event.status != "held":
+        raise ValueError("Seat is not held")
     db_seat_in_event.status = "booked"
 
     db.commit()
@@ -104,8 +110,12 @@ async def confirm_booking(db: Session, booking_id: int):
     return db_booking
 
 # delete an existing booking by id and set seat_in_event status to available
-async def delete_booking(db: Session, booking_id: int):
+async def delete_booking(db: Session, booking_id: int, user_uid: UUID):
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        raise ValueError("Booking not found")
+    if booking.user_uid != user_uid:
+        raise ValueError("User not authorized to delete this booking")
     seat_in_event = db.query(SeatInEvent).filter(
         SeatInEvent.seat_in_event_id == booking.seat_in_event_id
     ).first()

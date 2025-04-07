@@ -14,18 +14,26 @@ import ProfileView from "@/views/User/ProfileView.vue";
 
 import WebSocketTest from "@/views/WebsocketTest.vue";
 
+import store from '@/store'
 
 const routes = [
-  {
-    path: "/test",
-    name: "websocket-test",
-    component: WebSocketTest,
-  },
+  // {
+  //   path: "/test",
+  //   name: "websocket-test",
+  //   component: WebSocketTest,
+  // },
   {
     path: "/",
     name: "home",
     component: HomeView,
     meta: { auth: true },
+  },
+  {
+    path: "/event/:uid",
+    name: "booking-seats",
+    component: SeatsBookingView,
+    meta: { auth: true },
+    props: true,
   },
   {
     path: "/profile",
@@ -47,26 +55,26 @@ const routes = [
     path: "/admin/events",
     name: "events-admin",
     component: EventsAdminView,
-    // meta: { auth: true, admin: true },
+    meta: { auth: true, admin: true },
   },
   {
     path: "/admin/archived-events",
     name: "archived-events-admin",
     component: ArchivedEventsAdminView,
-    // meta: { auth: true, admin: true },
+    meta: { auth: true, admin: true },
   },
   {
     path: "/admin/event/:uid",
     name: "seats-admin",
     component: AdminSeatsInEventView,
-    // meta: { auth: true, admin: true },
+    meta: { auth: true, admin: true },
     props: true,
   },
   {
     path: "/admin/bookings/:event_uid",
     name: "bookings-admin",
     component: AdminBookingsView,
-    // meta: { auth: true, admin: true },
+    meta: { auth: true, admin: true },
     props: true,
   },
   // {
@@ -75,13 +83,7 @@ const routes = [
   //   component: EventsView,
   //   meta: { auth: true },
   // },
-  {
-    path: "/event/:uid",
-    name: "booking-seats",
-    component: SeatsBookingView,
-    meta: { auth: true },
-    props: true,
-  },
+  
 ];
 
 const router = createRouter({
@@ -96,6 +98,11 @@ router.beforeEach(async (to, from, next) => {
       const uid = localStorage.getItem("uid");
       const response = await instance.get(`/api/users/${uid}`);
       if (response.status === 200) {
+        if (response.data.role === 'admin') {
+          store.commit('auth/setAdmin', true)
+        } else {
+          store.commit('auth/setAdmin', false)
+        }
         // Check if the route requires admin access
         if (to.matched.some(record => record.meta.admin)) {
           // Assuming the response data has a 'role' property

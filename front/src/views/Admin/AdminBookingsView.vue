@@ -43,11 +43,11 @@
               <v-icon>mdi-cash</v-icon>
             </v-btn>
           </template>
-          <template v-slot:item.delete="{ item }">
+          <!-- <template v-slot:item.delete="{ item }">
             <v-btn :disabled="item.confirmed" size="small" color="red" @click="confirmDelete(item)">
               <v-icon>mdi-delete</v-icon>
             </v-btn>
-          </template>
+          </template> -->
         </v-data-table>
       </v-container>
   
@@ -74,7 +74,7 @@
     <!-- Payment Toggle Confirmation Dialog -->
     <v-dialog v-model="confirmPaymentDialog" max-width="400px">
       <v-card>
-        <v-card-title class="text-h5">Подтвердите изменение оплаты</v-card-title>
+        <v-card-title class="text-h5 text-wrap">Подтвердите изменение статуса оплаты</v-card-title>
         <v-card-text>
           Вы уверены, что хотите изменить статус оплаты?
         </v-card-text>
@@ -93,7 +93,7 @@
           <!-- Filter Controls -->
           <v-text-field
             v-model="filterName"
-            label="Фильтр по ФИО"
+            label="Фильтр по ФИО ребенка"
             clearable
             prepend-icon="mdi-account-search"
             :disabled="filterUnconfirmed"
@@ -132,7 +132,7 @@
           { title: "Ребенок", key: "user.child_name" },
           { title: "Родитель", key: "user.name" },
           { title: "", key: "payment", sortable: false },
-          { title: "", key: "delete", sortable: false },
+          // { title: "", key: "delete", sortable: false },
         ],
         confirmDeleteDialog: false,
         bookingToDelete: null,
@@ -165,7 +165,7 @@
         // Filter by user's name if filterName is provided
         if (this.filterName) {
           filtered = filtered.filter(booking =>
-            booking.user.name.toLowerCase().includes(this.filterName.toLowerCase())
+            booking.user.child_name.toLowerCase().includes(this.filterName.toLowerCase())
           );
         }
         // If filterUnpaid is true, show only unpaid bookings
