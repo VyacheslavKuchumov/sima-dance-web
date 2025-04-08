@@ -4,46 +4,9 @@ from app.models.seats import Seat
 from app.schemas.seats_in_events import SeatInEventCreate, SeatInEventUpdate
 from uuid import UUID
 
-
-# from enum import Enum
-# from pydantic import BaseModel, Field, ConfigDict
-# from app.schemas.seats import SeatOut
-# from app.schemas.events import EventOut
-# from uuid import UUID
+from app.controllers.redis import update_seat_cache
 
 
-# # Define an Enum for the seat status.
-# class SeatStatus(str, Enum):
-#     available = "available"
-#     held = "held"
-#     booked = "booked"
-#     unavailable = "unavailable"
-
-# # Schema for creating a seat in an event.
-# class SeatInEventCreate(BaseModel):
-#     seat_id: int
-#     event_uid: UUID
-#     status: SeatStatus = SeatStatus.available  # Default is 'available'
-#     price: int
-
-# # Schema for updating a seat in an event.
-# class SeatInEventUpdate(BaseModel):
-#     seat_id: int
-#     event_uid: UUID
-#     status: SeatStatus
-#     price: int
-
-# # Schema for outputting a seat in an event.
-# class SeatInEventOut(BaseModel):
-#     seat_in_event_id: int
-#     seat_id: int
-#     event_uid: UUID
-#     status: SeatStatus
-#     price: int
-#     seat: SeatOut
-#     event: EventOut
-
-#     model_config = ConfigDict(from_attributes=True)
 
 # initialize seats in event by venue_id and event_uid
 def initialize_seats_in_event(db: Session, venue_id: int, event_uid: UUID):
@@ -75,6 +38,7 @@ def update_seat_in_event(db: Session, seat_in_event_id: int, seat_in_event: Seat
     db_seat_in_event = db.query(SeatInEvent).filter(SeatInEvent.seat_in_event_id == seat_in_event_id).first()
     db_seat_in_event.status = seat_in_event.status
     db_seat_in_event.price = seat_in_event.price
+    update_seat_cache(db_seat_in_event)
     db.commit()
     db.refresh(db_seat_in_event)
     return db_seat_in_event

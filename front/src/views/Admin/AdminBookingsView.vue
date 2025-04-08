@@ -37,6 +37,13 @@
             <v-icon v-else color="red">mdi-close-circle</v-icon>
           </template>
           
+          <template v-slot:item.info="{ item }">
+            <!-- Changed the click handler to open the confirmation dialog -->
+            <v-btn size="small" color="primary" class="mr-2" @click="openInfoDialog(item)">
+              <v-icon>mdi-information-slab-circle-outline</v-icon>
+            </v-btn>
+          </template>
+
           <template v-slot:item.payment="{ item }">
             <!-- Changed the click handler to open the confirmation dialog -->
             <v-btn :disabled="!item.confirmed" size="small" color="green" class="mr-2" @click="confirmTogglePaid(item)">
@@ -55,6 +62,28 @@
         Нет данных
       </v-alert>
     </v-card>
+    <v-dialog v-model="infoDialog" max-width="450px">
+      <v-card>
+        <v-card-title class="text-h5 text-wrap">
+          Информация о бронировании
+        </v-card-title>
+        <v-card-text v-if="seat()">
+
+          <p>Секция: {{ seat().seat?.section }}</p>
+          <p>Место: {{ seat().seat?.number }}</p>
+          <p>Ряд: {{ seat().seat?.row }}</p>
+
+          <p>Цена: {{ seat().price }}р</p>
+          <p>ФИО родителя: {{ seat().booking?.user.name }}</p>
+          <p>ФИО ребенка: {{ seat().booking?.user.child_name }}</p>
+          
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="infoDialog = false">Ок</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="confirmDeleteDialog" max-width="400px">
@@ -126,11 +155,13 @@
       return {
         overlay: false,
         searchDialog: false,
+        infoDialog: false,
         search: false,
         headers: [
           { title: "Статус", key: "status" },
           { title: "Ребенок", key: "user.child_name" },
           { title: "Родитель", key: "user.name" },
+          {title: "", key: "info", sortable: false},
           { title: "", key: "payment", sortable: false },
           // { title: "", key: "delete", sortable: false },
         ],
@@ -183,15 +214,25 @@
       bookings() {
         return this.$store.state.bookings.data;
       },
+      seat(){
+        return this.$store.state.seats_in_events.seat_in_event || null;
+      },
       ...mapActions({
         getBookingsByEventUid: "bookings/getBookingsByEventUid",
         createBooking: "bookings/createBooking",
         updateBooking: "bookings/updateBooking",
         deleteBooking: "bookings/deleteBooking",
         togglePaidStatus: "bookings/togglePaidStatus",
+        getSeatInEventById: "seats_in_events/getSeatInEventById",
       }),
       goBack() {
         this.$router.go(-1);
+      },
+      async openInfoDialog(booking) {
+        this.overlay = true;
+        this.infoDialog = true;
+        await this.getSeatInEventById(booking.seat_in_event_id);
+        this.overlay = false;
       },
       // Existing method now called after confirmation
       async handleTogglePaidStatus(booking_id) {

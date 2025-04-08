@@ -830,7 +830,7 @@ export default {
 
 /* Gray: Unavailable Seats */
 .seat-unavailable {
-  background-color: gray;
+  background-color: red;
   color: white;
 }
 

@@ -71,6 +71,12 @@
         Редактировать место
       </v-card-title>
       <v-card-text>
+        <p>Секция: {{ seat()?.seat.section }}</p>
+        <p>Место: {{ seat()?.seat.number }}</p>
+        <p>Ряд: {{ seat()?.seat.row }}</p>
+        <p v-if="seat().booking">ФИО родителя: {{ seat()?.booking?.user.name }}</p>
+        <p v-if="seat().booking">ФИО ребенка: {{ seat()?.booking?.user.child_name }}</p>
+
         <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
           <v-select
             v-if="editingSeatInEvent"
@@ -520,6 +526,9 @@ export default {
     seats_in_events() {
       return this.$store.state.seats_in_events.data || [];
     },
+    seat(){
+      return this.$store.state.seats_in_events.seat_in_event || [];
+    },
 
     sortedRowKeys(rows) {
       return Object.keys(rows).sort((a, b) => Number(b) - Number(a));
@@ -532,6 +541,7 @@ export default {
       updateSeatInEvent: "seats_in_events/updateSeatInEvent",
       deleteSeatInEvent: "seats_in_events/deleteSeatInEvent",
       getVenues: "venues/getVenues",
+      getSeatInEventById: "seats_in_events/getSeatInEventById",
     }),
 
     goBack() {
@@ -545,13 +555,16 @@ export default {
       this.overlay = false;
     },
 
-    openEditDialog(seatInEvent) {
+    async openEditDialog(seatInEvent) {
+      this.overlay = true;
+      await this.getSeatInEventById(seatInEvent.seat_in_event_id)
       this.editingSeatInEvent = seatInEvent;
       this.seatInEventForm = {
         status: seatInEvent.status,
         price: seatInEvent.price,
       };
       this.editDialog = true;
+      this.overlay = false;
     },
 
     closeEditDialog() {
