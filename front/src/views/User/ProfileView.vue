@@ -47,11 +47,11 @@
         </v-card-title>
         <v-card-text>
           <v-text-field
-            label="User's Name"
+            label="ФИО родителя"
             v-model="userName"
           ></v-text-field>
           <v-text-field
-            label="Child's Name"
+            label="ФИО ребенка"
             v-model="childName"
           ></v-text-field>
         </v-card-text>
