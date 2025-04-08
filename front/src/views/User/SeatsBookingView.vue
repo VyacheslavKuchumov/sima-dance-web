@@ -122,7 +122,7 @@
         Ошибка
       </v-card-title>
       <v-card-text>
-        <p>Место недоступно</p>
+        <p>Место уже забронировано</p>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
