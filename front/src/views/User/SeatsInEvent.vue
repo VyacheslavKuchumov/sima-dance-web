@@ -690,8 +690,8 @@ export default {
   },
   async mounted() {
     this.panzoomInstance = Panzoom(this.$refs.zoomContainer, {
-      maxScale: 3,
-      minScale: 0.5,
+      maxScale: 5,
+      minScale: 0.1,
       smoothScroll: true,
       bounds: true,
       boundsPadding: 0.5,

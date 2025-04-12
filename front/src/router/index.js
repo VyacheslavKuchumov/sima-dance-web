@@ -8,7 +8,7 @@ import ArchivedEventsAdminView from "@/views/Admin/ArchivedEventsAdminView.vue";
 import EventsAdminView from "@/views/Admin/EventsAdminView.vue";
 // import EventsView from "@/views/User/EventsView.vue";
 import AdminSeatsInEventView from "@/views/Admin/AdminSeatsInEventView.vue";
-import SeatsBookingView from "@/views/User/SeatsBookingView.vue";
+import SeatsBookingView from "@/views/User/SeatsInEvent.vue";
 import AdminBookingsView from "@/views/Admin/AdminBookingsView.vue";
 import ProfileView from "@/views/User/ProfileView.vue";
 
