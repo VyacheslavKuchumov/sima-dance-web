@@ -32,8 +32,7 @@
         <v-col>
           <v-card class="ma-2" >
             <!-- Event Image with Title Overlay -->
-            <v-img :src="item.img_url" min-height="150px"  class="white--text align-end"
-              gradient="to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5)">
+            <v-img :src="item.img_url" min-height="150px"  class="white--text align-end">
               
             </v-img>
             <v-card-title class="text-wrap">{{ item.event_name }}</v-card-title>
