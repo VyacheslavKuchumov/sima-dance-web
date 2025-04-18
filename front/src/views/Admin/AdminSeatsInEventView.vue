@@ -19,6 +19,7 @@
         </template>
         <div>Инициализировать места</div>
       </v-tooltip>
+      <v-btn icon="mdi-account-multiple" color="green" @click="goToBookings"></v-btn>
     </v-toolbar>
     <v-card max-height="600">
       <div class="zoom-window" ref="zoomContainer">
@@ -38,12 +39,14 @@
                       <div
                         class="seat-circle"
                         :class="{
+                          'seat-paid': seat.booking?.paid === true,
                           'seat-available': seat.status === 'available',
                           'seat-held': seat.status === 'held',
-                          'seat-booked': seat.status === 'booked',
-                          'seat-unavailable': seat.status === 'unavailable'
+                          'seat-booked': seat.status === 'booked' && seat.booking?.paid === false,
+                          'seat-unavailable': seat.status === 'unavailable',
+
                         }"
-                        @click="openEditDialog(seat)"
+                        @click="openEditDialog(seat); console"
                       >
                         <span class="seat-number">{{ seat.seat.number }}</span>
                       </div>
@@ -556,7 +559,12 @@ export default {
     }),
 
     goBack() {
-      this.$router.go(-1);
+      this.$router.push(`/admin/events`);
+    },
+
+    goToBookings() {
+      const eventUid = this.$route.params.uid;
+      this.$router.push(`/admin/bookings/${eventUid}`);
     },
 
     async initializeSeatsInEvents() {
@@ -720,6 +728,11 @@ export default {
 
 .seat-available {
   background-color: #428af5;
+  color: white;
+}
+
+.seat-paid {
+  background-color: #4caf50;
   color: white;
 }
 

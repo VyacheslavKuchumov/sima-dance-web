@@ -19,7 +19,7 @@
   <!-- Main Card with Toolbar and Cards for each Event -->
   <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="800">
     <v-toolbar flat>
-      <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
+      <!-- <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn> -->
       <v-spacer></v-spacer>
       <v-btn icon="mdi-plus" color="primary" @click="openCreateDialog"></v-btn>
     </v-toolbar>

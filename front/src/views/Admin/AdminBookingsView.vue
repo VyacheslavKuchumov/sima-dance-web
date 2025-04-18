@@ -21,7 +21,7 @@
         <v-spacer></v-spacer>
         
         <v-btn icon="mdi-filter" color="primary" @click="searchDialog = !searchDialog"></v-btn>
-        
+        <v-btn icon="mdi-seat" color="secondary" @click="goToSeats"></v-btn>
       </v-toolbar>
   
       <v-container v-if="bookings()">
@@ -226,7 +226,11 @@
         getSeatInEventById: "seats_in_events/getSeatInEventById",
       }),
       goBack() {
-        this.$router.go(-1);
+        this.$router.push(`/admin/events`);;
+      },
+      goToSeats() {
+        const eventUid = this.$route.params.event_uid;
+        this.$router.push(`/admin/event/${eventUid}`);
       },
       async openInfoDialog(booking) {
         this.overlay = true;
