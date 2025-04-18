@@ -1,4 +1,24 @@
 <template>
+  
+  <v-snackbar
+      v-model="snackbar"
+      class="elevation-24"
+      color="deep-purple-accent-4"
+      :timeout="10000"
+      vertical
+    >
+      
+    <div class="text-subtitle-1 pb-2">Не забудьте оплатить места!</div>
+
+
+    <template v-slot:actions>
+      <v-btn color="white" variant="text" @click="paymentDialog = true">
+        ОПЛАТИТЬ
+      </v-btn>
+    </template>
+    
+  </v-snackbar>
+
   <v-overlay :model-value="overlay" class="align-center justify-center">
     <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
   </v-overlay>
@@ -14,6 +34,7 @@
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
       <v-spacer></v-spacer>
+      <v-btn icon="mdi-cash-multiple" color="secondary" @click="paymentDialog=true"></v-btn>
     </v-toolbar>
     <v-card max-height="600">
       <!-- Zoomable Container -->
@@ -130,6 +151,22 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="paymentDialog" max-width="500px">
+    <v-card>
+     <v-card-title class="text-h5">Оплата брони</v-card-title>
+     <v-card-text>
+       <p>
+         Вы забронировали {{ bookedSeats().length }} мест
+         на сумму <strong>{{ totalPrice() }}р</strong>.
+       </p>
+       
+     </v-card-text>
+     <v-card-actions>
+       <v-spacer />
+       <v-btn text @click="paymentDialog = false">Закрыть</v-btn>
+     </v-card-actions>
+   </v-card>
+</v-dialog>
 
 </template>
 
@@ -141,6 +178,8 @@ import WebSocketService from '@/websocket/WebSocketService.js';
 export default {
   data() {
     return {
+      paymentDialog: false,
+      snackbar: false,
       wsService: null,
       overlay: false,
       bookingDialog: false,
@@ -590,6 +629,17 @@ export default {
     goBack() {
       this.$router.go(-1);
     },
+    bookedSeats() {
+     return this.seats_in_events().filter(
+       seat =>
+        seat.booking &&
+         seat.booking.user_uid === this.$store.state.user.user.user_uid
+     );
+   },
+   // total price of those seats
+   totalPrice() {
+     return this.bookedSeats().reduce((sum, s) => sum + s.price, 0);
+   },
     async bookSeat(item) {
       this.overlay = true;
       console.log("Testing", item);
@@ -613,6 +663,7 @@ export default {
         };
         const bookingResponse = await this.createBooking(data);
         await this.getSeatInEventById(item.seat_in_event_id);
+        
         const updatedSeat = this.seats_in_events().find(
           (seat) => seat.seat_in_event_id === item.seat_in_event_id
         );
@@ -658,6 +709,7 @@ export default {
         console.error("Error confirming booking:", error);
       } finally {
         this.overlay = false;
+        this.snackbar = true;
       }
     },
     async initWebSocket() {
