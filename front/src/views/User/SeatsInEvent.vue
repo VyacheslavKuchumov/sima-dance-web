@@ -687,6 +687,7 @@ export default {
           throw new Error("Booking ID not found.");
         }
         await this.deleteBooking(bookingId);
+        await this.getSeatsInEvent(this.$route.params.uid);
         this.bookingDialog = false;
         this.bookingInfoDialog = false;
       } catch (error) {
