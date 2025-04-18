@@ -70,12 +70,21 @@
       <v-card-title class="text-h5">
         Редактировать место
       </v-card-title>
-      <v-card-text>
-        <p>Секция: {{ seat()?.seat.section }}</p>
-        <p>Место: {{ seat()?.seat.number }}</p>
-        <p>Ряд: {{ seat()?.seat.row }}</p>
-        <p v-if="seat().booking">ФИО родителя: {{ seat()?.booking?.user.name }}</p>
-        <p v-if="seat().booking">ФИО ребенка: {{ seat()?.booking?.user.child_name }}</p>
+      <v-card-text align="center">
+        <p>Секция: <strong>{{ seat()?.seat.section }}</strong></p>
+        <p>Место: <strong>{{ seat()?.seat.number }}</strong></p>
+        <p>Ряд: <strong>{{ seat()?.seat.row }}</strong></p>
+        <p v-if="seat().booking">ФИО родителя: <strong>{{ seat()?.booking?.user.name }}</strong></p>
+        <p v-if="seat().booking">ФИО ребенка: <strong>{{ seat()?.booking?.user.child_name }}</strong></p>
+
+        <v-btn
+          class="ma-5"
+          color="error"
+          v-if="seat().booking"
+          @click="deleteSeatBooking"
+        >
+          Удалить бронь
+        </v-btn>
 
         <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
           <v-select
@@ -98,6 +107,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="closeEditDialog">Отмена</v-btn>
+        
         <v-btn color="primary" :disabled="!valid" @click="saveSeatInEvent">Сохранить</v-btn>
       </v-card-actions>
     </v-card>
@@ -542,6 +552,7 @@ export default {
       deleteSeatInEvent: "seats_in_events/deleteSeatInEvent",
       getVenues: "venues/getVenues",
       getSeatInEventById: "seats_in_events/getSeatInEventById",
+      deleteBooking: "bookings/deleteBooking",
     }),
 
     goBack() {
@@ -553,6 +564,22 @@ export default {
       const eventUid = this.$route.params.uid;
       await this.initSeatsInEvent({ venue_id: 1, event_uid: eventUid });
       this.overlay = false;
+    },
+    async deleteSeatBooking() {
+      if (!this.seat().booking) return;           // safety
+      const bookingId = this.seat().booking.booking_id;    // grab the booking ID
+
+      this.overlay = true;                         // show loader
+      try {
+        await this.deleteBooking(bookingId);       // Vuex action
+        // reload seats so the UI reflects the deletion
+        await this.getSeatsInEvent(this.$route.params.uid);
+      } catch (err) {
+        console.error("Error deleting booking:", err);
+      } finally {
+        this.overlay = false;                      // hide loader
+        this.closeEditDialog();                    // close the dialog
+      }
     },
 
     async openEditDialog(seatInEvent) {
@@ -697,12 +724,12 @@ export default {
 }
 
 .seat-held {
-  background-color: orange;
+  background-color: red;
   color: white;
 }
 
 .seat-booked {
-  background-color: red;
+  background-color: orange;
   color: white;
 }
 
