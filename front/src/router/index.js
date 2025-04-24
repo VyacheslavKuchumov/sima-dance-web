@@ -4,13 +4,18 @@ import instance from "@/middlewares";
 import HomeView from "@/views/HomeView.vue";
 import Register from "@/views/Auth/Register.vue";
 import Login from "@/views/Auth/Login.vue";
+
+
 import ArchivedEventsAdminView from "@/views/Admin/ArchivedEventsAdminView.vue";
 import EventsAdminView from "@/views/Admin/EventsAdminView.vue";
-// import EventsView from "@/views/User/EventsView.vue";
 import AdminSeatsInEventView from "@/views/Admin/AdminSeatsInEventView.vue";
-import SeatsBookingView from "@/views/User/SeatsInEvent.vue";
 import AdminBookingsView from "@/views/Admin/AdminBookingsView.vue";
+import AdminAnalyticsView from "@/views/Admin/AdminAnalyticsView.vue";
+
+
+import SeatsBookingView from "@/views/User/SeatsInEvent.vue";
 import ProfileView from "@/views/User/ProfileView.vue";
+// import EventsView from "@/views/User/EventsView.vue";
 
 import WebSocketTest from "@/views/WebsocketTest.vue";
 
@@ -55,6 +60,12 @@ const routes = [
     path: "/admin/events",
     name: "events-admin",
     component: EventsAdminView,
+    meta: { auth: true, admin: true },
+  },
+  {
+    path: "/admin/analytics",
+    name: "analytics-admin",
+    component: AdminAnalyticsView,
     meta: { auth: true, admin: true },
   },
   {

@@ -4,15 +4,15 @@ export default {
   name: "user",
   state: () => ({
     user: null,
-    userNames: [],
+    users: null,
   }),
   mutations: {
     setUser(state, user) {
       state.user = user;
     },
-    setUserNames(state, names) {
-      state.userNames = names;
-    },
+    setUsers(state, users) {
+      state.users = users;
+    }
   },
   actions: {
 
@@ -38,7 +38,16 @@ export default {
         console.log(response.data);
         return commit("setUser", response.data);
       }
-    }
+    },
+
+    // get all users
+    async getAllUsers({ commit }) {
+      const response = await instance.get("/api/users");
+      if (response) {
+        console.log(response.data);
+        return commit("setUsers", response.data);
+      }
+    },
 
   },
 

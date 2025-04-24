@@ -19,3 +19,7 @@ def get_user_by_uid(uid: str, db: Session = Depends(get_db), current_uid: str = 
 def update_user(user: UserUpdate, user_uid: UUID, db: Session = Depends(get_db)):
     return user_controller.update_user(user_uid, user, db)
 
+# get all users
+@router.get("/", response_model=list[UserOut])
+def get_all_users(db: Session = Depends(get_db)):
+    return user_controller.get_all_users(db)

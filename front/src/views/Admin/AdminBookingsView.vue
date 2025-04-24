@@ -226,7 +226,7 @@
         getSeatInEventById: "seats_in_events/getSeatInEventById",
       }),
       goBack() {
-        this.$router.push(`/admin/events`);;
+        this.$router.push(`/admin/events`);
       },
       goToSeats() {
         const eventUid = this.$route.params.event_uid;

@@ -35,6 +35,9 @@
           <v-list-item v-if="isAuth && isAdmin" to="/admin/archived-events">
             <v-list-item-title>Архив концертов</v-list-item-title>
           </v-list-item>
+          <v-list-item v-if="isAuth && isAdmin" to="/admin/analytics">
+            <v-list-item-title>Аналитика</v-list-item-title>
+          </v-list-item>
 
           
          
