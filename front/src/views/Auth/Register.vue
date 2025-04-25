@@ -35,6 +35,24 @@
             required
             type="text"
             ></v-text-field>
+            <v-select
+            label="Выберите группу ребенка"
+            v-model="group_name"
+            :items="['Беби 1', 
+                    'Беби 2', 
+                    'Средние 1',
+                    'Средние 2',
+                    'Средние 3',
+                    'Старшие 1',
+                    'Старшие 2',
+                    'Старшие 3',
+                    'Cтаршие 11',
+                    'Сборные']"
+
+            :rules="groupRules"
+            required
+            ></v-select>
+
             <v-btn type="submit" :disabled="!valid" class="form-btn" color="primary">
             Регистрация
             </v-btn>
@@ -58,10 +76,12 @@
         password: "",
         name: "",
         child_name: "",
+        group_name: "",
         valid: false,
         emailRules: [(v) => !!v || "Email обязателен", (v) => /.+@.+\..+/.test(v) || "Email должен быть действительным"],
         passwordRules: [(v) => !!v || "Пароль обязателен"],
-        nameRules: [(v) => !!v || "Имя обязательно"],
+        nameRules: [(v) => !!v || "ФИО обязательно"],
+        groupRules: [(v) => !!v || "Группа обязательна"],
       };
     },
     methods: {
@@ -76,6 +96,7 @@
             password: this.password,
             name: this.name,
             child_name: this.child_name,
+            group_name: this.group_name,
           };
           await this.register(formData);
         }

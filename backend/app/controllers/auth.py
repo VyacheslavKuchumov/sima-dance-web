@@ -23,14 +23,14 @@ def signup(auth_data: AuthSignup, db: Session):
         auth_uid=uuid.uuid4()
     )
     db.add(new_auth)
-    db.commit()
-    db.refresh(new_auth)
+    
     
     # Create user record
     new_user = User(
         user_uid=new_auth.auth_uid,
         name=auth_data.name,
         child_name=auth_data.child_name,
+        group_name=auth_data.group_name,
         role="user"
     )
     db.add(new_user)

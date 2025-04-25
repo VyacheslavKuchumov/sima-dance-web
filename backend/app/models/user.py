@@ -15,6 +15,7 @@ class User(Base):
     
     name = Column(Text, nullable=False)
     child_name = Column(Text, nullable=False)
+    group_name = Column(Text, nullable=False)
     role = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

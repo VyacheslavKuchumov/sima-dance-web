@@ -9,12 +9,14 @@ class UserUpdateLikes(BaseModel):
 class UserUpdate(BaseModel):
     name: str
     child_name: str
+    group_name: str
 
 class UserOut(BaseModel):
     id: int
     user_uid: UUID
     name: str
     child_name: str
+    group_name: str
     role: str
     
 

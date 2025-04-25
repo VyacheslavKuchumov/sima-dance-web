@@ -45,7 +45,9 @@ export default {
         }
     },
     actions: {
-        async register({ }, { email, password, name, child_name }) {
+        async register({ }, input) {
+            const { email, password, name, child_name, group_name } = input
+            console.log(input)
             const response = await fetch(`${process.env.VUE_APP_SERVER}/api/auth/signup`, {
                 method: 'POST',
                 headers: {
@@ -55,7 +57,8 @@ export default {
                     email: email,
                     password: password,
                     name: name,
-                    child_name: child_name
+                    child_name: child_name,
+                    group_name: group_name
                 })
             })
             if (!checkStatuses(response.status)) return

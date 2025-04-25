@@ -6,6 +6,7 @@ class AuthSignup(BaseModel):
     password: str
     name: str
     child_name: str
+    group_name: str
 
 class AuthSignin(BaseModel):
     email: EmailStr

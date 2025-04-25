@@ -28,11 +28,13 @@ export default {
       console.log(user.message);
     },
 
-    async updateUser({ commit }, { name, child_name }) {
+    async updateUser({ commit }, input) {
+      const { name, child_name, group_name } = input;
       const uid = localStorage.getItem("uid");
       const response = await instance.put(`/api/users/${uid}`, {
         name: name,
         child_name: child_name,
+        group_name: group_name,
       });
       if (response) {
         console.log(response.data);

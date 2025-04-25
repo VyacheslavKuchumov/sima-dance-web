@@ -29,6 +29,7 @@
               <!-- Event Details -->
               <v-card-text>
                 <p>ФИО ребенка: {{ user().child_name }}</p>
+                <p>Группа: {{ user().group_name }}</p>
               </v-card-text>
   
               <!-- Action Buttons -->
@@ -54,7 +55,20 @@
             label="ФИО ребенка"
             v-model="childName"
           ></v-text-field>
+          <v-select label="Выберите группу ребенка"
+          v-model="group_name"
+          :items="['Беби 1', 
+                  'Беби 2', 
+                  'Средние 1',
+                  'Средние 2',
+                  'Средние 3',
+                  'Старшие 1',
+                  'Старшие 2',
+                  'Старшие 3',
+                  'Cтаршие 11',
+                  'Сборные']"></v-select>
         </v-card-text>
+        
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="red" text @click="closeDialog">Отменить</v-btn>
@@ -78,6 +92,7 @@
         dialog: false,
         userName: "",
         childName: "",
+        group_name: "",
       };
     },
     computed: {},
@@ -98,6 +113,7 @@
         if (this.$store.state.user.user) {
           this.userName = this.$store.state.user.user.name || '';
           this.childName = this.$store.state.user.user.child_name || '';
+          this.group_name = this.$store.state.user.user.group_name || '';
         }
         this.dialog = true;
       },
@@ -111,6 +127,7 @@
           await this.$store.dispatch('user/updateUser', {
             name: this.userName,
             child_name: this.childName,
+            group_name: this.group_name,
           });
           this.closeDialog();
         } catch (error) {

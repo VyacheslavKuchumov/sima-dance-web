@@ -30,6 +30,7 @@ def update_user(user_uid: UUID, user: UserUpdate, db: Session) -> UserOut:
     
     db_user.name = user.name
     db_user.child_name = user.child_name
+    db_user.group_name = user.group_name
     db.commit()
     db.refresh(db_user)
     
