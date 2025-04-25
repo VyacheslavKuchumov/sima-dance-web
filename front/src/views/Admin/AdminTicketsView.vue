@@ -66,7 +66,7 @@
         <p>ФИО родителя: {{ seat().booking?.user.name }}</p>
         <p>ФИО ребёнка: {{ seat().booking?.user.child_name }}</p>
         
-        <v-btn color="purple" @click="confirmToggleTicket(seat().booking)">Билет</v-btn>
+        <v-btn width="130" color="purple" @click="confirmToggleTicket(seat().booking)">Билет</v-btn>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -93,7 +93,7 @@
   <!-- Подтверждение статуса билета -->
   <v-dialog v-model="confirmToggleDialog" max-width="400px">
     <v-card>
-      <v-card-title class="text-h5">Подтвердите изменение статуса билета</v-card-title>
+      <v-card-title class="text-h5 text-wrap" >Подтвердите изменение статуса билета</v-card-title>
       <v-card-text>Вы уверены, что хотите изменить статус подтверждения билета?</v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -172,6 +172,7 @@ export default {
     filteredBookings() {
       let list = this.bookings() || [];
 
+      list = list.filter(b => b.paid);
       // Фильтрация по статусу билета
       if (this.filterTicketConfirmed && !this.filterTicketUnconfirmed) {
         // Только подтверждённые
