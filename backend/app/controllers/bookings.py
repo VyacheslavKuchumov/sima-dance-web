@@ -146,6 +146,8 @@ async def delete_booking(db: Session, booking_id: int, user_uid: UUID):
 def toggle_paid_status(db: Session, booking_id: int):
     db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
     db_booking.paid = not db_booking.paid
+    
+    update_seat_cache(db_booking.seat_in_event)
     db.commit()
     db.refresh(db_booking)
     return db_booking
