@@ -5,7 +5,7 @@
 
   <v-card max-width="800" class="elevation-0 mt-5 ml-auto mr-auto">
     <v-card-title class="text-wrap" align="center">
-      Список бронирований
+      Выписка билетов
     </v-card-title>
   </v-card>
 
@@ -14,8 +14,6 @@
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack" />
       <v-spacer />
       <v-btn icon="mdi-filter" color="primary" @click="searchDialog = !searchDialog" />
-      <v-btn icon="mdi-seat" color="secondary" @click="goToSeats" />
-      <v-btn icon="mdi-ticket" color="blue" @click="goToTickets"></v-btn>
     </v-toolbar>
 
     <v-container v-if="bookings() && bookings().length">
@@ -26,9 +24,17 @@
         hide-default-footer
       >
         <template v-slot:item.status="{ item }">
-          <v-icon v-if="item.confirmed && item.paid" color="green">mdi-check-circle</v-icon>
-          <v-icon v-else-if="item.confirmed && !item.paid" color="orange">mdi-clock-outline</v-icon>
-          <v-icon v-else color="red">mdi-close-circle</v-icon>
+          <v-icon v-if="item.ticket_confirmed" color="green">mdi-check-circle</v-icon>
+          <v-icon v-else color="orange">mdi-clock-outline</v-icon>
+
+        </template>
+
+        <template v-slot:item.user.child_name="{ item }">
+          {{ item.user.child_name }}
+        </template>
+
+        <template v-slot:item.user.name="{ item }">
+          {{ item.user.name }}
         </template>
 
         <template v-slot:item.info="{ item }">
@@ -37,11 +43,7 @@
           </v-btn>
         </template>
 
-        <template v-slot:item.payment="{ item }">
-          <v-btn :disabled="!item.confirmed" size="small" color="green" class="mr-2" @click="confirmTogglePaid(item)">
-            <v-icon>mdi-cash</v-icon>
-          </v-btn>
-        </template>
+        
       </v-data-table>
     </v-container>
 
@@ -56,17 +58,19 @@
       <v-card-title class="text-h5 text-wrap">
         Информация о бронировании
       </v-card-title>
-      <v-card-text v-if="seat()">
+      <v-card-text v-if="seat()" align="center">
         <p>Секция: {{ seat().seat?.section }}</p>
         <p>Место: {{ seat().seat?.number }}</p>
         <p>Ряд: {{ seat().seat?.row }}</p>
         <p>Цена: {{ seat().price }} р</p>
         <p>ФИО родителя: {{ seat().booking?.user.name }}</p>
         <p>ФИО ребёнка: {{ seat().booking?.user.child_name }}</p>
+        
+        <v-btn color="purple" @click="confirmToggleTicket(seat().booking)">Билет</v-btn>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" @click="infoDialog = false">Ок</v-btn>
+        <v-btn color="primary" @click="infoDialog = false">Закрыть</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -84,15 +88,17 @@
     </v-card>
   </v-dialog>
 
-  <!-- Подтверждение оплаты -->
-  <v-dialog v-model="confirmPaymentDialog" max-width="400px">
+
+
+  <!-- Подтверждение статуса билета -->
+  <v-dialog v-model="confirmToggleDialog" max-width="400px">
     <v-card>
-      <v-card-title class="text-h5 text-wrap">Подтвердите изменение статуса оплаты</v-card-title>
-      <v-card-text>Вы уверены, что хотите изменить статус оплаты?</v-card-text>
+      <v-card-title class="text-h5">Подтвердите изменение статуса билета</v-card-title>
+      <v-card-text>Вы уверены, что хотите изменить статус подтверждения билета?</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="closePaymentDialog">Отмена</v-btn>
-        <v-btn color="primary" @click="togglePaymentConfirmed">Подтвердить</v-btn>
+        <v-btn text @click="closeToggleDialog">Отмена</v-btn>
+        <v-btn color="primary" @click="toggleTicketConfirmed">Подтвердить</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -110,22 +116,18 @@
           :disabled="filterUnconfirmed"
         />
         <v-switch
-          v-model="filterPaid"
+          v-model="filterTicketConfirmed"
           color="green"
-          label="Только оплаченные"
-          :disabled="filterUnconfirmed"
+          label="Только выписанные"
+
         />
         <v-switch
-          v-model="filterUnpaid"
+          v-model="filterTicketUnconfirmed"
           color="orange"
-          label="Только неоплаченные"
-          :disabled="filterUnconfirmed"
+          label="Только невыписанные"
+
         />
-        <v-switch
-          v-model="filterUnconfirmed"
-          color="red"
-          label="Не подтверждённые"
-        />
+
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -146,48 +148,41 @@ export default {
       infoDialog: false,
       confirmDeleteDialog: false,
       confirmPaymentDialog: false,
+      confirmToggleDialog: false,
 
       headers: [
         { title: "Статус", key: "status" },
         { title: "Ребёнок", key: "user.child_name" },
         { title: "Родитель", key: "user.name" },
         { title: "", key: "info", sortable: false },
-        { title: "", key: "payment", sortable: false },
+
       ],
 
       // Фильтры
       filterName: "",
-      filterPaid: false,
-      filterUnpaid: true,
-      filterUnconfirmed: false,
+      filterTicketConfirmed: false,
+      filterTicketUnconfirmed: true,
 
       bookingToDelete: null,
-      bookingToToggle: null,
+      bookingToTogglePayment: null,
+      bookingToToggleTicket: null,
     };
   },
   computed: {
     filteredBookings() {
-      // Берём все бронирования
-      let list = this.bookings();
+      let list = this.bookings() || [];
 
-      list = list.filter(b => !b.ticket_confirmed);
-
-      // Сначала фильтр по подтверждённости
-      if (this.filterUnconfirmed) {
-        list = list.filter(b => !b.confirmed);
-      } else {
-        list = list.filter(b => b.confirmed);
+      // Фильтрация по статусу билета
+      if (this.filterTicketConfirmed && !this.filterTicketUnconfirmed) {
+        // Только подтверждённые
+        list = list.filter(b => b.ticket_confirmed);
+      } else if (this.filterTicketUnconfirmed && !this.filterTicketConfirmed) {
+        // Только НЕподтверждённые
+        list = list.filter(b => !b.ticket_confirmed);
       }
+      // иначе (оба вкл. или оба выкл.) — без фильтра по статусу
 
-      // Фильтр по оплате: если выбран ровно один из переключателей
-      if (this.filterPaid !== this.filterUnpaid) {
-        if (this.filterPaid) {
-          list = list.filter(b => b.paid);
-        } else {
-          list = list.filter(b => !b.paid);
-        }
-      }
-      // Фильтр по имени ребёнка
+      // Фильтрация по имени ребёнка
       if (this.filterName) {
         const name = this.filterName.toLowerCase();
         list = list.filter(b =>
@@ -209,19 +204,12 @@ export default {
       getBookingsByEventUid: "bookings/getBookingsByEventUid",
       deleteBooking: "bookings/deleteBooking",
       togglePaidStatus: "bookings/togglePaidStatus",
+      toggleTicketStatus: "bookings/toggleTicketStatus",
       getSeatInEventById: "seats_in_events/getSeatInEventById",
     }),
 
     goBack() {
-      this.$router.push(`/admin/events`);
-    },
-    goToSeats() {
-      const eventUid = this.$route.params.event_uid;
-      this.$router.push(`/admin/event/${eventUid}`);
-    },
-    goToTickets() {
-      const eventUid = this.$route.params.event_uid;
-      this.$router.push(`/admin/tickets/${eventUid}`);
+      this.$router.back();
     },
     async openInfoDialog(booking) {
       this.overlay = true;
@@ -247,21 +235,42 @@ export default {
       this.overlay = false;
     },
     confirmTogglePaid(booking) {
-      this.bookingToToggle = booking;
+      this.bookingToTogglePayment = booking;
       this.confirmPaymentDialog = true;
+      
     },
     closePaymentDialog() {
       this.confirmPaymentDialog = false;
-      this.bookingToToggle = null;
+      this.bookingToTogglePayment = null;
     },
     async togglePaymentConfirmed() {
-      if (this.bookingToToggle) {
+      if (this.bookingToTogglePayment) {
         this.overlay = true;
-        await this.togglePaidStatus(this.bookingToToggle.booking_id);
+        await this.togglePaidStatus(this.bookingToTogglePayment.booking_id);
         await this.getBookingsByEventUid(this.$route.params.event_uid);
+        
         this.overlay = false;
       }
       this.closePaymentDialog();
+    },
+    confirmToggleTicket(booking) {
+      this.bookingToToggleTicket = booking;
+      this.confirmToggleDialog = true;
+    },
+    closeToggleDialog() {
+      this.confirmToggleDialog = false;
+      
+      this.bookingToToggleTicket = null;
+    },
+    async toggleTicketConfirmed() {
+      if (this.bookingToToggleTicket) {
+        this.overlay = true;
+        await this.toggleTicketStatus(this.bookingToToggleTicket.booking_id);
+        await this.getBookingsByEventUid(this.$route.params.event_uid);
+        this.infoDialog = false;
+        this.overlay = false;
+      }
+      this.closeToggleDialog();
     },
   },
   async created() {

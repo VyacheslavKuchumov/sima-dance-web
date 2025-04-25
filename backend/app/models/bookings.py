@@ -12,6 +12,7 @@ class Booking(Base):
     booking_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     confirmed = Column(Boolean, default=False)
     paid = Column(Boolean, default=False)
+    ticket_confirmed = Column(Boolean, default=False)
     
     user = relationship("User", uselist=False, back_populates="booking")
     # The relationship now uses 'booking' as the back_populates name,

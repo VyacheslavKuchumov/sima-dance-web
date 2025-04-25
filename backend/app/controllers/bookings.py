@@ -152,6 +152,13 @@ def toggle_paid_status(db: Session, booking_id: int):
     db.refresh(db_booking)
     return db_booking
 
+def toggle_ticket_status(db: Session, booking_id: int):
+    db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    db_booking.ticket_confirmed = not db_booking.ticket_confirmed
+    db.commit()
+    db.refresh(db_booking)
+    return db_booking
+
 # update an existing booking by id
 def update_booking(db: Session, booking_id: int, booking: BookingUpdate):
     db_booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()

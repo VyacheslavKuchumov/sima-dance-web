@@ -28,8 +28,8 @@
               <v-card-title class="text-wrap"> <v-icon>mdi-account</v-icon> <strong> {{ user().name }}</strong> </v-card-title>
               <!-- Event Details -->
               <v-card-text>
-                <p>ФИО ребенка: {{ user().child_name }}</p>
-                <p>Группа: {{ user().group_name }}</p>
+                <p>ФИО ребенка: <strong>{{ user().child_name }}</strong> </p>
+                <p>Группа: <strong>{{ user().group_name }}</strong> </p>
               </v-card-text>
   
               <!-- Action Buttons -->

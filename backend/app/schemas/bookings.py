@@ -42,6 +42,7 @@ class BookingOut(BaseModel):
     booking_date: datetime
     confirmed: bool
     paid: bool
+    ticket_confirmed: bool
     
     user: UserOut
     # seat_in_event: SeatInEventOut

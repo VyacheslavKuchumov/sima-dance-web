@@ -743,13 +743,15 @@ export default {
   },
   async mounted() {
     this.panzoomInstance = Panzoom(this.$refs.zoomContainer, {
-      maxScale: 5,
-      minScale: 0.1,
+      maxZoom: 3,
+      minZoom: 0.5,
       smoothScroll: true,
       bounds: true,
       boundsPadding: 0.5,
-      disableDoubleTapZoom: true,
-      excludeClass: 'seat-circle'
+    });
+    this.$refs.zoomContainer.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      this.panzoomInstance.zoomWithWheel(event);
     });
   },
   beforeDestroy() {

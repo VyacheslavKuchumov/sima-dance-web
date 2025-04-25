@@ -638,6 +638,10 @@ export default {
       bounds: true,
       boundsPadding: 0.5,
     });
+    this.$refs.zoomContainer.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      this.panzoomInstance.zoomWithWheel(event);
+    });
   },
 
   beforeDestroy() {

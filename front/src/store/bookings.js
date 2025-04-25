@@ -71,6 +71,19 @@ export default {
       }
     },
 
+    // toggle ticket status
+    async toggleTicketStatus({}, booking_id) {
+      try {
+        const response = await instance.put(`/api/bookings/ticket/${booking_id}`);
+        if (response) {
+          console.log("Booking status toggled:", response.data);
+          return response.data;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
     // Update an existing booking by id
     async updateBooking({}, { id, booking }) {
       try {

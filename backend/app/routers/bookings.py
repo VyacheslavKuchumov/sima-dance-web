@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.bookings import BookingCreate, BookingUpdate, BookingOut
-from app.controllers.bookings import create_booking, update_booking, delete_booking, confirm_booking, get_bookings_by_event_uid, toggle_paid_status
+from app.controllers.bookings import create_booking, update_booking, delete_booking, confirm_booking, get_bookings_by_event_uid, toggle_paid_status, toggle_ticket_status
 from uuid import UUID
 
 from app.database import get_db
@@ -35,6 +35,11 @@ async def create_booking_route(booking: BookingCreate, db: Session = Depends(get
 @router.put("/confirm/{booking_id}/{user_uid}", response_model=BookingOut)
 async def confirm_booking_route(booking_id: int, user_uid: UUID, db: Session = Depends(get_db)):
     return await confirm_booking(db, booking_id, user_uid)
+
+# toggle ticket confirmed status
+@router.put("/ticket/{booking_id}", response_model=BookingOut)
+def toggle_ticket_status_route(booking_id: int, db: Session = Depends(get_db)):
+    return toggle_ticket_status(db, booking_id)
 
 
 # delete an existing booking by id
