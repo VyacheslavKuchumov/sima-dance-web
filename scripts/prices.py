@@ -60,7 +60,7 @@ def update_seat_in_event(seat_in_event_id, new_price, new_status):
 
 def change_seats(section_filter, row_filter, seat_start, seat_end, new_price, new_status):
     # ID мероприятия, по которому будет осуществлен запрос
-    event_uid = "0f07325a-4485-4202-9729-9c3af76958bb"
+    event_uid = "6c92a6e3-1b59-4845-9e75-68cd03cf0f38"
 
     # Получение списка мест с API (контекст модели SeatInEvent)
     seats = get_event_seats(event_uid)
@@ -121,10 +121,7 @@ change_seats(section_filter=section, row_filter="2", seat_start=1, seat_end=28, 
 
 change_seats(section_filter=section, row_filter="1", seat_start=1, seat_end=28, new_price=550, new_status="available")
 
-# unavailable
-change_seats(section_filter=section, row_filter="1", seat_start=13, seat_end=21, new_price=550, new_status="unavailable")
-change_seats(section_filter=section, row_filter="2", seat_start=15, seat_end=23, new_price=500, new_status="unavailable")
-change_seats(section_filter=section, row_filter="3", seat_start=13, seat_end=16, new_price=500, new_status="unavailable")
+
 
 # АМФИТЕАТР
 section = "Амфитеатр"
@@ -219,7 +216,17 @@ row = "1"
 change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=16, new_price=550, new_status="available")
 
 
+
+
 # unavailable
+section = "Балкон"
+change_seats(section_filter=section, row_filter="1", seat_start=13, seat_end=21, new_price=550, new_status="unavailable")
+change_seats(section_filter=section, row_filter="2", seat_start=15, seat_end=23, new_price=500, new_status="unavailable")
+change_seats(section_filter=section, row_filter="3", seat_start=13, seat_end=16, new_price=500, new_status="unavailable")
+
+section = "Партер"
 change_seats(section_filter=section, row_filter="5", seat_start=10, seat_end=11, new_price=550, new_status="unavailable")
 change_seats(section_filter=section, row_filter="11", seat_start=13, seat_end=16, new_price=550, new_status="unavailable")
 
+section = "Партер"
+change_seats(section_filter=section, row_filter="1", seat_start=9, seat_end=9, new_price=550, new_status="unavailable")
