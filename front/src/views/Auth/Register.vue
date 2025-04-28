@@ -23,7 +23,7 @@
             label="Введите ФИО родителя"
             v-model="name"
             :rules="nameRules"
-            placeholder="Иванов И. И."
+            placeholder="Иванов Иван Иванович"
             required
             type="text"
             ></v-text-field>
@@ -31,7 +31,7 @@
             label="Введите ФИО ребенка"
             v-model="child_name"
             :rules="nameRules"
-            placeholder="Иванов И. И."
+            placeholder="Иванов Иван Иванович"
             required
             type="text"
             ></v-text-field>

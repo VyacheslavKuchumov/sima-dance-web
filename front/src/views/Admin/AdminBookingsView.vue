@@ -213,7 +213,7 @@ export default {
     }),
 
     goBack() {
-      this.$router.push(`/admin/events`);
+      this.$router.back();
     },
     goToSeats() {
       const eventUid = this.$route.params.event_uid;

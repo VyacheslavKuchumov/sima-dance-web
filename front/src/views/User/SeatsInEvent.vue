@@ -153,20 +153,38 @@
   </v-dialog>
   <v-dialog v-model="paymentDialog" max-width="500px">
     <v-card>
-     <v-card-title class="text-h5">Оплата брони</v-card-title>
-     <v-card-text>
-       <p>
-         Вы забронировали {{ bookedSeats().length }} мест
-         на сумму <strong>{{ totalPrice() }}р</strong>.
-       </p>
-       
-     </v-card-text>
-     <v-card-actions>
-       <v-spacer />
-       <v-btn text @click="paymentDialog = false">Закрыть</v-btn>
-     </v-card-actions>
-   </v-card>
-</v-dialog>
+      <v-card-title class="text-h5">Оплата брони</v-card-title>
+      <v-card-text>
+        
+        <!-- QR-код для оплаты через Тинькофф -->
+        <v-img
+          src="@/assets/qr_code.jpg"
+          alt="QR-код Тинькофф для оплаты"
+          contain
+          max-width="250"
+          class="mx-auto mb-4"
+        />
+        <p>
+          Вы забронировали {{ bookedSeats().length }} мест
+          на сумму <strong>{{ totalPrice() }} ₽</strong>.
+        </p>
+        <!-- Телефон для перевода -->
+        <p class="subtitle-1">
+          Если вы являетесь клиентом Тинькофф Банка, просканируйте, пожалуйста, QR-код для оплаты. Для переводов с других банков воспользуйтесь следующим номером:
+        </p>
+        <p class="subtitle-1 font-weight-bold">
+          {{ phoneNumber }}
+        </p>
+        <p class="subtitle-1">
+          (Сбер, Альфа или Тинькофф)
+        </p>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn text @click="paymentDialog = false">Закрыть</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
 </template>
 
@@ -191,6 +209,7 @@ export default {
         required: (value) => !!value || "Это поле обязательно",
       },
       panzoomInstance: null,
+      phoneNumber: "+7 (950) 465-99-99",
     };
   },
   computed: {

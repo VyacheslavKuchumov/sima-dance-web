@@ -559,7 +559,7 @@ export default {
     }),
 
     goBack() {
-      this.$router.push(`/admin/events`);
+      this.$router.back();
     },
 
     goToBookings() {
