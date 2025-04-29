@@ -126,6 +126,19 @@
           color="red"
           label="Не подтверждённые"
         />
+        <!-- Добавленный мультивыбор групп -->
+        <v-select
+          v-model="filterGroups"
+          :items="[
+            'Беби 1', 'Беби 2', 'Средние 1', 'Средние 2', 'Средние 3',
+            'Старшие 1', 'Старшие 2', 'Старшие 3', 'Cтаршие 11', 'Сборные'
+          ]"
+          label="Фильтр по группе"
+          multiple
+          clearable
+          prepend-icon="mdi-format-list-bulleted"
+          :disabled="filterUnconfirmed"
+        />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -151,6 +164,7 @@ export default {
         { title: "Статус", key: "status" },
         { title: "Ребёнок", key: "user.child_name" },
         { title: "Родитель", key: "user.name" },
+        { title: "Группа", key: "user.group_name" },
         { title: "", key: "info", sortable: false },
         { title: "", key: "payment", sortable: false },
       ],
@@ -160,6 +174,7 @@ export default {
       filterPaid: false,
       filterUnpaid: true,
       filterUnconfirmed: false,
+      filterGroups: [],   // добавленный модель
 
       bookingToDelete: null,
       bookingToToggle: null,
@@ -167,19 +182,18 @@ export default {
   },
   computed: {
     filteredBookings() {
-      // Берём все бронирования
       let list = this.bookings();
 
       list = list.filter(b => !b.ticket_confirmed);
 
-      // Сначала фильтр по подтверждённости
+      // Подтверждённость
       if (this.filterUnconfirmed) {
         list = list.filter(b => !b.confirmed);
       } else {
         list = list.filter(b => b.confirmed);
       }
 
-      // Фильтр по оплате: если выбран ровно один из переключателей
+      // Оплата
       if (this.filterPaid !== this.filterUnpaid) {
         if (this.filterPaid) {
           list = list.filter(b => b.paid);
@@ -187,11 +201,19 @@ export default {
           list = list.filter(b => !b.paid);
         }
       }
-      // Фильтр по имени ребёнка
+
+      // ФИО ребёнка
       if (this.filterName) {
         const name = this.filterName.toLowerCase();
         list = list.filter(b =>
           b.user.child_name.toLowerCase().includes(name)
+        );
+      }
+
+      // Группы
+      if (this.filterGroups.length) {
+        list = list.filter(b =>
+          this.filterGroups.includes(b.user.group_name)
         );
       }
 
