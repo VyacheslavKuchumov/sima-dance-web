@@ -169,7 +169,7 @@ export default {
         { title: "Ряд", key: "row" },
         { title: "Место", key: "number" },
         { title: "Цена", key: "price" },
-        { title: "", key: "info", sortable: false },
+        
         { title: "", key: "payment", sortable: false },
       ],
 
