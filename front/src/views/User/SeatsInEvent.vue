@@ -12,7 +12,7 @@
 
 
     <template v-slot:actions>
-      <v-btn color="white" variant="text" @click="paymentDialog = true">
+      <v-btn color="white" variant="text" @click="paymentDialog = true; snackbar = false">
         ОПЛАТИТЬ
       </v-btn>
     </template>
@@ -34,7 +34,7 @@
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack"></v-btn>
       <v-spacer></v-spacer>
-      <v-btn icon="mdi-cash-multiple" color="secondary" @click="paymentDialog=true"></v-btn>
+      <v-btn icon="mdi-cash-multiple" color="secondary" @click="paymentDialog=true; snackbar=false"></v-btn>
     </v-toolbar>
     <v-card max-height="600">
       <!-- Zoomable Container -->
