@@ -88,6 +88,8 @@
         >
           Удалить бронь
         </v-btn>
+        
+        <p v-if="seat().status == 'held'"><strong>Бронь не подтверждена!</strong></p>
         <v-btn
           v-if="seat().status === 'held'"
           class="ma-5"
