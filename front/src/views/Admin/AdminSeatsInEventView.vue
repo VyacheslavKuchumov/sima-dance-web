@@ -88,6 +88,14 @@
         >
           Удалить бронь
         </v-btn>
+        <v-btn
+          v-if="seat().status === 'held'"
+          class="ma-5"
+          color="error"
+          @click="confirmFunc(seat().booking.booking_id)"
+        >
+          Подтвердить бронь
+        </v-btn>
 
         <v-form ref="seatInEventForm" v-model="valid" @submit.prevent="saveSeatInEvent">
           <v-select
@@ -555,7 +563,9 @@ export default {
       deleteSeatInEvent: "seats_in_events/deleteSeatInEvent",
       getVenues: "venues/getVenues",
       getSeatInEventById: "seats_in_events/getSeatInEventById",
+
       deleteBooking: "bookings/deleteBooking",
+      confirmBooking: "bookings/confirmBooking",
     }),
 
     goBack() {
@@ -605,6 +615,14 @@ export default {
     closeEditDialog() {
       this.editDialog = false;
       this.seatInEventForm = { status: "", price: null };
+    },
+
+    async confirmFunc(bookingId) {
+      this.overlay = true;
+      await this.confirmBooking(bookingId)
+      await this.getSeatsInEvent(this.$route.params.uid);
+      this.closeEditDialog();
+      this.overlay = false;
     },
 
     async saveSeatInEvent() {

@@ -127,6 +127,16 @@
 
         <p>Цена: {{ seat().price }}р</p>
         <p>ФИО: {{ seat().booking.user.name }}</p>
+
+        <p v-if="seat().status == 'held'"><strong>Бронь не подтверждена!</strong></p>
+        <v-btn
+          v-if="seat().status === 'held'"
+          class="ma-5"
+          color="error"
+          @click="confirmFunc(seat().booking.booking_id)"
+        >
+          Подтвердить бронь
+        </v-btn>
         
       </v-card-text>
       <v-card-actions>
@@ -659,6 +669,16 @@ export default {
    totalPrice() {
      return this.bookedSeats().reduce((sum, s) => sum + s.price, 0);
    },
+   async confirmFunc(bookingId) {
+      this.overlay = true;
+      
+      await this.confirmBooking(bookingId);
+      await this.getSeatsInEvent(this.$route.params.uid);
+      this.bookingInfoDialog = false;
+    
+      this.overlay = false;
+      
+    },
     async bookSeat(item) {
       this.overlay = true;
       console.log("Testing", item);
