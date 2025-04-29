@@ -9,14 +9,14 @@
     </v-card-title>
   </v-card>
 
-  <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="800">
+  <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1200">
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack" />
       <v-spacer />
       <v-btn icon="mdi-filter" color="primary" @click="searchDialog = !searchDialog" />
     </v-toolbar>
 
-    <v-container v-if="bookings() && bookings().length">
+    <v-container v-if="mergedBookings && mergedBookings.length">
       <v-data-table
         :headers="headers"
         :items="filteredBookings"
@@ -36,8 +36,14 @@
           {{ item.user.name }}
         </template>
 
+        <!-- Новые колонки мест -->
+        <template v-slot:item.section="{ item }">{{ item.section }}</template>
+        <template v-slot:item.row="{ item }">{{ item.row }}</template>
+        <template v-slot:item.number="{ item }">{{ item.number }}</template>
+        <template v-slot:item.price="{ item }">{{ item.price }} р</template>
+
         <template v-slot:item.info="{ item }">
-          <v-btn size="small" color="primary" class="mr-2" @click="openInfoDialog(item)">
+          <v-btn size="small" color="purple" class="mr-2" @click="confirmToggleTicket(item)">
             <v-icon>mdi-ticket</v-icon>
           </v-btn>
         </template>
@@ -55,14 +61,14 @@
       <v-card-title class="text-h5 text-wrap">
         Информация о бронировании
       </v-card-title>
-      <v-card-text v-if="seat()" align="center">
-        <p>Секция: {{ seat().seat?.section }}</p>
-        <p>Место: {{ seat().seat?.number }}</p>
-        <p>Ряд: {{ seat().seat?.row }}</p>
-        <p>Цена: {{ seat().price }} р</p>
-        <p>ФИО родителя: {{ seat().booking?.user.name }}</p>
-        <p>ФИО ребёнка: {{ seat().booking?.user.child_name }}</p>
-        <v-btn width="130" color="purple" @click="confirmToggleTicket(seat().booking)">
+      <v-card-text v-if="selectedTicket" align="center">
+        <p>Секция: {{ selectedTicket.section }}</p>
+        <p>Ряд: {{ selectedTicket.row }}</p>
+        <p>Место: {{ selectedTicket.number }}</p>
+        <p>Цена: {{ selectedTicket.price }} р</p>
+        <p>ФИО родителя: {{ selectedTicket.user.name }}</p>
+        <p>ФИО ребёнка: {{ selectedTicket.user.child_name }}</p>
+        <v-btn width="130" color="purple" @click="confirmToggleTicket(selectedTicket)">
           Билет
         </v-btn>
       </v-card-text>
@@ -158,46 +164,57 @@ export default {
         { title: "Ребёнок", key: "user.child_name" },
         { title: "Родитель", key: "user.name" },
         { title: "Группа", key: "user.group_name" },
+        { title: "Секция", key: "section" },
+        { title: "Ряд", key: "row" },
+        { title: "Место", key: "number" },
+        { title: "Цена", key: "price" },
         { title: "", key: "info", sortable: false },
       ],
 
-      // Фильтры
       filterName: "",
       filterTicketConfirmed: false,
       filterTicketUnconfirmed: true,
-      filterGroups: [],   // <-- добавлено
+      filterGroups: [],
 
       bookingToDelete: null,
       bookingToToggleTicket: null,
+      selectedTicket: null,
     };
   },
   computed: {
+    // Объединяем бронирования и места
+    mergedBookings() {
+      return (this.bookings() || []).map(b => {
+        const seat = this.seats().find(s => s.seat_in_event_id === b.seat_in_event_id) || {};
+        return {
+          ...b,
+          section: seat.seat?.section,
+          row: seat.seat?.row,
+          number: seat.seat?.number,
+          price: seat.price,
+        };
+      });
+    },
     filteredBookings() {
-      let list = this.bookings() || [];
+      let list = [...this.mergedBookings];
 
       // Только оплаченные
       list = list.filter(b => b.paid);
 
-      // Фильтрация по статусу билета
-      if (this.filterTicketConfirmed && !this.filterTicketUnconfirmed) {
-        list = list.filter(b => b.ticket_confirmed);
-      } else if (this.filterTicketUnconfirmed && !this.filterTicketConfirmed) {
-        list = list.filter(b => !b.ticket_confirmed);
+      // Статус билета
+      if (this.filterTicketConfirmed !== this.filterTicketUnconfirmed) {
+        list = list.filter(b => this.filterTicketConfirmed ? b.ticket_confirmed : !b.ticket_confirmed);
       }
 
-      // Фильтрация по имени ребёнка
+      // ФИО ребёнка
       if (this.filterName) {
         const name = this.filterName.toLowerCase();
-        list = list.filter(b =>
-          b.user.child_name.toLowerCase().includes(name)
-        );
+        list = list.filter(b => b.user.child_name.toLowerCase().includes(name));
       }
 
-      // Фильтрация по группам
+      // Группы
       if (this.filterGroups.length) {
-        list = list.filter(b =>
-          this.filterGroups.includes(b.user.group_name)
-        );
+        list = list.filter(b => this.filterGroups.includes(b.user.group_name));
       }
 
       return list;
@@ -207,23 +224,26 @@ export default {
     bookings() {
       return this.$store.state.bookings.data;
     },
-    seat() {
-      return this.$store.state.seats_in_events.seat_in_event || null;
+    seats() {
+      return this.$store.state.seats_in_events.data || [];
     },
     ...mapActions({
       getBookingsByEventUid: "bookings/getBookingsByEventUid",
       deleteBooking: "bookings/deleteBooking",
       toggleTicketStatus: "bookings/toggleTicketStatus",
-      getSeatInEventById: "seats_in_events/getSeatInEventById",
+      getSeatsInEvent: "seats_in_events/getSeatsInEvent",
     }),
 
     goBack() {
       this.$router.back();
     },
-    async openInfoDialog(booking) {
+    async openInfoDialog(item) {
       this.overlay = true;
       this.infoDialog = true;
-      await this.getSeatInEventById(booking.seat_in_event_id);
+      this.selectedTicket = item;
+      if (!item.section) {
+        await this.getSeatsInEvent(this.$route.params.event_uid);
+      }
       this.overlay = false;
     },
     closeConfirmDialog() {
@@ -239,8 +259,8 @@ export default {
       this.closeConfirmDialog();
       this.overlay = false;
     },
-    confirmToggleTicket(booking) {
-      this.bookingToToggleTicket = booking;
+    confirmToggleTicket(item) {
+      this.bookingToToggleTicket = item;
       this.confirmToggleDialog = true;
     },
     closeToggleDialog() {
@@ -261,6 +281,7 @@ export default {
   async created() {
     this.overlay = true;
     await this.getBookingsByEventUid(this.$route.params.event_uid);
+    await this.getSeatsInEvent(this.$route.params.event_uid);
     this.overlay = false;
   },
 };

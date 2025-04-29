@@ -9,16 +9,16 @@
     </v-card-title>
   </v-card>
 
-  <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="800">
+  <v-card class="elevation-5 mt-5 ml-auto mr-auto" max-width="1200">
     <v-toolbar flat>
       <v-btn icon="mdi-keyboard-backspace" color="primary" @click="goBack" />
       <v-spacer />
       <v-btn icon="mdi-filter" color="primary" @click="searchDialog = !searchDialog" />
       <v-btn icon="mdi-seat" color="secondary" @click="goToSeats" />
-      <v-btn icon="mdi-ticket" color="blue" @click="goToTickets"></v-btn>
+      <v-btn icon="mdi-ticket" color="blue" @click="goToTickets" />
     </v-toolbar>
 
-    <v-container v-if="bookings() && bookings().length">
+    <v-container v-if="mergedBookings && mergedBookings.length">
       <v-data-table
         :headers="headers"
         :items="filteredBookings"
@@ -56,13 +56,13 @@
       <v-card-title class="text-h5 text-wrap">
         Информация о бронировании
       </v-card-title>
-      <v-card-text v-if="seat()">
-        <p>Секция: {{ seat().seat?.section }}</p>
-        <p>Место: {{ seat().seat?.number }}</p>
-        <p>Ряд: {{ seat().seat?.row }}</p>
-        <p>Цена: {{ seat().price }} р</p>
-        <p>ФИО родителя: {{ seat().booking?.user.name }}</p>
-        <p>ФИО ребёнка: {{ seat().booking?.user.child_name }}</p>
+      <v-card-text v-if="selectedBooking">
+        <p>Секция: {{ selectedBooking.section }}</p>
+        <p>Ряд: {{ selectedBooking.row }}</p>
+        <p>Место: {{ selectedBooking.number }}</p>
+        <p>Цена: {{ selectedBooking.price }} р</p>
+        <p>ФИО родителя: {{ selectedBooking.user.name }}</p>
+        <p>ФИО ребёнка: {{ selectedBooking.user.child_name }}</p>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -165,6 +165,10 @@ export default {
         { title: "Ребёнок", key: "user.child_name" },
         { title: "Родитель", key: "user.name" },
         { title: "Группа", key: "user.group_name" },
+        { title: "Секция", key: "section" },
+        { title: "Ряд", key: "row" },
+        { title: "Место", key: "number" },
+        { title: "Цена", key: "price" },
         { title: "", key: "info", sortable: false },
         { title: "", key: "payment", sortable: false },
       ],
@@ -174,16 +178,31 @@ export default {
       filterPaid: false,
       filterUnpaid: true,
       filterUnconfirmed: false,
-      filterGroups: [],   // добавленный модель
+      filterGroups: [],
 
       bookingToDelete: null,
       bookingToToggle: null,
+      selectedBooking: null,
     };
   },
   computed: {
+    // Объединяем бронирования и места
+    mergedBookings() {
+      return (this.bookings() || []).map(b => {
+        const seatRecord = this.seats().find(s => s.seat_in_event_id === b.seat_in_event_id) || {};
+        return {
+          ...b,
+          section: seatRecord.seat?.section,
+          row: seatRecord.seat?.row,
+          number: seatRecord.seat?.number,
+          price: seatRecord.price,
+        };
+      });
+    },
     filteredBookings() {
-      let list = this.bookings();
+      let list = [...this.mergedBookings];
 
+      // Исключаем подтверждённые тикеты
       list = list.filter(b => !b.ticket_confirmed);
 
       // Подтверждённость
@@ -195,26 +214,18 @@ export default {
 
       // Оплата
       if (this.filterPaid !== this.filterUnpaid) {
-        if (this.filterPaid) {
-          list = list.filter(b => b.paid);
-        } else {
-          list = list.filter(b => !b.paid);
-        }
+        list = list.filter(b => (this.filterPaid ? b.paid : !b.paid));
       }
 
       // ФИО ребёнка
       if (this.filterName) {
         const name = this.filterName.toLowerCase();
-        list = list.filter(b =>
-          b.user.child_name.toLowerCase().includes(name)
-        );
+        list = list.filter(b => b.user.child_name.toLowerCase().includes(name));
       }
 
       // Группы
       if (this.filterGroups.length) {
-        list = list.filter(b =>
-          this.filterGroups.includes(b.user.group_name)
-        );
+        list = list.filter(b => this.filterGroups.includes(b.user.group_name));
       }
 
       return list;
@@ -224,14 +235,14 @@ export default {
     bookings() {
       return this.$store.state.bookings.data;
     },
-    seat() {
-      return this.$store.state.seats_in_events.seat_in_event || null;
+    seats() {
+      return this.$store.state.seats_in_events.data || [];
     },
     ...mapActions({
       getBookingsByEventUid: "bookings/getBookingsByEventUid",
       deleteBooking: "bookings/deleteBooking",
       togglePaidStatus: "bookings/togglePaidStatus",
-      getSeatInEventById: "seats_in_events/getSeatInEventById",
+      getSeatsInEvent: "seats_in_events/getSeatsInEvent",
     }),
 
     goBack() {
@@ -248,7 +259,11 @@ export default {
     async openInfoDialog(booking) {
       this.overlay = true;
       this.infoDialog = true;
-      await this.getSeatInEventById(booking.seat_in_event_id);
+      this.selectedBooking = booking;
+      if (!booking.section) {
+        // Если информация не загружена, можно загрузить по ID
+        await this.getSeatsInEvent(this.$route.params.event_uid);
+      }
       this.overlay = false;
     },
     confirmDelete(booking) {
@@ -289,6 +304,7 @@ export default {
   async created() {
     this.overlay = true;
     await this.getBookingsByEventUid(this.$route.params.event_uid);
+    await this.getSeatsInEvent(this.$route.params.event_uid);
     this.overlay = false;
   },
 };
