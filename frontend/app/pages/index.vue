@@ -1,5 +1,5 @@
 <template>
-    <ListEvents />
+    <EventsList />
 </template>
 
 <script setup>

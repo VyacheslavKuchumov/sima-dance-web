@@ -12,6 +12,12 @@ export default defineNuxtConfig({
     '@nuxt/test-utils',
     '@pinia/nuxt',
     'pinia-plugin-persistedstate',
-    'vuetify-nuxt-module'
-  ]
+    'vuetify-nuxt-module',
+  ],
+  runtimeConfig: {
+    public: {
+      BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000'
+    }
+  },
+
 })
