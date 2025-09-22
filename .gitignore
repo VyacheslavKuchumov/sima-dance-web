@@ -1,4 +1,4 @@
-backend/.env
-front/.env
-/backend/.venv
-/scripts/.venv
+.env
+.venv
+
+/.vscode
