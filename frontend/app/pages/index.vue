@@ -1,5 +1,5 @@
 <template>
-  <PlaceholderCard />
+  <EventList />
 </template>
 
 <script setup>
