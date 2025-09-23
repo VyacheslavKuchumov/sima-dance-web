@@ -5,19 +5,17 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/eslint',
-    '@nuxt/fonts',
-    '@nuxt/icon',
     '@nuxt/image',
     '@nuxt/scripts',
     '@nuxt/test-utils',
+    '@nuxt/ui',
     '@pinia/nuxt',
-    'pinia-plugin-persistedstate',
-    'vuetify-nuxt-module',
+    'pinia-plugin-persistedstate'
   ],
   runtimeConfig: {
     public: {
       BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000'
     }
   },
-
+  css: ['~/assets/css/main.css']
 })

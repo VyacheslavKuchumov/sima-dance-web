@@ -1,9 +1,13 @@
+<!-- app.vue -->
 <template>
-  <NuxtLayout>
-    <v-app>
-      
-      <NuxtPage />
-      
-    </v-app>
-  </NuxtLayout>
+  <UApp>
+      <NavBar />
+    <UContainer class="flex items-center justify-center">
+      <NuxtPage class="mt-20" />
+    </UContainer>
+  </UApp>
 </template>
+
+<script setup lang="ts">
+
+</script>

@@ -1,3 +1,3 @@
 <template>
-    <SignupCard />
+  <SignupCard />
 </template>

@@ -1,78 +1,96 @@
 <template>
-  <v-overlay :model-value="overlay" class="align-center justify-center">
-    <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
-  </v-overlay>
-    <v-container>
-        <v-card-title>Войти</v-card-title>
-        <v-form @submit.prevent="onSubmit" ref="loginForm" v-model="valid" lazy-validation>
-            <v-text-field
-              label="Введите логин"
-              v-model="login"
-              :rules="loginRules"
-              required
-              type="text"
-            ></v-text-field>
-            <v-text-field
-              label="Введите пароль"
-              v-model="password"
-              :rules="passwordRules"
-              required
-              type="password"
-            ></v-text-field>
-            
-            <v-btn type="submit" :disabled="!valid" class="form-btn" color="primary">
-              Войти
-            </v-btn>
-            
-            <v-btn class="mt-5" variant="plain" text to="/signup">Нет аккаунта?</v-btn>
-            
-        </v-form>
-    </v-container>
-    <ErrorDialog v-if="dialog" :message="error" />
+  <UCard class="w-full max-w-md">
+    <template #header>
+      <h2 class="text-xl font-semibold">Войти в аккаунт</h2>
+    </template>
+
+    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+      <UFormField label="Логин" name="username" required>
+        <UInput
+          class="w-full"
+          v-model="state.username"
+          placeholder="Введите имя пользователя"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UFormField label="Пароль" name="password" required>
+        <UInput
+          class="w-full"
+          v-model="state.password"
+          type="password"
+          placeholder="Введите пароль"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UButton
+        type="submit"
+        color="primary"
+        block
+        :loading="loading"
+        :disabled="!v.safeParse(schema, state).success"
+      >
+        Войти в аккаунт
+      </UButton>
+    </UForm>
+
+    <template #footer>
+      <div class="text-center">
+        Нет аккаунта?
+        <NuxtLink to="/signup" class="text-primary underline ml-1">
+          Зарегистрироваться
+        </NuxtLink>
+      </div>
+    </template>
+  </UCard>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import * as v from 'valibot'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
-const overlay = ref(false)
-const loginForm = ref(null)
-const login = ref('')
-const password = ref('')
-const valid = ref(false)
-
-
+const loading = ref(false)
+const auth    = useAuthStore()
 const router  = useRouter()
-const auth = useAuthStore()
+const toast   = useToast()
 
-const error = ref('')
-const dialog = ref(false)
+// Schema
+const schema = v.object({
+  username: v.pipe(
+    v.string(),
+  ),
+  password: v.pipe(
+    v.string(),
+  )
+})
 
+type Schema = v.InferOutput<typeof schema>
 
-const loginRules = ref([
-  v => !!v || 'Логин обязателен',
-  v => (v && v.length >= 3) || 'Логин должен быть не менее 3 символов',
-])
+// State
+const state = reactive({
+  username: '',
+  password: ''
+})
 
-const passwordRules = ref([(v) => !!v || "Пароль обязателен"])
-
-
-async function onSubmit() {
-  overlay.value = true
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  loading.value = true
   try {
     await auth.login({
-      username: login.value,
-      password: password.value,
+      username: event.data.username,
+      password: event.data.password,
     })
+    toast.add({ title: 'Успешно', description: 'Вы вошли в аккаунт', color: 'success' })
     router.push('/')
-    
   } catch (err) {
     console.error(err)
-    error.value = err.message
-    dialog.value = true
-
+    if (err instanceof Error) {
+      toast.add({ title: 'Ошибка', description: err.message, color: 'error' })
+    } else {
+      toast.add({ title: 'Ошибка', description: 'Произошла непредвиденная ошибка', color: 'error' })
+    }
   } finally {
-    overlay.value = false
+    loading.value = false
   }
 }
-
-
 </script>
