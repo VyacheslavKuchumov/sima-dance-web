@@ -10,7 +10,7 @@
           <UInput
             class="w-full"
             v-model="state.username"
-            placeholder="Введите имя пользователя"
+            placeholder="Придумайте логин"
             :disabled="loading"
           />
         </UFormField>
@@ -20,7 +20,7 @@
             class="w-full"
             v-model="state.password"
             type="password"
-            placeholder="Введите пароль"
+            placeholder="Придумайте пароль"
             :disabled="loading"
           />
         </UFormField>
