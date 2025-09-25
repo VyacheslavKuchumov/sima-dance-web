@@ -12,8 +12,8 @@
             <p >{{ formatDate.isoToRu(event.starts_at) }}</p>
 
             <template #footer>
-                <UButton color="primary" block @click="() => console.log(`Registering for event ${event.id}`)">
-                    Зарегистрироваться
+                <UButton color="primary" block @click="() => showEventSeats(event.id)">
+                    Бронировать места
                 </UButton>
             </template>
         </UCard>
@@ -44,4 +44,9 @@ const events = useEventsStore()
   } finally {
 
   }
+
+function showEventSeats(eventId) {
+    const router = useRouter()
+    router.push(`/seats/${eventId}`)
+}
 </script>
