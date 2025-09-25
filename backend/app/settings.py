@@ -105,7 +105,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',  # JWT authentication
 
     # custom apps
-    'accounts',  
+    'accounts',
+    'booking',  
 ]
 
 MIDDLEWARE = [
