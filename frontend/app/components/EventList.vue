@@ -1,52 +1,65 @@
 <template>
     <UContainer>
-        <UCard v-if="events.data" v-for="event in events.data" :key="event.id" class="mb-4 max-w-md mx-auto"
-        :ui="{
-        header: 'p-0 sm:px-0', // Remove padding from header slot
-        }">
-            <template #header>
-                <NuxtImg src="/img/event.jpg" alt="Здесь должна быть картинка..." class=" object-cover" />
-            </template>
+    <!-- show loader while fetching -->
+    <UProgress v-if="pending" animation="swing" />
 
-            <p class="text-2xl">{{ event.title }}</p>
-            <p >{{ formatDate.isoToRu(event.starts_at) }}</p>
+    <!-- events list -->
+    <UCard
+      v-else
+      v-for="event in events"
+      :key="event.id"
+      class="mb-4 max-w-md mx-auto"
+      :ui="{
+        header: 'p-0 sm:px-0' // Remove padding from header slot
+      }"
+    >
+      <template #header>
+        <NuxtImg src="/img/event.jpg" alt="Здесь должна быть картинка..." class="object-cover" />
+      </template>
 
-            <template #footer>
-                <UButton color="primary" block @click="() => showEventSeats(event.id)">
-                    Бронировать места
-                </UButton>
-            </template>
-        </UCard>
-        <UProgress v-else animation="swing" />
-    </UContainer>
+      <p class="text-2xl">{{ event.title }}</p>
+      <p>{{ formatDate.isoToRu(event.starts_at) }}</p>
+
+      <template #footer>
+        <UButton color="primary" block @click="() => showEventSeats(event.id)">
+          Бронировать места
+        </UButton>
+      </template>
+    </UCard>
+
+
+  </UContainer>
 </template>
 
 <script setup>
 
+const config = useRuntimeConfig()
+// composables used in your original component
 const formatDate = useDateConverter()
-const toast   = useToast()
+const toast = useToast()
 
-const events = useEventsStore()
+// Fetch events with useFetch (no store)
+// Adjust endpoint if your API route differs
+const { data, pending, error } = useFetch(`${config.public.BACKEND_URL}/api/booking/events/`, {
+  // automatic fetch on setup; remove or change options if needed
+  // e.g. headers, credentials, baseURL, etc.
+})
+
+// Computed array for template safety (always an array)
+const events = computed(() => {
+  // If API returns { results: [...] } adapt accordingly:
+  // return events.value?.results ?? []
+  return data.value?.results ?? []
+})
+
+if (error.value){
+  toast.add({ title: 'Ошибка', description: `Не удалось загрузить события ${error.value}`, color: 'error' })
+}
 
 
-
-  try {
-    await events.fetchEvents()
-  } catch (err) {
-    console.error(err)
-    if (err instanceof Error) {
-      toast.add({ title: 'Ошибка', description: err.message, color: 'error' })
-      events.data = []
-    } else {
-      toast.add({ title: 'Ошибка', description: 'Произошла непредвиденная ошибка', color: 'error' })
-        events.data = []
-    }
-  } finally {
-
-  }
-
+// navigation to seats page
 function showEventSeats(eventId) {
-    const router = useRouter()
-    router.push(`/seats/${eventId}`)
+  const router = useRouter()
+  router.push(`/seats/${eventId}`)
 }
 </script>

@@ -1,13 +1,9 @@
 <template>
-    {{ seats.data }}
+    <SeatsList :event_id="event_id" />
 </template>
 
 <script setup>
-
-
-    const route = useRoute()
-    const event_id = computed(() => route.params.event_id)
-
-    const seats = useSeatsStore()
-    seats.fetchSeats(event_id.value)
+const route = useRoute()
+const event_id = computed(() => route.params.event_id)
+    
 </script>
