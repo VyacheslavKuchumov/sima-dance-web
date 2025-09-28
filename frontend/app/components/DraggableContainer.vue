@@ -1,26 +1,39 @@
 <template>
-    <UContainer class="h-full w-full border">
+    <UCard >
+        <template #header>
+            <h2 class="text-lg font-medium">{{ label }}</h2>
+        </template>
         <div ref="panzoomContainer" class="h-full w-full">
             <slot />
         </div>
-    </UContainer>
+    </UCard>
 </template>
 
 <script setup>
 import Panzoom from '@panzoom/panzoom'
 
+const props = defineProps({
+  label: {
+    type: String,
+    default: 'Draggable Container'
+  }
+})
+
 const panzoomContainer = ref(null)
 
 onMounted(() => {
     if (panzoomContainer.value) {
-        Panzoom(panzoomContainer.value, {
+        const elem = panzoomContainer.value
+        const panzoom = Panzoom(elem, {
             maxZoom: 3,
             minZoom: 0.5,
             smoothScroll: true,
             bounds: true,
             boundsPadding: 0.5,
         })
+        elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel)
     }
 })
+
 
 </script>

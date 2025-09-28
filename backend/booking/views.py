@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError
 from .models import Event, Seat, Booking
 from .serializers import EventSerializer, SeatSerializer, BookingSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+
 
 # Read-only Event viewset
 class EventViewSet(viewsets.ReadOnlyModelViewSet):
@@ -25,6 +27,9 @@ class SeatViewSet(viewsets.ModelViewSet):
     serializer_class = SeatSerializer
     permission_classes = [permissions.AllowAny]  # change as needed
     lookup_field = "id"
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['section', 'row', 'number']
 
     def perform_create(self, serializer):
         # Use an atomic block to surface DB integrity errors as validation errors

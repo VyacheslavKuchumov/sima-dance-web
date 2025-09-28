@@ -1,10 +1,10 @@
 <template>
   <header class="border-b border-gray-200 shadow-sm :dark:border-gray-700">
     <nav class="container mx-auto flex items-center justify-between py-4 px-6">
-      <h1 class="text-xl font-bold">Simadancing 💃</h1>
+      <h1 class="text-xl font-bold" @click="$router.push('/')">Simadancing 💃</h1>
 
       <!-- Slideover Menu -->
-      <USlideover title="Меню" close-icon="i-lucide-arrow-right">
+      <USlideover title="Меню" close-icon="i-lucide-x">
         <UButton
           icon="i-lucide-menu"
           color="neutral"
