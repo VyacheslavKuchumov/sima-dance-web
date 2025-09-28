@@ -1,5 +1,5 @@
 <template>
-    <SeatsList :event_id="event_id" />
+    <SeatsList :event_id="event_id"/>
 </template>
 
 <script setup>

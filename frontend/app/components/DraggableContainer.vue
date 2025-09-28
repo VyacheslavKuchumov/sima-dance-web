@@ -1,11 +1,12 @@
 <template>
-    <UCard >
+    <UCard class="h-full w-full" shadow="lg" rounded="md" >
         <template #header>
             <h2 class="text-lg font-medium">{{ label }}</h2>
         </template>
         <div ref="panzoomContainer" class="h-full w-full">
             <slot />
         </div>
+
     </UCard>
 </template>
 

@@ -1,6 +1,6 @@
 // composables/useVenueSeats.js
 export function useVenueSeats(seatsRaw, currentUserId = null) {
-  const selectedSeat = ref(null)
+  const selectedSeats = ref([])
 
   
     const gapRules = {
@@ -48,15 +48,15 @@ export function useVenueSeats(seatsRaw, currentUserId = null) {
   function isCurrentUserSeat(seat) {
     return currentUserId != null && seat.user_id === currentUserId
   }
-
-  function onSeatClick(seat) {
-    const status = seatStatus(seat)
-    if (status === 'available' || (status === 'booked' && isCurrentUserSeat(seat))) {
-      selectedSeat.value = seat
+    function toggleSeatSelection(seat) {
+    const index = selectedSeats.value.findIndex(s => s.id === seat.id)
+    if (index === -1) {
+      selectedSeats.value.push(seat)
     } else {
-      selectedSeat.value = null
+      selectedSeats.value.splice(index, 1)
     }
   }
+
   
 
   // --- Group seats by section -> row, insert gaps ---
@@ -121,9 +121,9 @@ export function useVenueSeats(seatsRaw, currentUserId = null) {
   return {
     groupedSeats,
     sortedRowKeys,
-    selectedSeat,
+    selectedSeats,
     seatStatus,
     isCurrentUserSeat,
-    onSeatClick
+    toggleSeatSelection
   }
 }

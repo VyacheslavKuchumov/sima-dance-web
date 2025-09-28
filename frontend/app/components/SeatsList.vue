@@ -1,10 +1,8 @@
 <template>
-  <UContainer>
-    {{ selectedSeat }}
+  <UContainer >
     <!-- show loader while fetching -->
     <UProgress v-if="pending" animation="swing" />
-    <DraggableContainer label="План зала" class="max-h-100" v-else>
-      
+    <DraggableContainer label="План зала" class="max-h-110 md:max-h-150" v-else>
         <div
           v-for="(rows, section) in groupedSeats"
           :key="section"
@@ -34,6 +32,7 @@
                       'seat-available': seatStatus(seat) === 'available',
                       'seat-booked': seatStatus(seat) === 'booked' && !isCurrentUserSeat(seat),
                       'seat-booked-current': seatStatus(seat) === 'booked' && isCurrentUserSeat(seat),
+                      'seat-selected': selectedSeats.find(s => s.id === seat.id),
                       'seat-unavailable': seatStatus(seat) === 'unavailable'
                     }"
                     @click="onSeatClick(seat)"
@@ -42,7 +41,7 @@
                   </div>
 
                   <div class="seat-price" v-if="seat.price">
-                    {{ seat.price }}₽
+                    {{ parseInt(seat.price) }}₽
                   </div>
                   <div class="seat-price seat-price-empty" v-else>
                     —
@@ -56,24 +55,39 @@
             </div>
           </div>
         </div>
-
-        <!-- optional: show selected seat -->
-        <!-- <div class="selected-info" v-if="selectedSeat">
-          Selected: Section <b>{{ selectedSeat.section }}</b>,
-          Row <b>{{ selectedSeat.row }}</b>,
-          Seat <b>{{ selectedSeat.number }}</b>
-          — {{ selectedSeat.price ?? 'no price' }}
-        </div> -->
       
     </DraggableContainer>
+    <UContainer class="mt-4 flex justify-center">
+      <UModal title="Выбранные места" :ui="{ footer: 'justify-end' }">
+        <UButton color="primary" variant="solid" size="xl" icon="i-lucide-ticket" v-if="selectedSeats.length > 0" >
+          Подтвердить бронь ({{ selectedSeats.length }})
+        </UButton>
+        
+        <template #body>
+          <UCard v-for="seat in selectedSeats" :key="seat.id" class="mb-2">
+            Секция: {{ seat.section }}, Ряд: {{ seat.row }}, Место: {{ seat.number }}, Цена: {{ seat.price ? parseInt(seat.price) + '₽' : '—' }}
+
+          </UCard>
+        </template>
+        <template #footer="{ close }">
+          <UButton label="Сбросить" color="error" variant="outline" @click="close" />
+          <UButton label="Подтвердить" color="primary" />
+        </template>
+      </UModal>
+    </UContainer>
+    
   </UContainer>
+  
+
+  
+  
 </template>
 
 <script setup>
 
 
 const props = defineProps({
-  event_id: Number,
+  event_id: String,
 })
 
 const config = useRuntimeConfig()
@@ -98,6 +112,19 @@ if (error.value) {
   })
 }
 
+function onSeatClick(seat) {
+    const status = seatStatus(seat)
+    if (status === 'available' || (status === 'booked' && isCurrentUserSeat(seat))) {
+        toggleSeatSelection(seat)
+    } else {
+        toast.add({
+          title: 'Место недоступно',
+          description: `Это место уже занято.`,
+          color: 'warning',
+        })
+    }
+  }
+
 
 
 
@@ -106,20 +133,16 @@ if (error.value) {
 const {
   groupedSeats,
   sortedRowKeys,
-  selectedSeat,
+  selectedSeats,
   seatStatus,
   isCurrentUserSeat,
-  onSeatClick
+  toggleSeatSelection,
 } = useVenueSeats(seats, currentUserId)
 
 </script>
 
 <style scoped>
-.venue-plan {
-  display: block;
-  gap: 1.5rem;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-}
+
 .section-container {
   margin-bottom: 1.75rem;
   border-bottom: 1px solid #eee;
@@ -186,6 +209,11 @@ const {
   background: #e6ffed;
   border-color: #49a36b;
   color: #0b4d28;
+}
+.seat-selected {
+  background: #cce5ff;
+  border-color: #2a7ae4;
+  color: #003380;
 }
 .seat-unavailable {
   background: #f3f3f4;
