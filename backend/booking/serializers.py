@@ -15,7 +15,28 @@ class EventSerializer(serializers.ModelSerializer):
 class SeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seat
-        fields = ["id", "section", "row", "number", "price"]
+        fields = ['id', 'section', 'row', 'number', 'available', 'price']
+        read_only_fields = ['id']
+
+    def validate(self, attrs):
+        # If updating, include instance values not provided in payload
+        section = attrs.get('section', getattr(self.instance, 'section', None))
+        row = attrs.get('row', getattr(self.instance, 'row', None))
+        number = attrs.get('number', getattr(self.instance, 'number', None))
+
+        if section is None or row is None or number is None:
+            # Let model field validators handle missing fields (they normally aren't missing)
+            return attrs
+
+        # Check uniqueness manually to provide a nice error message
+        qs = Seat.objects.filter(section=section, row=row, number=number)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError({
+                'non_field_errors': [f"Seat {section} {row}-{number} already exists."]
+            })
+        return attrs
 
 
 class BookingSerializer(serializers.ModelSerializer):
