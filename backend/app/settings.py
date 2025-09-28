@@ -38,6 +38,7 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    '0.0.0.0',
     'https://sima-test.vyachik-dev.ru',
     'https://sima-test-server.vyachik-dev.ru'
 ]
