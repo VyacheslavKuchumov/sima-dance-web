@@ -1,15 +1,9 @@
 import requests  
 import itertools  
   
-url = "http://127.0.0.1:8000/api"  
+url = "http://127.0.0.1:8000/api/booking"  
 # url = "http://simadancing.ru/api"  
 # url = "http://192.168.50.223/api"
-
-data = {  
-	"venue_name": "ДК Гагарина"  
-}  
-response = requests.post(url+'/venues/', json=data)  # Use json=data to send as JSON  
-print(response.json())  # Get the response body as JSON  
   
   
   
@@ -21,9 +15,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 28+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)  # Use json=data to send as JSON  
                     print(response.json())  # Get the response body as JSON  
@@ -31,9 +24,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 24+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -41,9 +33,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 26+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -57,9 +48,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in itertools.chain(range(2, 11+1), range(16, 26+1)):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -67,9 +57,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 26+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -77,9 +66,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 31+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())    
@@ -94,9 +82,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 16+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -104,9 +91,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 18+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())        
@@ -114,9 +100,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 20+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -124,9 +109,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 22+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }  
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
@@ -134,9 +118,8 @@ for section in ["Балкон", "Амфитеатр", "Партер"]:
                 for seat_num in range(1, 24+1):  
                     data = {  
                         "section": section,  
-                        "row": str(row),  
-                        "number": str(seat_num),  
-                        "venue_id": 1  
+                        "row": row,  
+                        "number": seat_num
                     }
                     response = requests.post(url + '/seats/', json=data)
                     print(response.json())
