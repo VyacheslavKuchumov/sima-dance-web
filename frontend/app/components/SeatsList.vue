@@ -2,17 +2,17 @@
     <UContainer>
     <!-- show loader while fetching -->
     <UProgress v-if="pending" animation="swing" />
-
+      <DraggableContainer v-else>
         {{ seats }}
-    
-    </UContainer>
+      </DraggableContainer>
+      {{ seats }}
+</UContainer>
 </template>
 
 <script setup>
 
 const props = defineProps({
   event_id: Number,
-
 })
 
 const config = useRuntimeConfig()
@@ -30,6 +30,6 @@ const seats = computed(() => {
 })
 
 if (error.value){
-  toast.add({ title: 'Ошибка', description: `Не удалось загрузить события ${error.value}`, color: 'error' })
+  toast.add({ title: 'Ошибка', description: `Не удалось загрузить ${error.value}`, color: 'error' })
 }
 </script>
