@@ -145,7 +145,6 @@ const {
 
 .section-container {
   margin-bottom: 1.75rem;
-  border-bottom: 1px solid #eee;
   padding-bottom: 0.75rem;
 }
 .section-title {
