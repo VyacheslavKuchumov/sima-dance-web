@@ -17,7 +17,7 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
 
 # Read-only Seat viewset (optionally nested under Event)
 class SeatViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Seat.objects.select_related("event").all().order_by("row", "number")
+    queryset = Seat.objects.all().order_by("section", "row", "number")
     serializer_class = SeatSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = "id"
