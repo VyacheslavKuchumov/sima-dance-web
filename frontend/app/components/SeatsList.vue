@@ -151,7 +151,6 @@ const {
 .section-title {
   margin: 0 0 0.5rem 0;
   font-size: 1.05rem;
-  color: #222;
 }
 .row-container {
   display: flex;
@@ -162,7 +161,6 @@ const {
   width: 56px;
   text-align: right;
   margin-right: 12px;
-  color: #444;
   font-weight: 600;
 }
 .seats-row {
@@ -202,9 +200,7 @@ const {
   font-size: 0.75rem;
   text-align: center;
 }
-.seat-price-empty {
-  color: #999;
-}
+
 .seat-available {
   background: #e6ffed;
   border-color: #49a36b;
