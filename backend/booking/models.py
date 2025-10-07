@@ -72,58 +72,82 @@ class Booking(models.Model):
         return f"{self.user} - {self.seat} ({self.status})"
 
     @classmethod
-    def create_hold(cls, user, seat_qs, event, hold_seconds=300):
+    def create_hold(cls, user, seat, event, hold_seconds=300):
         """
-        Atomically create held bookings for seats in seat_qs for user + event.
-        seat_qs: queryset (or list) of Seat objects expected to belong to the same logical venue.
-        event: Event instance for which seats are being held.
-        Returns list of created Booking objects.
-        Raises ValueError if any seat already booked or actively held by someone else.
+        Atomically create (or extend) a held booking for a single seat.
+
+        Args:
+            user: User instance placing the hold.
+            seat: Seat instance to hold.
+            event: Event instance for which the seat is being held.
+            hold_seconds: int seconds until the hold expires (default 300).
+
+        Returns:
+            Booking instance (created or extended).
+
+        Raises:
+            ValueError: if seat already BOOKED for this event or actively HELD by someone else.
+            Seat.DoesNotExist: if seat.pk is invalid (propagated from .get()).
         """
         now = timezone.now()
         expires_at = now + timezone.timedelta(seconds=hold_seconds)
-        created = []
 
-        # Normalize seat_qs to queryset if it's a list of Seat instances
-        if not hasattr(seat_qs, 'select_for_update'):
-            # fallback: assume iterable of seats -> build queryset by ids
-            seat_ids = [s.id for s in seat_qs]
-            seat_qs = Seat.objects.filter(id__in=seat_ids)
-
+        # Use an atomic transaction and lock the seat row to avoid race conditions.
         with transaction.atomic():
-            # Lock seats (or their DB rows) to avoid races
-            locked_seats = seat_qs.select_for_update(nowait=False)
+            # Lock the seat row
+            locked_seat = (
+                type(seat).objects.select_for_update(nowait=False).get(pk=seat.pk)
+            )
 
-            for seat in locked_seats:
-                # Can't hold if there's an already BOOKED booking for this seat for the event
-                if cls.objects.filter(seat=seat, event=event, status=cls.STATUS_BOOKED).exists():
-                    raise ValueError(f"Seat already booked for this event: {seat}")
-                # Can't hold if another active hold exists for the same event (and not by this user)
-                active_hold = cls.objects.filter(
-                    seat=seat,
-                    event=event,
-                    status=cls.STATUS_HELD,
-                ).exclude(user=user).filter(
-                    Q(expires_at__isnull=True) | Q(expires_at__gt=now)
-                )
-                if active_hold.exists():
-                    raise ValueError(f"Seat currently held by someone else for this event: {seat}")
+            # If already booked for this event -> cannot hold
+            if cls.objects.filter(
+                seat=locked_seat, event=event, status=cls.STATUS_BOOKED
+            ).exists():
+                raise ValueError(f"Seat already booked for this event: {locked_seat}")
 
-            # All checks passed: create holds and snapshot current seat price
-            for seat in locked_seats:
-                # snapshot price (fall back to Decimal('0.00') if None)
-                snapshot = seat.price if seat.price is not None else Decimal('0.00')
-                b = cls.objects.create(
-                    user=user,
-                    seat=seat,
-                    event=event,
-                    status=cls.STATUS_HELD,
-                    expires_at=expires_at,
-                    price_snapshot=snapshot,
-                )
-                created.append(b)
+            # If another user's active hold exists -> cannot hold
+            active_other_hold = cls.objects.filter(
+                seat=locked_seat,
+                event=event,
+                status=cls.STATUS_HELD,
+            ).exclude(user=user).filter(
+                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+            )
+            if active_other_hold.exists():
+                raise ValueError(f"Seat currently held by someone else for this event: {locked_seat}")
 
-        return created
+            # If this user already has an active hold for this seat+event -> extend it
+            existing_hold = cls.objects.filter(
+                seat=locked_seat,
+                event=event,
+                status=cls.STATUS_HELD,
+                user=user,
+            ).filter(
+                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+            ).first()
+
+            # Snapshot current seat price (safe fallback)
+            price_snapshot = locked_seat.price if locked_seat.price is not None else Decimal("0.00")
+
+            if existing_hold:
+                # Extend/refresh the existing hold
+                existing_hold.expires_at = expires_at
+                existing_hold.price_snapshot = price_snapshot
+                # Only update the changed fields
+                existing_hold.save(update_fields=["expires_at", "price_snapshot"])
+                return existing_hold
+
+            # Otherwise create a new hold
+            booking = cls.objects.create(
+                user=user,
+                seat=locked_seat,
+                event=event,
+                status=cls.STATUS_HELD,
+                expires_at=expires_at,
+                price_snapshot=price_snapshot,
+            )
+
+            return booking
 
     def confirm(self):
         """

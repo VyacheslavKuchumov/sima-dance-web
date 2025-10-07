@@ -99,7 +99,9 @@ const toast = useToast()
 
 // Fetch seat data
 const { data, pending, error } = useFetch(
-  `${config.public.BACKEND_URL}/api/booking/events/${props.event_id}/seatmap/`
+  `${config.public.BACKEND_URL}/api/booking/events/${props.event_id}/seatmap/`, {
+    "lazy": true
+  }
 )
 
 const seats = computed(() => data.value ?? [])
@@ -112,10 +114,25 @@ if (error.value) {
   })
 }
 
-function onSeatClick(seat) {
+async function onSeatClick(seat) {
     const status = seatStatus(seat)
     if (status === 'available' || (status === 'booked' && isCurrentUserSeat(seat))) {
+      try {
+        await $fetch(`${config.public.BACKEND_URL}/api/booking/hold/`, {
+          method: 'POST',
+          body: { "seat_id": seat.id, "event_id": props.event_id },
+          headers: { Authorization: `Bearer ${auth.accessToken}` }
+        })
         toggleSeatSelection(seat)
+      }catch (err) {
+        toast.add({
+          title: 'Ошибка',
+          description: err.message,
+          color: 'error',
+        })
+      }
+        
+        
     } else {
         toast.add({
           title: 'Место недоступно',

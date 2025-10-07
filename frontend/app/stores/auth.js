@@ -31,6 +31,23 @@ export const useAuthStore = defineStore('auth', {
       // auto-login after register
       await this.login({ username, password })
     },
+    async refreshToken() {
+      const config = useNuxtApp().$config
+      if (!this.refreshToken) return false
+
+      try {
+        const res = await $fetch(`${config.public.BACKEND_URL}/api/accounts/token/refresh/`, {
+          method: 'POST',
+          body: { refresh: this.refreshToken },
+        })
+        this.accessToken = res.access
+        return true
+      } catch (err) {
+        console.error("Refresh token failed", err)
+        this.logout()
+        return false
+      }
+    },
     async fetchUser() {
       const config = useNuxtApp().$config
       if (!this.accessToken) return

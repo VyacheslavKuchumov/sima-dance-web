@@ -131,25 +131,42 @@ class HoldSeatsView(APIView):
     def post(self, request):
         """
         POST /api/hold/
-        body: { "seat_ids": [1,2,3], "hold_seconds": 300 }
+        body: { "seat_id": 1, "event_id": 2 }
 
-        Returns created Booking objects (status held).
+        Returns created or extended Booking object (status held).
         """
-        seat_ids = request.data.get("seat_ids") or []
-        hold_seconds = int(request.data.get("hold_seconds", 300))
-        if not seat_ids:
-            return Response({"detail": "seat_ids required"}, status=status.HTTP_400_BAD_REQUEST)
+        seat_id = request.data.get("seat_id")
+        event_id = request.data.get("event_id")
 
-        seats = Seat.objects.filter(id__in=seat_ids).select_related("event")
-        if seats.count() != len(seat_ids):
-            return Response({"detail": "One or more seats not found"}, status=status.HTTP_400_BAD_REQUEST)
+        if not seat_id:
+            return Response({"detail": "seat_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not event_id:
+            return Response({"detail": "event_id required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Load Event (no lock needed for the event read)
         try:
-            bookings = Booking.create_hold(request.user, seats, hold_seconds=hold_seconds)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_409_CONFLICT)
+            event = Event.objects.get(pk=event_id)
+        except Event.DoesNotExist:
+            return Response({"detail": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = BookingSerializer(bookings, many=True)
+        # Use an atomic transaction and lock the seat row to avoid race conditions
+        try:
+            with transaction.atomic():
+                # lock the seat row
+                seat = Seat.objects.select_for_update(nowait=False).get(pk=seat_id)
+
+                # Delegate the rest of the checks/creation to Booking.create_hold
+                # (expects signature: create_hold(cls, user, seat, event, hold_seconds=300))
+                try:
+                    booking = Booking.create_hold(request.user, seat, event)
+                except ValueError as e:
+                    return Response({"detail": str(e)}, status=status.HTTP_409_CONFLICT)
+
+        except Seat.DoesNotExist:
+            return Response({"detail": "Seat not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize single Booking instance
+        serializer = BookingSerializer(booking, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # Confirm held bookings (after payment)
