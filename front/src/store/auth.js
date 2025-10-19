@@ -87,7 +87,10 @@ export default {
             return
         },
         async changeAccess({ }) {
-            const response = await instance.post('/api/auth/changeAccess', {},  // Body data (empty in this case)
+            
+            const response = await instance.post('/api/auth/changeAccess', {
+                uid: localStorage.getItem('uid')
+            },  // Body data (empty in this case)
                 {
                     headers: {
                         'x-refresh-token': localStorage.getItem('refreshToken')

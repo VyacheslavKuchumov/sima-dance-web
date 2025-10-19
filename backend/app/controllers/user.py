@@ -45,8 +45,8 @@ def signin(user_data: UserSignin, db: Session) -> UserTokensOut:
     refresh_token = create_refresh_token({"uid": str(user_record.user_uid)}, REFRESH_LIFETIME)
 
     # Update record with tokens
-    user_record.AccessToken = access_token
-    user_record.RefreshToken = refresh_token
+    user_record.access_token = access_token
+    user_record.refresh_token = refresh_token
     db.commit()
 
     return UserTokensOut(uid=user_record.user_uid, accessToken=access_token, refreshToken=refresh_token)
@@ -67,8 +67,8 @@ def change_access(refresh_token: str, db: Session) -> UserChangeAccessResponse:
     new_access = create_access_token({"uid": str(user_record.user_uid)}, ACCESS_LIFETIME)
     new_refresh = create_refresh_token({"uid": str(user_record.user_uid)}, REFRESH_LIFETIME)
 
-    user_record.AccessToken = new_access
-    user_record.RefreshToken = new_refresh
+    user_record.access_token = new_access
+    user_record.refresh_token = new_refresh
     db.commit()
 
     return UserChangeAccessResponse(uid=user_record.user_uid, accessToken=new_access, refreshToken=new_refresh)

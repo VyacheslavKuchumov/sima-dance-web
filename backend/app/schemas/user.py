@@ -20,7 +20,7 @@ class UserTokensOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class UserChangeAccessResponse(BaseModel):
-    user_uid: UUID
+    uid: UUID
     accessToken: str
     refreshToken: str
 
