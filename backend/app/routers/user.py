@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.controllers import user as user_controller
 from app.database import get_db
 from app.middlewares.auth import verify_token
-from app.schemas.user import UserOut, UserUpdateLikes, UserUpdate
+from app.schemas.user import UserOut, UserUpdate
 from uuid import UUID
 
 router = APIRouter()

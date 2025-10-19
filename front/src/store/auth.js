@@ -81,8 +81,8 @@ export default {
             console.log(result)
             localStorage.setItem('accessToken', result.accessToken)
             localStorage.setItem('refreshToken', result.refreshToken)
-            localStorage.setItem('uid', result.auth_uid)
-            localStorage.setItem('username', result.username)
+            localStorage.setItem('uid', result.uid)
+            localStorage.setItem('username', result.name)
             router.push('/')
             return
         },

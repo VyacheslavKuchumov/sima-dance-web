@@ -9,10 +9,14 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(BigInteger, primary_key=True, index=True)
-     # Here we define user_uid as both the primary reference for the user and a foreign key
-    # that points to Auth.auth_uid.
-    user_uid = Column(UUID(as_uuid=True), ForeignKey("auths.auth_uid"), unique=True, index=True, default=uuid.uuid4)
     
+    user_uid = Column(UUID(as_uuid=True), unique=True, index=True, default=uuid.uuid4)
+    
+    email = Column(Text, nullable=False, unique=True)
+    password = Column(Text, nullable=False)
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
+
     name = Column(Text, nullable=False)
     child_name = Column(Text, nullable=False)
     group_name = Column(Text, nullable=False)
@@ -20,7 +24,5 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Establishes the association to the Auth model
-    auth = relationship("Auth", back_populates="user", uselist=False)
     
     booking = relationship("Booking", uselist=False, back_populates="user")
