@@ -12,7 +12,7 @@ def get_event_seats(event_uid):
     Возвращает:
       list: Список словарей с информацией о местах или пустой список при ошибке.
     """
-    url = f"https://simadancing.ru/api/seats_in_events/{event_uid}"
+    url = f"https://sima-server.vyachik-dev.ru/api/seats_in_events/{event_uid}"
     try:
         response = requests.get(url)
         response.raise_for_status()  # вызывает исключение при ошибочном статусе запроса
@@ -41,7 +41,7 @@ def update_seat_in_event(seat_in_event_id, new_price, new_status):
     Возвращает:
       bool: True, если обновление прошло успешно, иначе False.
     """
-    url = f"https://simadancing.ru/api/seats_in_events/{seat_in_event_id}"
+    url = f"https://sima-server.vyachik-dev.ru/api/seats_in_events/{seat_in_event_id}"
     payload = {"price": new_price, "status": new_status}
 
     try:
@@ -60,7 +60,7 @@ def update_seat_in_event(seat_in_event_id, new_price, new_status):
 
 def change_seats(section_filter, row_filter, seat_start, seat_end, new_price, new_status):
     # ID мероприятия, по которому будет осуществлен запрос
-    event_uid = "6c92a6e3-1b59-4845-9e75-68cd03cf0f38"
+    event_uid = "59fff144-173c-4772-bc42-6cbfeec2500f"
 
     # Получение списка мест с API (контекст модели SeatInEvent)
     seats = get_event_seats(event_uid)
