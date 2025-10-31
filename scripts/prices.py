@@ -148,72 +148,72 @@ change_seats(section_filter=section, row_filter="13", seat_start=16, seat_end=26
 # ПАРТЕР
 section = "Партер"
 row = "12"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "11"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "10"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "9"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "8"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "7"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "6"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=4, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=5, seat_end=8, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=9, seat_end=16, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=17, seat_end=20, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=21, seat_end=24, new_price=500, new_status="available")
 
 row = "5"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=3, new_price=400, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=4, seat_end=7, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=8, seat_end=15, new_price=550, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=16, seat_end=19, new_price=500, new_status="available")
-change_seats(section_filter=section, row_filter=row, seat_start=20, seat_end=22, new_price=400, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=3, new_price=500, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=4, seat_end=7, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=8, seat_end=15, new_price=650, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=16, seat_end=19, new_price=600, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=20, seat_end=22, new_price=500, new_status="available")
 
 row = "4"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=22, new_price=550, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=22, new_price=650, new_status="available")
 
 row = "3"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=20, new_price=550, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=20, new_price=750, new_status="available")
 
 row = "2"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=18, new_price=550, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=18, new_price=750, new_status="available")
 
 row = "1"
-change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=16, new_price=550, new_status="available")
+change_seats(section_filter=section, row_filter=row, seat_start=1, seat_end=16, new_price=750, new_status="available")
 
 
 
@@ -225,8 +225,8 @@ change_seats(section_filter=section, row_filter="2", seat_start=15, seat_end=23,
 change_seats(section_filter=section, row_filter="3", seat_start=13, seat_end=16, new_price=500, new_status="unavailable")
 
 section = "Партер"
-change_seats(section_filter=section, row_filter="5", seat_start=10, seat_end=11, new_price=550, new_status="unavailable")
-change_seats(section_filter=section, row_filter="11", seat_start=13, seat_end=16, new_price=550, new_status="unavailable")
+change_seats(section_filter=section, row_filter="5", seat_start=10, seat_end=11, new_price=650, new_status="unavailable")
+change_seats(section_filter=section, row_filter="11", seat_start=13, seat_end=16, new_price=650, new_status="unavailable")
 
 section = "Партер"
-change_seats(section_filter=section, row_filter="1", seat_start=9, seat_end=9, new_price=550, new_status="unavailable")
+change_seats(section_filter=section, row_filter="1", seat_start=9, seat_end=9, new_price=750, new_status="unavailable")
