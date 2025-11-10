@@ -62,8 +62,8 @@ export default {
                 })
             })
             if (!checkStatuses(response.status)) return
-            window.alert('Вы были зарегистрированы')
-            router.push('/login')
+            // window.alert('Вы были зарегистрированы')
+            // router.push('/login')
             return
         },
         async login({ commit }, { email, password }) {

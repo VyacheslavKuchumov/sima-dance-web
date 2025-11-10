@@ -88,6 +88,7 @@
     methods: {
       ...mapActions({
         register: "auth/register",
+        login: "auth/login",
       }),
       async go_register() {
         this.overlay = true;
@@ -101,6 +102,11 @@
           };
           await this.register(formData);
         }
+        
+        await this.login({
+          email: this.email,
+          password: this.password
+        })
         this.overlay = false;
       },
     },
