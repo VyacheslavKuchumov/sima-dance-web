@@ -181,9 +181,9 @@
         
       </v-card-text>
       <v-card-actions>
-        <v-btn variant="primary" @click="redirectToExternalPage('https://payment.alfabank.ru/sc/TzMfqhRHpufumcmu')">Оплатить</v-btn>
         <v-spacer />
         <v-btn text @click="paymentDialog = false">Закрыть</v-btn>
+        <v-btn color="primary" @click="redirectToExternalPage('https://payment.alfabank.ru/sc/TzMfqhRHpufumcmu')">Оплатить</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
