@@ -165,31 +165,23 @@
     <v-card>
       <v-card-title class="text-h5">Оплата брони</v-card-title>
       <v-card-text>
-        
+        <!-- LEGACY!!! -->
         <!-- QR-код для оплаты через Тинькофф -->
-        <v-img
+        <!-- <v-img
           src="@/assets/qr_code.jpg"
           alt="QR-код Тинькофф для оплаты"
           contain
           max-width="250"
           class="mx-auto mb-4"
-        />
+        /> -->
         <p>
           Вы забронировали {{ bookedSeats().length }} мест
           на сумму <strong>{{ totalPrice() }} ₽</strong>.
         </p>
-        <!-- Телефон для перевода -->
-        <p class="subtitle-1">
-          Если вы являетесь клиентом Тинькофф Банка, просканируйте, пожалуйста, QR-код для оплаты. Для переводов с других банков воспользуйтесь следующим номером:
-        </p>
-        <p class="subtitle-1 font-weight-bold">
-          {{ phoneNumber }}
-        </p>
-        <p class="subtitle-1">
-          (Сбер, Альфа или Тинькофф)
-        </p>
+        
       </v-card-text>
       <v-card-actions>
+        <v-btn primary to="https://payment.alfabank.ru/sc/TzMfqhRHpufumcmu">Оплатить</v-btn>
         <v-spacer />
         <v-btn text @click="paymentDialog = false">Закрыть</v-btn>
       </v-card-actions>
