@@ -181,7 +181,7 @@
         
       </v-card-text>
       <v-card-actions>
-        <v-btn primary to="https://payment.alfabank.ru/sc/TzMfqhRHpufumcmu">Оплатить</v-btn>
+        <v-btn variant="primary" @click="redirectToExternalPage('https://payment.alfabank.ru/sc/TzMfqhRHpufumcmu')">Оплатить</v-btn>
         <v-spacer />
         <v-btn text @click="paymentDialog = false">Закрыть</v-btn>
       </v-card-actions>
@@ -610,6 +610,9 @@ export default {
     },
   },
   methods: {
+    redirectToExternalPage(url) {
+      window.location.href = url;
+    },
     user() {
       return this.$store.state.user.user;
     },
