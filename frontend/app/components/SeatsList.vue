@@ -90,18 +90,16 @@ const props = defineProps({
   event_id: String,
 })
 
-const config = useRuntimeConfig()
 const auth = useAuthStore()
 // Current user
-const currentUserId = auth.user?.id || null
+const currentUserId = computed(() => auth.userId ?? auth.user?.id ?? null)
 
 const toast = useToast()
 
 // Fetch seat data
 const { data, pending, error } = useFetch(
-  `${config.public.BACKEND_URL}/api/booking/events/${props.event_id}/seatmap/`, {
-    "lazy": true
-  }
+  () => `/api/backend/booking/events/${props.event_id}/seatmap/`,
+  { lazy: true }
 )
 
 const seats = computed(() => data.value ?? [])
@@ -118,10 +116,13 @@ async function onSeatClick(seat) {
     const status = seatStatus(seat)
     if (status === 'available' || (status === 'booked' && isCurrentUserSeat(seat))) {
       try {
-        await $fetch(`${config.public.BACKEND_URL}/api/booking/hold/`, {
+        const ok = await auth.ensureAccessToken()
+        if (!ok) return
+
+        await $fetch('/api/backend/booking/hold/', {
           method: 'POST',
           body: { "seat_id": seat.id, "event_id": props.event_id },
-          headers: { Authorization: `Bearer ${auth.accessToken}` }
+          headers: auth.authHeader()
         })
         toggleSeatSelection(seat)
       }catch (err) {

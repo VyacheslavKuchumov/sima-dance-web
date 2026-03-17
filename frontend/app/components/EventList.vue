@@ -33,14 +33,13 @@
 
 <script setup>
 
-const config = useRuntimeConfig()
 // composables used in your original component
 const formatDate = useDateConverter()
 const toast = useToast()
 
 // Fetch events with useFetch (no store)
 // Adjust endpoint if your API route differs
-const { data, pending, error } = useFetch(`${config.public.BACKEND_URL}/api/booking/events/`, {
+const { data, pending, error } = useFetch('/api/backend/booking/events/', {
   // automatic fetch on setup; remove or change options if needed
   // e.g. headers, credentials, baseURL, etc.
 })

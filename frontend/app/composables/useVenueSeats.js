@@ -46,7 +46,8 @@ export function useVenueSeats(seatsRaw, currentUserId = null) {
   }
 
   function isCurrentUserSeat(seat) {
-    return currentUserId != null && seat.user_id === currentUserId
+    const resolvedUserId = isRef(currentUserId) ? currentUserId.value : currentUserId
+    return resolvedUserId != null && seat.user_id === resolvedUserId
   }
     function toggleSeatSelection(seat) {
     const index = selectedSeats.value.findIndex(s => s.id === seat.id)

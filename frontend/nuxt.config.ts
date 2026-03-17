@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NUXT_DEVTOOLS !== 'false' },
 
   modules: [
     '@nuxt/eslint',
@@ -13,9 +13,7 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate'
   ],
   runtimeConfig: {
-    public: {
-      BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000'
-    }
+    backendUrl: 'http://localhost:8000'
   },
   css: ['~/assets/css/main.css']
 })

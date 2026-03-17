@@ -35,26 +35,39 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '0.0.0.0',
-    'sima-test.vyachik-dev.ru',
-    'sima-test-server.vyachik-dev.ru'
-]
+def _clean_list(value):
+    return [item for item in value if item]
 
-CORS_ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'https://sima-test.vyachik-dev.ru',
-  'http://127.0.0.1:8000'
-]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://sima-test.vyachik-dev.ru',
-    'http://127.0.0.1:8000',
-    'http://localhost:8000',
-]
+ALLOWED_HOSTS = _clean_list(env.list(
+    'ALLOWED_HOSTS',
+    default=[
+        'localhost',
+        '127.0.0.1',
+        '0.0.0.0',
+        'sima-test.vyachik-dev.ru',
+        'sima-test-server.vyachik-dev.ru',
+    ],
+))
+
+CORS_ALLOWED_ORIGINS = _clean_list(env.list(
+    'CORS_ALLOWED_ORIGINS',
+    default=[
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://sima-test.vyachik-dev.ru',
+        'http://127.0.0.1:8000',
+    ],
+))
+
+CSRF_TRUSTED_ORIGINS = _clean_list(env.list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=[
+        'https://sima-test.vyachik-dev.ru',
+        'http://127.0.0.1:8000',
+        'http://localhost:8000',
+    ],
+))
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,

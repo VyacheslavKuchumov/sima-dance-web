@@ -1,16 +1,18 @@
 import { useAuthStore } from '~/stores/auth'
 
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuthStore()
+  auth.hydrateFromToken()
+  await auth.ensureAccessToken()
 
-  // Skip check for public pages
   const publicPages = ['/login', '/signup']
-  if (publicPages.includes(to.path)) {
-    return
+  const isPublicPage = publicPages.includes(to.path)
+
+  if (!auth.isAuthenticated && !isPublicPage) {
+    return navigateTo('/login')
   }
 
-  // Redirect if not logged in
-  if (!auth.isAuthenticated) {
-    return navigateTo('/login')
+  if (auth.isAuthenticated && isPublicPage) {
+    return navigateTo('/')
   }
 })
