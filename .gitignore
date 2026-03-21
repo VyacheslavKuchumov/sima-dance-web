@@ -1,4 +1,6 @@
 .env
+.env.production
+.env.production.*
 .venv
 
 /.vscode
