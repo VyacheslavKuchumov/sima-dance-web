@@ -114,6 +114,7 @@ wait_for_http() {
   local url="$1"
   local host="$2"
   local name="$3"
+  local ready_status_pattern="${4:-}"
 
   if ! command -v curl >/dev/null 2>&1; then
     echo "curl is not installed; skipping HTTP readiness check for ${name}."
@@ -123,10 +124,11 @@ wait_for_http() {
   echo "Waiting for ${name} at ${url}..."
   for _ in $(seq 1 60); do
     status="$(curl -k -s -o /dev/null -w '%{http_code}' --resolve "${host}:443:127.0.0.1" "$url" || true)"
-    if [ "$status" != "000" ]; then
+    if [[ "$status" =~ ^[1-5][0-9][0-9]$ ]] && { [ -z "$ready_status_pattern" ] || [[ "$status" =~ $ready_status_pattern ]]; }; then
       echo "${name} responded with HTTP ${status}."
       return 0
     fi
+    echo "${name} is not ready yet (HTTP ${status})."
     sleep 2
   done
 
@@ -139,8 +141,8 @@ wait_for_service "backend" "running" 60
 wait_for_service "frontend" "running" 60
 wait_for_service "traefik" "running" 60
 
-wait_for_http "https://${TRAEFIK_API_HOST}/api/" "$TRAEFIK_API_HOST" "backend"
-wait_for_http "https://${TRAEFIK_WEB_HOST}/" "$TRAEFIK_WEB_HOST" "frontend"
+wait_for_http "https://${TRAEFIK_API_HOST}/api/booking/events/" "$TRAEFIK_API_HOST" "backend" '^[234][0-9][0-9]$'
+wait_for_http "https://${TRAEFIK_WEB_HOST}/" "$TRAEFIK_WEB_HOST" "frontend" '^[23][0-9][0-9]$'
 
 if [ "$run_set_prices" = true ]; then
   echo "Applying seat prices..."
