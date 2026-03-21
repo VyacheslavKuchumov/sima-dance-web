@@ -113,7 +113,7 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
-const toast = useToast()
+const toast = useAppToast()
 
 const currentUserId = computed(() => auth.userId ?? auth.user?.id ?? null)
 const eventId = computed(() => String(props.eventId))
@@ -177,10 +177,22 @@ async function onSeatClick(seat) {
   try {
     if (status === 'available') {
       await bookingStore.holdSeat({ eventId: eventId.value, seatId: seat.id })
+      const isMobileLayout = import.meta.client && window.innerWidth < 1024
+
       toast.add({
         title: 'Место удержано',
-        description: 'Оно добавлено в корзину справа.',
+        description: isMobileLayout
+          ? 'Место добавлено. Откройте корзину, чтобы подтвердить бронь.'
+          : 'Оно добавлено в корзину справа.',
         color: 'success',
+        actions: isMobileLayout
+          ? [{
+              label: 'Перейти в корзину',
+              color: 'neutral',
+              variant: 'outline',
+              to: '/cart',
+            }]
+          : [],
       })
       toast.add({
         title: 'Подтвердите бронь',
@@ -264,11 +276,11 @@ onMounted(async () => {
     await syncBookings()
   } catch (error) {
     console.error('Failed to sync bookings on mount', error)
-    toast.add({
-      title: 'Не удалось синхронизировать корзину',
-      description: 'Схема зала останется доступной, попробуйте обновить позже.',
-      color: 'warning',
-    })
+  toast.add({
+    title: 'Не удалось синхронизировать корзину',
+    description: 'Схема зала останется доступной, попробуйте обновить позже.',
+    color: 'warning',
+  })
   }
 })
 </script>

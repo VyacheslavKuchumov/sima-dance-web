@@ -18,6 +18,7 @@ class BookingFlowTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="alice", password="password123")
         self.other_user = User.objects.create_user(username="bob", password="password123")
+        self.staff_user = User.objects.create_user(username="admin", password="password123", is_staff=True)
         self.event = Event.objects.create(title="Spring Gala", starts_at=date(2026, 4, 1))
         self.other_event = Event.objects.create(title="Summer Gala", starts_at=date(2026, 4, 2))
         self.seat = Seat.objects.create(section="Партер", row=1, number=1, price="1500.00")
@@ -139,6 +140,35 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["event"], self.event.id)
+
+    def test_staff_booking_list_defaults_to_current_user_only(self):
+        Booking.create_hold(self.user, self.seat, self.event)
+        other_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1500.00")
+        staff_booking = Booking.create_hold(self.staff_user, other_seat, self.event)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.get(
+            reverse("booking-list"),
+            {"status": "held", "active_only": "true"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], staff_booking.id)
+
+    def test_staff_can_request_all_users_bookings_explicitly(self):
+        first_booking = Booking.create_hold(self.user, self.seat, self.event)
+        other_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1500.00")
+        second_booking = Booking.create_hold(self.staff_user, other_seat, self.event)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.get(
+            reverse("booking-list"),
+            {"status": "held", "active_only": "true", "all_users": "true"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual({item["id"] for item in response.data}, {first_booking.id, second_booking.id})
 
     def test_seatmap_includes_booking_status(self):
         self.hold_seat()

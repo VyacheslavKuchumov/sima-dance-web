@@ -273,17 +273,23 @@ class BookingViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_permissions(self):
-        # Admins can see all; regular users only their own bookings
-        if self.request.method in ("GET", "HEAD", "OPTIONS") and self.request.user and self.request.user.is_staff:
+        all_users = self.request.query_params.get("all_users")
+        if (
+            self.request.method in ("GET", "HEAD", "OPTIONS")
+            and self.request.user
+            and self.request.user.is_staff
+            and all_users in {"1", "true", "yes"}
+        ):
             return [permissions.IsAdminUser()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
-        queryset = super().get_queryset()
+        queryset = Booking.objects.filter(user=user).select_related("seat", "event").order_by("-created_at")
+        all_users = self.request.query_params.get("all_users")
 
-        if user.is_authenticated and not user.is_staff:
-            queryset = Booking.objects.filter(user=user).select_related("seat", "event").order_by("-created_at")
+        if user.is_authenticated and user.is_staff and all_users in {"1", "true", "yes"}:
+            queryset = super().get_queryset()
 
         status_param = self.request.query_params.get("status")
         event_id = self.request.query_params.get("event_id")

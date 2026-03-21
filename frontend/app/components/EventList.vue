@@ -35,7 +35,7 @@
 
 // composables used in your original component
 const formatDate = useDateConverter()
-const toast = useToast()
+const toast = useAppToast()
 
 // Fetch events with useFetch (no store)
 // Adjust endpoint if your API route differs

@@ -263,7 +263,7 @@ const props = defineProps({
 const emit = defineEmits(['changed'])
 
 const bookingStore = useBookingStore()
-const toast = useToast()
+const toast = useAppToast()
 
 const checkoutOpen = ref(false)
 const bookedCancellationOpen = ref(false)

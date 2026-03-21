@@ -15,9 +15,11 @@
         :event-id="eventId"
       />
 
-      <BookingCart
-        :event-id="eventId"
-      />
+      <div class="hidden lg:block">
+        <BookingCart
+          :event-id="eventId"
+        />
+      </div>
     </div>
   </div>
 </template>

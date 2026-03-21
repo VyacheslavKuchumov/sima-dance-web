@@ -104,7 +104,7 @@ const state = reactive({
   confirmPassword: ''
 })
 
-const toast = useToast()
+const toast = useAppToast()
 async function onSubmit(event: FormSubmitEvent<Schema>) {
 
   loading.value = true

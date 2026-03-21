@@ -66,7 +66,7 @@ import * as v from 'valibot'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 const auth = useAuthStore()
-const toast = useToast()
+const toast = useAppToast()
 const loading = ref(false)
 
 const schema = v.object({

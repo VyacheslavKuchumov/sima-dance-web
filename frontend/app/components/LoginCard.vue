@@ -53,7 +53,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 const loading = ref(false)
 const auth    = useAuthStore()
 const router  = useRouter()
-const toast   = useToast()
+const toast   = useAppToast()
 
 // Schema
 const schema = v.object({
