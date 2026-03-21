@@ -4,7 +4,7 @@
       <h1 class="text-xl font-bold" @click="$router.push('/')">Simadancing 💃</h1>
 
       <!-- Slideover Menu -->
-      <USlideover title="Меню" close-icon="i-lucide-x">
+      <USlideover v-model:open="menuOpen" title="Меню" close-icon="i-lucide-x">
         <UButton
           icon="i-lucide-menu"
           color="neutral"
@@ -52,6 +52,8 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const auth = useAuthStore()
+const route = useRoute()
+const menuOpen = ref(false)
 
 // Build navigation items dynamically depending on authentication
 const items = computed<NavigationMenuItem[][]>(() => {
@@ -71,5 +73,9 @@ const items = computed<NavigationMenuItem[][]>(() => {
       { label: 'Войти', icon: 'i-lucide-log-in', to: '/login' }
     ]]
   }
+})
+
+watch(() => route.fullPath, () => {
+  menuOpen.value = false
 })
 </script>
