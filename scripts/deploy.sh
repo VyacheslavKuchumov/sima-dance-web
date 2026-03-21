@@ -6,6 +6,7 @@ cd "$root_dir"
 
 env_file="$root_dir/.env.production"
 build_flag="--build"
+run_set_prices=true
 
 usage() {
   cat <<'EOF'
@@ -15,6 +16,7 @@ Usage:
 Options:
   --env-file PATH   Env file for docker compose. Default: .env.production
   --no-build        Skip image rebuild before start.
+  --skip-set-prices Skip automatic seat price update after deploy.
   --help            Show this help.
 EOF
 }
@@ -27,6 +29,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-build)
       build_flag=""
+      shift
+      ;;
+    --skip-set-prices)
+      run_set_prices=false
       shift
       ;;
     --help)
@@ -135,6 +141,13 @@ wait_for_service "traefik" "running" 60
 
 wait_for_http "https://${TRAEFIK_API_HOST}/api/" "$TRAEFIK_API_HOST" "backend"
 wait_for_http "https://${TRAEFIK_WEB_HOST}/" "$TRAEFIK_WEB_HOST" "frontend"
+
+if [ "$run_set_prices" = true ]; then
+  echo "Applying seat prices..."
+  bash "$root_dir/scripts/set_prices.sh" \
+    --api-base "https://${TRAEFIK_API_HOST}/api/booking" \
+    --skip-event-create
+fi
 
 echo
 echo "Deploy finished."
