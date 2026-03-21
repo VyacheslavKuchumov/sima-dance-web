@@ -42,6 +42,7 @@ class SeatSerializer(serializers.ModelSerializer):
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     seat = SeatSerializer(read_only=True)
+    event_title = serializers.CharField(source="event.title", read_only=True)
     seat_id = serializers.PrimaryKeyRelatedField(
         queryset=Seat.objects.all(),
         write_only=True,
@@ -62,6 +63,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "seat_id",
             "event",
             "event_id",
+            "event_title",
             "status",
             "created_at",
             "updated_at",

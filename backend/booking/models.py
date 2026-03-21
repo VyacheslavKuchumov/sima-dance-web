@@ -61,7 +61,11 @@ class Booking(models.Model):
     class Meta:
         # Prevent two confirmed bookings for the same seat (PostgreSQL conditional unique index)
         constraints = [
-            UniqueConstraint(fields=['seat'], condition=Q(status="Booked"), name='unique_booked_seat')
+            UniqueConstraint(
+                fields=['event', 'seat'],
+                condition=Q(status='booked'),
+                name='unique_booked_event_seat'
+            )
         ]
         indexes = [
             models.Index(fields=['status', 'expires_at']),

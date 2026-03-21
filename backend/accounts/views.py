@@ -1,15 +1,17 @@
-from django.shortcuts import render
-
-# Create your views here.
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from .serializers import UserSerializer, UserSignupSerializer
+from .serializers import (
+    UserSerializer,
+    UserSignupSerializer,
+    UserUpdateSerializer,
+    ChangePasswordSerializer,
+)
 
 User = get_user_model()
+
 
 class UserDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -17,6 +19,35 @@ class UserDetailView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UserUpdateSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save(update_fields=['password'])
+
+        return Response(
+            {'detail': 'Пароль успешно обновлен.'},
+            status=status.HTTP_200_OK,
+        )
 
 
 class SignupView(APIView):

@@ -109,6 +109,8 @@ fi
 echo "Local stack is running."
 echo "Frontend: http://localhost:3000"
 echo "Backend:  http://localhost:8000"
+echo "Create Django superuser: $root_dir/scripts/create_superuser.sh"
+echo "Run backend tests:      $root_dir/scripts/run_tests.sh [--smoke]"
 
 while true; do
   if ! kill -0 "$backend_pid" 2>/dev/null; then

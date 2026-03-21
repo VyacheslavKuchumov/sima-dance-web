@@ -6,6 +6,7 @@ from .views import (
     SeatMapView,
     HoldSeatsView,
     ConfirmBookingView,
+    ReleaseBookingView,
     BookingViewSet,
 )
 
@@ -21,4 +22,5 @@ urlpatterns = [
     # hold and confirm endpoints
     path("hold/", HoldSeatsView.as_view(), name="hold-seats"),
     path("confirm/", ConfirmBookingView.as_view(), name="confirm-booking"),
+    path("bookings/<int:booking_id>/release/", ReleaseBookingView.as_view(), name="release-booking"),
 ]

@@ -116,6 +116,29 @@ export const useAuthStore = defineStore('auth', {
       this.userId = Number(this.user?.id) || this.userId
       return this.user
     },
+    async updateProfile(payload) {
+      const ok = await this.ensureAccessToken()
+      if (!ok) return null
+
+      this.user = await $fetch('/api/backend/accounts/me/', {
+        method: 'PATCH',
+        body: payload,
+        headers: this.authHeader(),
+      })
+      this.userId = Number(this.user?.id) || this.userId
+      return this.user
+    },
+    async changePassword(payload) {
+      const ok = await this.ensureAccessToken()
+      if (!ok) return false
+
+      await $fetch('/api/backend/accounts/change-password/', {
+        method: 'POST',
+        body: payload,
+        headers: this.authHeader(),
+      })
+      return true
+    },
     logout(redirect = true) {
       this.accessToken = null
       this.refreshToken = null

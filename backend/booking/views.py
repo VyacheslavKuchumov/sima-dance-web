@@ -1,11 +1,11 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction, IntegrityError
+from django.db.models import Q
 from .models import Event, Seat, Booking
 from .serializers import EventSerializer, SeatSerializer, BookingSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -76,7 +76,7 @@ class SeatMapView(APIView):
 
         # 3) build a mapping: seat_id -> booking summary
         now = timezone.now()
-        booking_map = {}  # seat_id -> {"status": ..., "user_id": ...}
+        booking_map = {}  # seat_id -> {"status": ..., "user_id": ..., "expires_at": ...}
         STATUS_BOOKED = Booking.STATUS_BOOKED
         STATUS_HELD = Booking.STATUS_HELD
 
@@ -92,11 +92,19 @@ class SeatMapView(APIView):
                 continue  # already have a BOOKED; skip
 
             if st == STATUS_BOOKED:
-                booking_map[sid] = {"status": STATUS_BOOKED, "user_id": uid}
+                booking_map[sid] = {
+                    "status": STATUS_BOOKED,
+                    "user_id": uid,
+                    "expires_at": None,
+                }
             elif st == STATUS_HELD and expires and expires > now:
                 # if not booked, keep held (only if not expired)
                 if not existing or existing["status"] != STATUS_BOOKED:
-                    booking_map[sid] = {"status": STATUS_HELD, "user_id": uid}
+                    booking_map[sid] = {
+                        "status": STATUS_HELD,
+                        "user_id": uid,
+                        "expires_at": expires,
+                    }
             # ignore other statuses or expired holds
 
         # 4) build response without hitting DB anymore
@@ -106,6 +114,7 @@ class SeatMapView(APIView):
             b = booking_map.get(sid)
             is_booked = bool(b and b["status"] == STATUS_BOOKED)
             is_held = bool(b and b["status"] == STATUS_HELD)
+            booking_status = "booked" if is_booked else "held" if is_held else "available" if s["available"] else "unavailable"
 
             available = bool(s["available"]) and not is_booked and not is_held
             user_id = b["user_id"] if b else None
@@ -118,6 +127,12 @@ class SeatMapView(APIView):
                 "number": s["number"],
                 "user_id": user_id,
                 "available": available,
+                "booking_status": booking_status,
+                "held_until": (
+                    b["expires_at"].isoformat()
+                    if b and b["status"] == STATUS_HELD and b.get("expires_at")
+                    else None
+                ),
                 "price": str(price_snapshot) if price_snapshot is not None else None,
             })
 
@@ -187,6 +202,11 @@ class ConfirmBookingView(APIView):
         bookings_qs = Booking.objects.filter(id__in=booking_ids, user=request.user).select_for_update()
         with transaction.atomic():
             bookings = list(bookings_qs.select_related("seat", "event"))
+            if len(bookings) != len(booking_ids):
+                return Response(
+                    {"detail": "Some bookings were not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             # Validate all bookings
             for b in bookings:
                 if b.status != Booking.STATUS_HELD:
@@ -194,24 +214,62 @@ class ConfirmBookingView(APIView):
                 if b.expires_at and b.expires_at < now:
                     return Response({"detail": f"Hold expired for booking: {b.id}"}, status=status.HTTP_400_BAD_REQUEST)
                 # Double-check no other booked exists for the same seat
-                if Booking.objects.filter(seat=b.seat, status=Booking.STATUS_BOOKED).exclude(id=b.id).exists():
+                if Booking.objects.filter(
+                    seat=b.seat,
+                    event=b.event,
+                    status=Booking.STATUS_BOOKED
+                ).exclude(id=b.id).exists():
                     return Response({"detail": f"Seat already booked: {b.seat.id}"}, status=status.HTTP_409_CONFLICT)
 
             # Mark as booked
             for b in bookings:
                 b.status = Booking.STATUS_BOOKED
                 b.expires_at = None
-                if payment_ref:
-                    b.payment_reference = payment_ref if hasattr(b, "payment_reference") else ""
-                b.save()
+                b.save(update_fields=["status", "expires_at", "updated_at"])
 
         serializer = BookingSerializer(bookings, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ReleaseBookingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, booking_id):
+        now = timezone.now()
+
+        with transaction.atomic():
+            booking = get_object_or_404(
+                Booking.objects.select_for_update().select_related("seat", "event"),
+                pk=booking_id,
+                user=request.user,
+            )
+
+            if booking.status != Booking.STATUS_HELD:
+                return Response(
+                    {"detail": "Only held bookings can be released."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if booking.expires_at and booking.expires_at < now:
+                booking.status = Booking.STATUS_EXPIRED
+                booking.save(update_fields=["status", "updated_at"])
+                return Response(
+                    {"detail": "Hold already expired."},
+                    status=status.HTTP_409_CONFLICT
+                )
+
+            booking.status = Booking.STATUS_CANCELLED
+            booking.expires_at = now
+            booking.save(update_fields=["status", "expires_at", "updated_at"])
+
+        serializer = BookingSerializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Booking viewset: users can list their bookings; admins can view all
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.select_related("seat", "event", "user").all().order_by("-created_at")
     serializer_class = BookingSerializer
+    pagination_class = None
 
     def get_permissions(self):
         # Admins can see all; regular users only their own bookings
@@ -221,9 +279,29 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = super().get_queryset()
+
         if user.is_authenticated and not user.is_staff:
-            return Booking.objects.filter(user=user).select_related("seat", "event").order_by("-created_at")
-        return super().get_queryset()
+            queryset = Booking.objects.filter(user=user).select_related("seat", "event").order_by("-created_at")
+
+        status_param = self.request.query_params.get("status")
+        event_id = self.request.query_params.get("event_id")
+        active_only = self.request.query_params.get("active_only")
+        now = timezone.now()
+
+        if status_param:
+            statuses = [value.strip() for value in status_param.split(",") if value.strip()]
+            queryset = queryset.filter(status__in=statuses)
+
+        if event_id:
+            queryset = queryset.filter(event_id=event_id)
+
+        if active_only in {"1", "true", "yes"}:
+            queryset = queryset.exclude(
+                Q(status=Booking.STATUS_HELD) & Q(expires_at__lt=now)
+            )
+
+        return queryset
 
     def perform_create(self, serializer):
         # Creation through API should be via HoldSeatsView — but support direct create if needed
