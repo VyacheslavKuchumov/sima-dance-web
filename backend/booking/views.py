@@ -11,8 +11,8 @@ from .serializers import EventSerializer, SeatSerializer, BookingSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 
 
-# Read-only Event viewset
-class EventViewSet(viewsets.ReadOnlyModelViewSet):
+# Event viewset used by local setup scripts and frontend reads
+class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by("-starts_at")
     serializer_class = EventSerializer
     permission_classes = [permissions.AllowAny]

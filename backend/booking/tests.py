@@ -102,3 +102,19 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]["booking_status"], "held")
         self.assertIn("held_until", response.data[0])
+
+    def test_events_endpoint_allows_create(self):
+        self.client.force_authenticate(None)
+        response = self.client.post(
+            reverse("event-list"),
+            {
+                "title": "Autumn Gala",
+                "starts_at": "2026-05-01",
+                "img_url": "",
+                "archived": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["title"], "Autumn Gala")
