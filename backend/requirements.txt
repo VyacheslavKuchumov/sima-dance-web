@@ -1,4 +1,6 @@
 asgiref
+channels
+channels-redis
 Django
 django-cors-headers
 django-debug-toolbar
@@ -13,3 +15,5 @@ tzdata
 whitenoise
 djangorestframework
 djangorestframework-simplejwt
+uvicorn
+websockets

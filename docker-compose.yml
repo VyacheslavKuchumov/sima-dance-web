@@ -58,7 +58,7 @@ services:
     command: >-
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
-             gunicorn app.wsgi:application --bind 0.0.0.0:8000"
+             uvicorn app.asgi:application --host 0.0.0.0 --port 8000"
     labels:
       - traefik.enable=true
       - traefik.http.routers.sima-api.rule=Host(`${TRAEFIK_API_HOST:-api.sima.local}`)

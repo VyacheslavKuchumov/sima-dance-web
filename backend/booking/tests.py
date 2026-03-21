@@ -5,8 +5,10 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework.test import APIRequestFactory
 
 from .models import Booking, Event, Seat
+from .serializers import BookingSerializer
 
 
 User = get_user_model()
@@ -28,15 +30,39 @@ class BookingFlowTests(APITestCase):
             format="json",
         )
 
+    def assert_expires_in_about_30_minutes(self, expires_at):
+        expected_expires_at = timezone.now() + timedelta(minutes=30)
+        self.assertLessEqual(abs((expires_at - expected_expires_at).total_seconds()), 5)
+
     def test_user_can_release_held_booking(self):
         hold_response = self.hold_seat()
         self.assertEqual(hold_response.status_code, status.HTTP_201_CREATED)
         booking_id = hold_response.data["id"]
 
+        booking = Booking.objects.get(pk=booking_id)
+        self.assert_expires_in_about_30_minutes(booking.expires_at)
+
         release_response = self.client.post(reverse("release-booking", args=[booking_id]), format="json")
 
         self.assertEqual(release_response.status_code, status.HTTP_200_OK)
         self.assertEqual(release_response.data["status"], Booking.STATUS_CANCELLED)
+
+    def test_booking_serializer_defaults_expires_at_to_thirty_minutes(self):
+        factory = APIRequestFactory()
+        request = factory.post("/", {}, format="json")
+        request.user = self.user
+
+        serializer = BookingSerializer(
+            data={"seat_id": self.seat.id, "event_id": self.event.id},
+            context={"request": request},
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        booking = serializer.save()
+
+        self.assertEqual(booking.user, self.user)
+        self.assertEqual(booking.status, Booking.STATUS_HELD)
+        self.assert_expires_in_about_30_minutes(booking.expires_at)
 
     def test_confirm_allows_same_physical_seat_for_different_events(self):
         first_hold = self.hold_seat()
@@ -49,6 +75,7 @@ class BookingFlowTests(APITestCase):
         )
 
         self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(Booking.objects.get(pk=first_booking_id).expires_at)
 
         second_hold = self.hold_seat(event_id=self.other_event.id)
         self.assertEqual(second_hold.status_code, status.HTTP_201_CREATED)
@@ -64,6 +91,26 @@ class BookingFlowTests(APITestCase):
             Booking.objects.filter(seat=self.seat, status=Booking.STATUS_BOOKED).count(),
             2,
         )
+
+    def test_user_can_cancel_booked_booking(self):
+        hold_response = self.hold_seat()
+        booking_id = hold_response.data["id"]
+
+        confirm_response = self.client.post(
+            reverse("confirm-booking"),
+            {"booking_ids": [booking_id]},
+            format="json",
+        )
+        self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
+
+        cancel_response = self.client.post(reverse("release-booking", args=[booking_id]), format="json")
+
+        self.assertEqual(cancel_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(cancel_response.data["status"], Booking.STATUS_CANCELLED)
+
+        self.client.force_authenticate(self.other_user)
+        next_hold_response = self.hold_seat()
+        self.assertEqual(next_hold_response.status_code, status.HTTP_201_CREATED)
 
     def test_active_hold_blocks_other_user_until_released(self):
         self.assertEqual(self.hold_seat().status_code, status.HTTP_201_CREATED)

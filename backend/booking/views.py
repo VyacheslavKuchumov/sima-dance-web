@@ -171,7 +171,7 @@ class HoldSeatsView(APIView):
                 seat = Seat.objects.select_for_update(nowait=False).get(pk=seat_id)
 
                 # Delegate the rest of the checks/creation to Booking.create_hold
-                # (expects signature: create_hold(cls, user, seat, event, hold_seconds=300))
+                # using the model default hold duration.
                 try:
                     booking = Booking.create_hold(request.user, seat, event)
                 except ValueError as e:
@@ -244,13 +244,13 @@ class ReleaseBookingView(APIView):
                 user=request.user,
             )
 
-            if booking.status != Booking.STATUS_HELD:
+            if booking.status not in {Booking.STATUS_HELD, Booking.STATUS_BOOKED}:
                 return Response(
-                    {"detail": "Only held bookings can be released."},
+                    {"detail": "Only held or booked bookings can be cancelled."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            if booking.expires_at and booking.expires_at < now:
+            if booking.status == Booking.STATUS_HELD and booking.expires_at and booking.expires_at < now:
                 booking.status = Booking.STATUS_EXPIRED
                 booking.save(update_fields=["status", "updated_at"])
                 return Response(
@@ -258,8 +258,9 @@ class ReleaseBookingView(APIView):
                     status=status.HTTP_409_CONFLICT
                 )
 
+            previous_status = booking.status
             booking.status = Booking.STATUS_CANCELLED
-            booking.expires_at = now
+            booking.expires_at = now if previous_status == Booking.STATUS_HELD else booking.expires_at
             booking.save(update_fields=["status", "expires_at", "updated_at"])
 
         serializer = BookingSerializer(booking)

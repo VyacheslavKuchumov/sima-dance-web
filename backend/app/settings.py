@@ -108,6 +108,7 @@ INTERNAL_IPS = [
 
 INSTALLED_APPS = [
     'corsheaders',
+    'channels',
     'rest_framework',
     'django_filters',
     'django.contrib.admin',
@@ -121,7 +122,7 @@ INSTALLED_APPS = [
 
     # custom apps
     'accounts',
-    'booking',  
+    'booking.apps.BookingConfig',
 ]
 
 MIDDLEWARE = [
@@ -163,6 +164,7 @@ STORAGES = {
 }
 
 WSGI_APPLICATION = 'app.wsgi.application'
+ASGI_APPLICATION = 'app.asgi.application'
 
 
 # Database
@@ -171,6 +173,24 @@ WSGI_APPLICATION = 'app.wsgi.application'
 DATABASES = {
     'default': env.db(),
 }
+
+REDIS_URL = env('REDIS_URL', default='')
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+            },
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        }
+    }
 
 
 # Password validation

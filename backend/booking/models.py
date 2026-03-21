@@ -5,6 +5,7 @@ from django.utils import timezone
 from decimal import Decimal
 
 User = settings.AUTH_USER_MODEL
+DEFAULT_HOLD_SECONDS = 30 * 60
 
 class Event(models.Model):
     """An event (movie screening, flight, concert) that has seats (global seats used across events)."""
@@ -76,7 +77,7 @@ class Booking(models.Model):
         return f"{self.user} - {self.seat} ({self.status})"
 
     @classmethod
-    def create_hold(cls, user, seat, event, hold_seconds=300):
+    def create_hold(cls, user, seat, event, hold_seconds=DEFAULT_HOLD_SECONDS):
         """
         Atomically create (or extend) a held booking for a single seat.
 
@@ -84,7 +85,7 @@ class Booking(models.Model):
             user: User instance placing the hold.
             seat: Seat instance to hold.
             event: Event instance for which the seat is being held.
-            hold_seconds: int seconds until the hold expires (default 300).
+            hold_seconds: int seconds until the hold expires (default 1800).
 
         Returns:
             Booking instance (created or extended).

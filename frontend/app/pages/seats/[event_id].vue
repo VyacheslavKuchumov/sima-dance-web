@@ -13,13 +13,10 @@
     <div class="layout-grid">
       <SeatsList
         :event-id="eventId"
-        :refresh-nonce="refreshNonce"
-        @changed="handleBookingChange"
       />
 
       <BookingCart
         :event-id="eventId"
-        @changed="handleBookingChange"
       />
     </div>
   </div>
@@ -29,7 +26,6 @@
 const route = useRoute()
 
 const eventId = computed(() => String(route.params.event_id))
-const refreshNonce = ref(0)
 
 const { data } = useFetch(() => `/api/backend/booking/events/${eventId.value}/`, {
   server: false,
@@ -48,10 +44,6 @@ const eventDateLabel = computed(() => {
     year: 'numeric',
   }).format(new Date(event.value.starts_at))
 })
-
-function handleBookingChange() {
-  refreshNonce.value += 1
-}
 </script>
 
 <style scoped>

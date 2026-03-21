@@ -6,12 +6,24 @@
           <div>
             <h2 class="text-xl font-semibold">План зала</h2>
             <p class="text-sm text-gray-500">
-              Карта автоматически обновляется раз в 12-15 секунд, пока вкладка активна.
+              Карта обновляется по push-событиям, без перезагрузки страницы и без polling.
             </p>
           </div>
 
-          <UBadge v-if="isPollingActive" color="success" variant="subtle">
+          <UBadge
+            v-if="connectionState === 'connected'"
+            color="success"
+            variant="subtle"
+          >
             Live
+          </UBadge>
+
+          <UBadge
+            v-else-if="connectionState === 'connecting' || connectionState === 'reconnecting'"
+            color="warning"
+            variant="subtle"
+          >
+            Syncing
           </UBadge>
         </div>
 
@@ -24,7 +36,7 @@
       </div>
     </template>
 
-    <UProgress v-if="pending" animation="swing" />
+    <UProgress v-if="pending && !seats.length" animation="swing" />
 
     <DraggableContainer v-else label="Схема мест" class="max-h-110 md:max-h-150">
       <div
@@ -97,13 +109,7 @@ const props = defineProps({
     type: [String, Number],
     required: true,
   },
-  refreshNonce: {
-    type: Number,
-    default: 0,
-  },
 })
-
-const emit = defineEmits(['changed'])
 
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
@@ -113,9 +119,7 @@ const currentUserId = computed(() => auth.userId ?? auth.user?.id ?? null)
 const eventId = computed(() => String(props.eventId))
 const activeSeatId = ref(null)
 const isRefreshing = ref(false)
-const isPollingActive = ref(false)
-
-let pollTimer = null
+const refreshQueuePending = ref(false)
 
 const { data, pending, error, refresh } = useFetch(
   () => `/api/backend/booking/events/${eventId.value}/seatmap/`,
@@ -142,30 +146,11 @@ async function syncBookings() {
   await bookingStore.fetchEventBookings({ eventId: eventId.value, force: true })
 }
 
-function clearPollTimer() {
-  if (pollTimer) {
-    clearTimeout(pollTimer)
-    pollTimer = null
-  }
-}
-
-function schedulePoll() {
-  clearPollTimer()
-
-  if (!import.meta.client || document.hidden) {
-    isPollingActive.value = false
+async function refreshSeatMap({ syncCart = false } = {}) {
+  if (isRefreshing.value) {
+    refreshQueuePending.value = true
     return
   }
-
-  isPollingActive.value = true
-  const delay = 12_000 + Math.floor(Math.random() * 3_000)
-  pollTimer = window.setTimeout(() => {
-    void refreshSeatMap({ syncCart: true })
-  }, delay)
-}
-
-async function refreshSeatMap({ syncCart = false } = {}) {
-  if (isRefreshing.value) return
 
   isRefreshing.value = true
 
@@ -177,18 +162,12 @@ async function refreshSeatMap({ syncCart = false } = {}) {
     await Promise.all(tasks)
   } finally {
     isRefreshing.value = false
-    schedulePoll()
-  }
-}
 
-function handleVisibilityChange() {
-  if (document.hidden) {
-    clearPollTimer()
-    isPollingActive.value = false
-    return
+    if (refreshQueuePending.value) {
+      refreshQueuePending.value = false
+      await refreshSeatMap({ syncCart: true })
+    }
   }
-
-  void refreshSeatMap({ syncCart: true })
 }
 
 async function onSeatClick(seat) {
@@ -203,7 +182,11 @@ async function onSeatClick(seat) {
         description: 'Оно добавлено в корзину справа.',
         color: 'success',
       })
-      emit('changed')
+      toast.add({
+        title: 'Подтвердите бронь',
+        description: 'Место удерживается 30 минут. Завершите подтверждение в корзине, чтобы закрепить его за собой.',
+        color: 'warning',
+      })
       await refreshSeatMap({ syncCart: true })
       return
     }
@@ -226,7 +209,6 @@ async function onSeatClick(seat) {
         description: 'Место снова доступно для бронирования.',
         color: 'success',
       })
-      emit('changed')
       await refreshSeatMap({ syncCart: true })
       return
     }
@@ -256,35 +238,37 @@ async function onSeatClick(seat) {
   }
 }
 
+const { connectionState } = useSeatmapRealtimeSync({
+  eventId,
+  onMessage: () => {
+    void refreshSeatMap({ syncCart: true }).catch((error) => {
+      console.error('Failed to refresh seatmap after websocket update', error)
+    })
+  },
+})
+
 const {
   groupedSeats,
   sortedRowKeys,
   seatStatus,
 } = useVenueSeats(seats, currentUserId)
 
-watch(() => props.refreshNonce, (nextValue, previousValue) => {
-  if (nextValue === previousValue) return
-  void refreshSeatMap({ syncCart: true })
-})
-
 watch(eventId, () => {
-  void refreshSeatMap({ syncCart: true })
+  void refreshSeatMap({ syncCart: true }).catch((error) => {
+    console.error('Failed to refresh seatmap after event change', error)
+  })
 })
 
 onMounted(async () => {
-  await syncBookings()
-  schedulePoll()
-
-  if (import.meta.client) {
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-  }
-})
-
-onUnmounted(() => {
-  clearPollTimer()
-
-  if (import.meta.client) {
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  try {
+    await syncBookings()
+  } catch (error) {
+    console.error('Failed to sync bookings on mount', error)
+    toast.add({
+      title: 'Не удалось синхронизировать корзину',
+      description: 'Схема зала останется доступной, попробуйте обновить позже.',
+      color: 'warning',
+    })
   }
 })
 </script>

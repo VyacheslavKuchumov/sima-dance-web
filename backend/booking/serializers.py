@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from django.conf import settings
-from .models import Event, Seat, Booking
+from .models import Event, Seat, Booking, DEFAULT_HOLD_SECONDS
 
 User = settings.AUTH_USER_MODEL
 
@@ -91,8 +91,8 @@ class BookingSerializer(serializers.ModelSerializer):
         # snapshot the price at booking time
         validated_data["price_snapshot"] = seat.price
 
-        # auto-expire after e.g. 15 minutes (optional)
-        validated_data.setdefault("expires_at", timezone.now() + timezone.timedelta(minutes=15))
+        # auto-expire after 30 minutes when the caller does not provide an explicit expiry
+        validated_data.setdefault("expires_at", timezone.now() + timezone.timedelta(seconds=DEFAULT_HOLD_SECONDS))
 
         return super().create(validated_data)
 
