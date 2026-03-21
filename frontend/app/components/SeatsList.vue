@@ -177,27 +177,17 @@ async function onSeatClick(seat) {
   try {
     if (status === 'available') {
       await bookingStore.holdSeat({ eventId: eventId.value, seatId: seat.id })
-      const isMobileLayout = import.meta.client && window.innerWidth < 1024
 
       toast.add({
         title: 'Место удержано',
-        description: isMobileLayout
-          ? 'Место добавлено. Откройте корзину, чтобы подтвердить бронь.'
-          : 'Оно добавлено в корзину справа.',
+        description: 'Место добавлено. Откройте корзину, чтобы подтвердить бронь.',
         color: 'success',
-        actions: isMobileLayout
-          ? [{
-              label: 'Перейти в корзину',
-              color: 'neutral',
-              variant: 'outline',
-              to: '/cart',
-            }]
-          : [],
-      })
-      toast.add({
-        title: 'Подтвердите бронь',
-        description: 'Место удерживается 30 минут. Завершите подтверждение в корзине, чтобы закрепить его за собой.',
-        color: 'warning',
+        actions: [{
+          label: 'Перейти в корзину',
+          color: 'neutral',
+          variant: 'outline',
+          to: '/cart',
+        }],
       })
       await refreshSeatMap({ syncCart: true })
       return
