@@ -4,7 +4,6 @@ django-cors-headers
 django-debug-toolbar
 django-environ
 django-filter
-django-unfold
 gunicorn
 Markdown
 packaging
