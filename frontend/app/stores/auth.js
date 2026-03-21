@@ -26,6 +26,7 @@ export const useAuthStore = defineStore('auth', {
     refreshToken: null,
     user: null,
     userId: null,
+    signupGroups: [],
   }),
   getters: {
     isAuthenticated: (state) => {
@@ -78,11 +79,22 @@ export const useAuthStore = defineStore('auth', {
       this.hydrateFromToken()
       await this.fetchUser()
     },
-    async signup({ username, password }) {
+    async fetchSignupGroups({ force = false } = {}) {
+      if (this.signupGroups.length && !force) return this.signupGroups
+
+      const groups = await $fetch('/api/backend/accounts/signup-groups/')
+      this.signupGroups = Array.isArray(groups) ? groups : []
+      return this.signupGroups
+    },
+    async signup({ username, password, group, full_name, child_full_name }) {
       await $fetch('/api/backend/accounts/signup/', {
         method: 'POST',
         body: {
-          username, password
+          username,
+          password,
+          group,
+          full_name,
+          child_full_name,
         },
       })
       // auto-login after register
@@ -144,6 +156,7 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = null
       this.user = null
       this.userId = null
+      this.signupGroups = []
       if (redirect) {
         const router = useRouter()
         router.push('/login')

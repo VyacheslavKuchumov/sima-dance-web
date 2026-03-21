@@ -246,7 +246,7 @@ class ReleaseBookingView(APIView):
 
             if booking.status not in {Booking.STATUS_HELD, Booking.STATUS_BOOKED}:
                 return Response(
-                    {"detail": "Only held or booked bookings can be cancelled."},
+                    {"detail": "Only held or booked bookings can be removed."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -258,13 +258,10 @@ class ReleaseBookingView(APIView):
                     status=status.HTTP_409_CONFLICT
                 )
 
-            previous_status = booking.status
-            booking.status = Booking.STATUS_CANCELLED
-            booking.expires_at = now if previous_status == Booking.STATUS_HELD else booking.expires_at
-            booking.save(update_fields=["status", "expires_at", "updated_at"])
+            booking_data = BookingSerializer(booking).data
+            booking.delete()
 
-        serializer = BookingSerializer(booking)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(booking_data, status=status.HTTP_200_OK)
 
 # Booking viewset: users can list their bookings; admins can view all
 class BookingViewSet(viewsets.ModelViewSet):

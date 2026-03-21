@@ -79,6 +79,12 @@ export const useBookingStore = defineStore('booking', {
       this.bookingsByEvent[toEventKey(eventId)] = bookings
     },
 
+    removeBooking(eventId, bookingId) {
+      const eventKey = toEventKey(eventId)
+      const current = this.bookingsByEvent[eventKey] ?? []
+      this.bookingsByEvent[eventKey] = current.filter((item) => item.id !== bookingId)
+    },
+
     upsertBooking(eventId, booking) {
       const eventKey = toEventKey(eventId)
       const current = [...(this.bookingsByEvent[eventKey] ?? [])]
@@ -172,7 +178,7 @@ export const useBookingStore = defineStore('booking', {
           headers: auth.authHeader(),
         })
 
-        this.upsertBooking(eventId, booking)
+        this.removeBooking(eventId, booking.id)
         return booking
       } finally {
         this.actionByBookingId[String(bookingId)] = false

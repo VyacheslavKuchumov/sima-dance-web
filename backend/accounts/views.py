@@ -4,11 +4,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from .serializers import (
+    SignupGroupSerializer,
     UserSerializer,
     UserSignupSerializer,
     UserUpdateSerializer,
     ChangePasswordSerializer,
 )
+from .models import UserGroup
 
 User = get_user_model()
 
@@ -62,3 +64,12 @@ class SignupView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SignupGroupsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        groups = UserGroup.objects.all()
+        serializer = SignupGroupSerializer(groups, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

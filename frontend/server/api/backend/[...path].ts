@@ -33,6 +33,7 @@ function isPublicRequest(method: string, path: string) {
   }
 
   if (method === 'GET') {
+    if (normalizedPath === '/accounts/signup-groups') return true
     if (normalizedPath === '/booking/events') return true
     if (/^\/booking\/events\/\d+$/.test(normalizedPath)) return true
     if (/^\/booking\/events\/\d+\/seatmap$/.test(normalizedPath)) return true

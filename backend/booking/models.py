@@ -38,13 +38,11 @@ class Booking(models.Model):
     """Booking/Reservation record representing a user reserving one or more seats for an event."""
     STATUS_HELD = 'held'        # temporary hold awaiting payment / confirm
     STATUS_BOOKED = 'booked'    # confirmed (paid or finalized)
-    STATUS_CANCELLED = 'cancelled'
     STATUS_EXPIRED = 'expired'  # hold expired by background job
 
     STATUS_CHOICES = [
         (STATUS_HELD, 'Held'),
         (STATUS_BOOKED, 'Booked'),
-        (STATUS_CANCELLED, 'Cancelled'),
         (STATUS_EXPIRED, 'Expired'),
     ]
 

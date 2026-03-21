@@ -46,7 +46,8 @@ class BookingFlowTests(APITestCase):
         release_response = self.client.post(reverse("release-booking", args=[booking_id]), format="json")
 
         self.assertEqual(release_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(release_response.data["status"], Booking.STATUS_CANCELLED)
+        self.assertEqual(release_response.data["id"], booking_id)
+        self.assertFalse(Booking.objects.filter(pk=booking_id).exists())
 
     def test_booking_serializer_defaults_expires_at_to_thirty_minutes(self):
         factory = APIRequestFactory()
@@ -93,7 +94,7 @@ class BookingFlowTests(APITestCase):
             2,
         )
 
-    def test_user_can_cancel_booked_booking(self):
+    def test_user_can_delete_booked_booking(self):
         hold_response = self.hold_seat()
         booking_id = hold_response.data["id"]
 
@@ -107,7 +108,8 @@ class BookingFlowTests(APITestCase):
         cancel_response = self.client.post(reverse("release-booking", args=[booking_id]), format="json")
 
         self.assertEqual(cancel_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(cancel_response.data["status"], Booking.STATUS_CANCELLED)
+        self.assertEqual(cancel_response.data["id"], booking_id)
+        self.assertFalse(Booking.objects.filter(pk=booking_id).exists())
 
         self.client.force_authenticate(self.other_user)
         next_hold_response = self.hold_seat()

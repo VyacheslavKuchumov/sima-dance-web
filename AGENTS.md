@@ -3,6 +3,8 @@
 ## Описание проекта
 Проект состоит из Nuxt 4 фронтенда и Django бэкенда для бронирования мест на события. Фронтенд общается с Django через серверные роуты Nuxt (`/api/backend/...`), которые проксируют запросы к `/api/...` на бэкенде. Аутентификация JWT реализована на стороне клиента с обновлением access токена через refresh.
 
+На стороне `accounts` дополнительно есть отдельные модели `UserGroup` и `UserProfile`. Группы пользователей не связаны с Django auth groups, редактируются через Django admin и используются на форме регистрации Nuxt.
+
 ## Структура репозитория
 - `frontend/`: Nuxt приложение (UI, страницы, stores, server routes).
 - `backend/`: Django приложение (accounts, booking, настройки).
@@ -12,11 +14,13 @@
 ## Ключевые маршруты API
 - `POST /api/accounts/token/`: получить access/refresh.
 - `POST /api/accounts/token/refresh/`: обновить access.
+- `GET /api/accounts/signup-groups/`: получить список групп для регистрации.
 - `POST /api/accounts/signup/`: регистрация.
 - `GET /api/accounts/me/`: профиль.
 - `GET /api/booking/events/`: список событий.
 - `GET /api/booking/events/<id>/seatmap/`: карта мест.
 - `POST /api/booking/hold/`: удержание места.
+- `POST /api/booking/bookings/<id>/release/`: удалить удержанную или подтвержденную бронь пользователя.
 
 ## Команды разработки
 Frontend:
@@ -47,3 +51,12 @@ Frontend runtime config:
 
 ## Примечания по аутентификации
 JWT хранится в Pinia store. Перед запросами к защищенным эндпоинтам используется обновление access токена, затем добавляется `Authorization: Bearer <token>`.
+
+## Примечания по регистрации
+- Регистрация на фронтенде требует `username`, `password`, `group`, `full_name`, `child_full_name`.
+- Список групп для регистрации загружается публично через `/api/accounts/signup-groups/`.
+- Данные группы, ФИО пользователя и ФИО ребенка сохраняются в `accounts.UserProfile`.
+
+## Примечания по бронированиям
+- У бронирований нет статуса `canceled/cancelled`.
+- При отмене или освобождении бронь удаляется из БД через release endpoint.

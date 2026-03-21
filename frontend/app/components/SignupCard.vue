@@ -1,60 +1,100 @@
 
 <template>
-    <UCard class="w-full max-w-md">
-      <template #header>
+  <UCard class="w-full max-w-md">
+    <template #header>
+      <div class="space-y-1">
         <h2 class="text-xl font-semibold">Регистрация</h2>
-      </template>
+        <p class="text-sm text-muted">
+          Выберите группу и заполните данные, чтобы создать аккаунт.
+        </p>
+      </div>
+    </template>
 
-      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-        <UFormField label="Логин" name="username" required>
-          <UInput
-            class="w-full"
-            v-model="state.username"
-            placeholder="Придумайте логин"
-            :disabled="loading"
-          />
-        </UFormField>
-
-        <UFormField label="Пароль" name="password" required>
-          <UInput
-            class="w-full"
-            v-model="state.password"
-            type="password"
-            placeholder="Придумайте пароль"
-            :disabled="loading"
-          />
-        </UFormField>
-
-        <UFormField label="Подтверждение пароля" name="confirmPassword" required>
-          <UInput
-            class="w-full"
-            v-model="state.confirmPassword"
-            type="password"
-            placeholder="Подтвердите пароль"
-            :disabled="loading"
-          />
-        </UFormField>
-
-        <UButton
-          type="submit"
-          color="primary"
-          block
-          :loading="loading"
-          :disabled="!v.safeParse(schema, state).success"
+    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+      <UFormField label="Группа" name="groupId" required>
+        <select
+          id="groupId"
+          v-model="state.groupId"
+          name="groupId"
+          class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="loading || !signupGroups.length"
         >
-          Регистрация
-        </UButton>
-      </UForm>
+          <option value="" disabled>
+            {{ signupGroups.length ? 'Выберите группу' : 'Группы не найдены' }}
+          </option>
+          <option v-for="group in signupGroups" :key="group.id" :value="String(group.id)">
+            {{ group.name }}
+          </option>
+        </select>
+      </UFormField>
 
-      <template #footer>
-        <div class="text-center">
-          Уже есть аккаунт?
-          <NuxtLink to="/login" class="text-primary underline ml-1">
-            Войти в аккаунт
-          </NuxtLink>
-        </div>
-      </template>
-    </UCard>
+      <UFormField label="Логин" name="username" required>
+        <UInput
+          v-model="state.username"
+          class="w-full"
+          placeholder="Придумайте логин"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UFormField label="Ваше ФИО" name="full_name" required>
+        <UInput
+          v-model="state.full_name"
+          class="w-full"
+          placeholder="Иванов Иван Иванович"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UFormField label="ФИО ребенка" name="child_full_name" required>
+        <UInput
+          v-model="state.child_full_name"
+          class="w-full"
+          placeholder="Иванов Петр Иванович"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UFormField label="Пароль" name="password" required>
+        <UInput
+          v-model="state.password"
+          class="w-full"
+          type="password"
+          placeholder="Придумайте пароль"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UFormField label="Подтверждение пароля" name="confirmPassword" required>
+        <UInput
+          v-model="state.confirmPassword"
+          class="w-full"
+          type="password"
+          placeholder="Подтвердите пароль"
+          :disabled="loading"
+        />
+      </UFormField>
+
+      <UButton
+        type="submit"
+        color="primary"
+        block
+        :loading="loading"
+        :disabled="!v.safeParse(schema, state).success || !signupGroups.length"
+      >
+        Регистрация
+      </UButton>
+    </UForm>
+
+    <template #footer>
+      <div class="text-center">
+        Уже есть аккаунт?
+        <NuxtLink to="/login" class="ml-1 text-primary underline">
+          Войти в аккаунт
+        </NuxtLink>
+      </div>
+    </template>
+  </UCard>
 
 </template>
 
@@ -63,20 +103,29 @@
 import * as v from 'valibot'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
+const loading = ref(false)
 
-// const username  = ref('')
-// const password  = ref('')
-const loading   = ref(false)
-
-const auth   = useAuthStore()
+const auth = useAuthStore()
 const router = useRouter()
+const signupGroups = computed(() => auth.signupGroups)
 
-  
 const schema = v.pipe(
   v.object({
+    groupId: v.pipe(
+      v.string(),
+      v.minLength(1, 'Выберите группу'),
+    ),
     username: v.pipe(
       v.string(),
       v.minLength(2, 'Имя пользователя должно содержать минимум 2 символа')
+    ),
+    full_name: v.pipe(
+      v.string(),
+      v.minLength(2, 'Укажите ваше ФИО'),
+    ),
+    child_full_name: v.pipe(
+      v.string(),
+      v.minLength(2, 'Укажите ФИО ребенка'),
     ),
     password: v.pipe(
       v.string(),
@@ -99,19 +148,30 @@ const schema = v.pipe(
 type Schema = v.InferOutput<typeof schema>
 
 const state = reactive({
+  groupId: '',
   username: '',
+  full_name: '',
+  child_full_name: '',
   password: '',
   confirmPassword: ''
 })
 
+onMounted(() => {
+  void auth.fetchSignupGroups().catch((error) => {
+    console.error('Failed to load signup groups', error)
+  })
+})
+
 const toast = useAppToast()
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-
   loading.value = true
   try {
     await auth.signup({
-      username:  event.data.username,
-      password:  event.data.password,
+      username: event.data.username,
+      password: event.data.password,
+      group: Number(event.data.groupId),
+      full_name: event.data.full_name,
+      child_full_name: event.data.child_full_name,
     })
     toast.add({ title: 'Успешно', description: 'Вы были зарегистрированы.', color: 'success' })
     router.push('/')

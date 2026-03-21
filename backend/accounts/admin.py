@@ -3,6 +3,7 @@ from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
+from accounts.models import UserGroup, UserProfile
 from booking.models import Booking
 
 
@@ -25,15 +26,33 @@ class BookingInline(admin.TabularInline):
         return False
 
 
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    fk_name = "user"
+    extra = 0
+    can_delete = False
+    fields = ("group", "full_name", "child_full_name", "created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 try:
     admin.site.unregister(User)
 except NotRegistered:
     pass
 
 
+@admin.register(UserGroup)
+class UserGroupAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+
+
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
-    inlines = [BookingInline]
+    inlines = [BookingInline, UserProfileInline]
     list_display = DjangoUserAdmin.list_display + ("booking_count",)
 
     @admin.display(description="Бронирований")
