@@ -14,31 +14,55 @@ set -a
 source "$root_dir/.env"
 set +a
 
+wait_for_http() {
+  local url="$1"
+  local name="$2"
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "curl is not installed; skipping HTTP readiness check for ${name}."
+    return 0
+  fi
+
+  echo "Waiting for ${name} at ${url}..."
+  for _ in {1..60}; do
+    status="$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)"
+    if [ "$status" != "000" ]; then
+      echo "${name} responded with HTTP ${status}."
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "Timed out waiting for ${name}."
+  return 1
+}
+
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-sima_dance}"
 POSTGRES_PORT="${POSTGRES_PORT:-5433}"
 
-DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+DATABASE_URL="${DATABASE_URL:-postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}}"
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "Docker is required to start the database. Please install Docker first."
+if ! command -v python >/dev/null 2>&1; then
+  echo "Python is required to start the backend."
   exit 1
 fi
 
-docker compose up -d postgres
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm is required to start the frontend."
+  exit 1
+fi
 
-pg_container_id="$(docker compose ps -q postgres || true)"
-if [ -n "$pg_container_id" ]; then
-  echo "Waiting for postgres to become healthy..."
-  for _ in {1..30}; do
-    status="$(docker inspect -f '{{.State.Health.Status}}' "$pg_container_id" 2>/dev/null || true)"
-    if [ "$status" = "healthy" ]; then
-      echo "Postgres is healthy."
-      break
-    fi
-    sleep 1
-  done
+if command -v pg_isready >/dev/null 2>&1; then
+  echo "Checking local postgres availability..."
+  if ! pg_isready -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" >/dev/null 2>&1; then
+    echo "Postgres is not available at 127.0.0.1:${POSTGRES_PORT}."
+    echo "Please start a local Postgres or set DATABASE_URL."
+    exit 1
+  fi
+else
+  echo "pg_isready not found; skipping postgres availability check."
 fi
 
 backend_python="$root_dir/backend/.venv/bin/python"
@@ -72,6 +96,19 @@ echo "Backend started (PID $backend_pid)."
 frontend_pid=$!
 
 echo "Frontend started (PID $frontend_pid)."
+
+wait_for_http "http://localhost:8000/api/" "backend"
+wait_for_http "http://localhost:3000/" "frontend"
+
+if [ -x "$root_dir/scripts/tests/smoke_local.sh" ]; then
+  "$root_dir/scripts/tests/smoke_local.sh"
+else
+  echo "Smoke test script not found; skipping tests."
+fi
+
+echo "Local stack is running."
+echo "Frontend: http://localhost:3000"
+echo "Backend:  http://localhost:8000"
 
 while true; do
   if ! kill -0 "$backend_pid" 2>/dev/null; then

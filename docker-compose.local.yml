@@ -1,0 +1,10 @@
+services:
+  backend:
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: ${DJANGO_DEBUG:-True}
+
+  frontend:
+    ports:
+      - "3000:3000"
