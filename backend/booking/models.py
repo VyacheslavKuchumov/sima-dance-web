@@ -9,27 +9,33 @@ DEFAULT_HOLD_SECONDS = 30 * 60
 
 class Event(models.Model):
     """An event (movie screening, flight, concert) that has seats (global seats used across events)."""
-    title = models.CharField(max_length=255)
-    img_url = models.URLField(blank=True)
-    archived = models.BooleanField(default=False)
-    starts_at = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    title = models.CharField("Название", max_length=255)
+    img_url = models.URLField("Ссылка на изображение", blank=True)
+    archived = models.BooleanField("В архиве", default=False)
+    starts_at = models.DateField("Дата начала")
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Событие"
+        verbose_name_plural = "События"
 
     def __str__(self):
         return f"{self.title} @ {self.starts_at}"
 
 class Seat(models.Model):
     """A global seat (position/identity) reused across events."""
-    section = models.CharField(max_length=32)
-    row = models.PositiveIntegerField()
-    number = models.PositiveIntegerField()
-    available = models.BooleanField(default=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    section = models.CharField("Секция", max_length=32)
+    row = models.PositiveIntegerField("Ряд")
+    number = models.PositiveIntegerField("Место")
+    available = models.BooleanField("Доступно", default=True)
+    price = models.DecimalField("Цена", max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
         # seats are unique by section/row/number (global)
         unique_together = ('section', 'row', 'number')
         ordering = ['section', 'row', 'number']
+        verbose_name = "Место"
+        verbose_name_plural = "Места"
 
     def __str__(self):
         return f"{self.section}: {self.row}-{self.number}"
@@ -41,21 +47,21 @@ class Booking(models.Model):
     STATUS_EXPIRED = 'expired'  # hold expired by background job
 
     STATUS_CHOICES = [
-        (STATUS_HELD, 'Held'),
-        (STATUS_BOOKED, 'Booked'),
-        (STATUS_EXPIRED, 'Expired'),
+        (STATUS_HELD, 'Удержание'),
+        (STATUS_BOOKED, 'Подтверждено'),
+        (STATUS_EXPIRED, 'Истекло'),
     ]
 
-    user = models.ForeignKey(User, related_name='bookings', on_delete=models.CASCADE)
-    seat = models.ForeignKey(Seat, related_name='bookings', on_delete=models.CASCADE)
-    event = models.ForeignKey(Event, related_name='bookings', on_delete=models.CASCADE)
-    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_HELD)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, related_name='bookings', on_delete=models.CASCADE, verbose_name="Пользователь")
+    seat = models.ForeignKey(Seat, related_name='bookings', on_delete=models.CASCADE, verbose_name="Место")
+    event = models.ForeignKey(Event, related_name='bookings', on_delete=models.CASCADE, verbose_name="Событие")
+    status = models.CharField("Статус", max_length=16, choices=STATUS_CHOICES, default=STATUS_HELD)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    updated_at = models.DateTimeField("Обновлено", auto_now=True)
     # expires_at: when a hold becomes invalid; null allowed only if you intentionally want indefinite hold
-    expires_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField("Действует до", null=True, blank=True)
     # snapshot of seat price at time of hold/booking
-    price_snapshot = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price_snapshot = models.DecimalField("Цена на момент бронирования", max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
         # Prevent two confirmed bookings for the same seat (PostgreSQL conditional unique index)
@@ -70,6 +76,8 @@ class Booking(models.Model):
             models.Index(fields=['status', 'expires_at']),
             models.Index(fields=['event', 'seat']),
         ]
+        verbose_name = "Бронирование"
+        verbose_name_plural = "Бронирования"
 
     def __str__(self):
         return f"{self.user} - {self.seat} ({self.status})"

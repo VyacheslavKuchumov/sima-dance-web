@@ -19,6 +19,9 @@ from django.urls import path, include
 import debug_toolbar
 from django.views.generic.base import RedirectView
 
+admin.site.site_header = "Администрирование Sima Dance"
+admin.site.site_title = "Sima Dance Admin"
+admin.site.index_title = "Управление сайтом"
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/admin/', permanent=True)),
