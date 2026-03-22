@@ -62,6 +62,8 @@ class Booking(models.Model):
     expires_at = models.DateTimeField("Действует до", null=True, blank=True)
     # snapshot of seat price at time of hold/booking
     price_snapshot = models.DecimalField("Цена на момент бронирования", max_digits=10, decimal_places=2, null=True, blank=True)
+    is_paid = models.BooleanField("Оплачено", default=False)
+    is_ticket_issued = models.BooleanField("Билет выписан", default=False)
 
     class Meta:
         # Prevent two confirmed bookings for the same seat (PostgreSQL conditional unique index)

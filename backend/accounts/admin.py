@@ -18,7 +18,16 @@ class BookingInline(admin.TabularInline):
     show_change_link = True
     verbose_name = "Бронирование"
     verbose_name_plural = "Что забронировал пользователь"
-    fields = ("event", "seat", "status", "price_snapshot", "created_at", "expires_at")
+    fields = (
+        "event",
+        "seat",
+        "status",
+        "is_paid",
+        "is_ticket_issued",
+        "price_snapshot",
+        "created_at",
+        "expires_at",
+    )
     readonly_fields = fields
     ordering = ("-created_at",)
 
@@ -54,6 +63,11 @@ class UserGroupAdmin(admin.ModelAdmin):
 class UserAdmin(DjangoUserAdmin):
     inlines = [BookingInline, UserProfileInline]
     list_display = DjangoUserAdmin.list_display + ("booking_count",)
+    search_fields = DjangoUserAdmin.search_fields + (
+        "profile__full_name",
+        "profile__child_full_name",
+        "profile__group__name",
+    )
 
     @admin.display(description="Бронирований")
     def booking_count(self, obj):
