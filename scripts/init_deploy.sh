@@ -11,14 +11,14 @@ set_prices_args=()
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/init_deploy.sh [options] [set_prices options]
+  ./scripts/init_deploy.sh [options] [install_data options]
 
 Options:
   --env-file PATH   Env file for docker compose. Default: .env.production
   --no-build        Skip image rebuild before start.
   --help            Show this help.
 
-Any additional options are passed to scripts/set_prices.sh.
+Any additional options are passed to scripts/install_data.sh.
 Examples:
   ./scripts/init_deploy.sh
   ./scripts/init_deploy.sh --event-title "Концерт" --event-date 2026-04-01
@@ -59,7 +59,8 @@ set -a
 source "$env_file"
 set +a
 
-echo "Creating initial event and applying seat prices..."
-bash "$root_dir/scripts/set_prices.sh" \
+echo "Installing initial booking data..."
+bash "$root_dir/scripts/install_data.sh" \
   --api-base "https://${TRAEFIK_API_HOST}/api/booking" \
+  --event-create-mode if-empty \
   "${set_prices_args[@]}"

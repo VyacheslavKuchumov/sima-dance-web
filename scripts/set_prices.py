@@ -115,6 +115,17 @@ def create_event(
     return event
 
 
+def get_events(session: requests.Session, api_base: str, timeout: float) -> list[dict]:
+    response = session.get(f"{api_base}/events/", timeout=timeout)
+    response.raise_for_status()
+    payload = response.json()
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict) and isinstance(payload.get("results"), list):
+        return payload["results"]
+    raise ValueError("Unexpected events payload format")
+
+
 def get_seats(session: requests.Session, api_base: str, timeout: float) -> list[dict]:
     response = session.get(f"{api_base}/seats/", timeout=timeout)
     response.raise_for_status()
@@ -154,10 +165,80 @@ def patch_seat(
     response.raise_for_status()
 
 
+def ensure_event(
+    session: requests.Session,
+    api_base: str,
+    title: str,
+    starts_at: str,
+    img_url: str,
+    archived: bool,
+    timeout: float,
+    create_mode: str,
+) -> dict | None:
+    if create_mode == "never":
+        print("Skipping event creation.")
+        return None
+
+    if create_mode == "if-empty":
+        events = get_events(session, api_base, timeout)
+        if events:
+            print(f"Skipping event creation because {len(events)} event(s) already exist.")
+            return None
+
+    return create_event(
+        session=session,
+        api_base=api_base,
+        title=title,
+        starts_at=starts_at,
+        img_url=img_url,
+        archived=archived,
+        timeout=timeout,
+    )
+
+
+def apply_prices(session: requests.Session, api_base: str, timeout: float) -> tuple[int, int]:
+    seats = get_seats(session, api_base, timeout)
+    updated = 0
+    skipped = 0
+
+    print("Overwriting configured seat prices and availability where they differ from the rules.")
+
+    for seat in seats:
+        target = find_target(seat, RULES)
+        if target is None:
+            skipped += 1
+            continue
+
+        current_price = int(float(seat.get("price") or 0))
+        current_available = bool(seat.get("available"))
+        target_price = int(target["price"])
+        target_available = bool(target["available"])
+
+        if current_price == target_price and current_available == target_available:
+            skipped += 1
+            continue
+
+        patch_seat(
+            session=session,
+            api_base=api_base,
+            seat=seat,
+            price=target_price,
+            available=target_available,
+            timeout=timeout,
+        )
+        updated += 1
+        print(
+            f"Updated {seat['section']}: {seat['row']}-{seat['number']} "
+            f"-> price={target_price}, available={target_available}"
+        )
+
+    return updated, skipped
+
+
 def parse_args() -> argparse.Namespace:
     today = date.today().isoformat()
     parser = argparse.ArgumentParser(
-        description="Create an event via REST API and configure global seat prices/availability.",
+        description="Create an event via REST API and overwrite seat prices/availability using the configured rules.",
     )
     parser.add_argument("--api-base", default=DEFAULT_API_BASE, help="Base booking API URL.")
     parser.add_argument(
@@ -183,7 +264,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-event-create",
         action="store_true",
-        help="Only update seat prices without creating a new event first.",
+        help="Only overwrite seat prices without creating a new event first.",
+    )
+    parser.add_argument(
+        "--event-create-mode",
+        choices=("always", "if-empty", "never"),
+        default="always",
+        help="Event creation strategy. Default: always.",
     )
     parser.add_argument(
         "--timeout",
@@ -197,52 +284,23 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     session = requests.Session()
+    api_base = args.api_base.rstrip("/")
+    event_create_mode = "never" if args.skip_event_create else args.event_create_mode
 
-    if not args.skip_event_create:
-        create_event(
-            session=session,
-            api_base=args.api_base.rstrip("/"),
-            title=args.event_title,
-            starts_at=args.event_date,
-            img_url=args.event_image_url,
-            archived=args.event_archived,
-            timeout=args.timeout,
-        )
+    created_event = ensure_event(
+        session=session,
+        api_base=api_base,
+        title=args.event_title,
+        starts_at=args.event_date,
+        img_url=args.event_image_url,
+        archived=args.event_archived,
+        timeout=args.timeout,
+        create_mode=event_create_mode,
+    )
+    if created_event is not None:
         print("Note: seat prices are global in the current data model and apply to all events.")
 
-    seats = get_seats(session, args.api_base.rstrip("/"), args.timeout)
-    updated = 0
-    skipped = 0
-
-    for seat in seats:
-        target = find_target(seat, RULES)
-        if target is None:
-            skipped += 1
-            continue
-
-        current_price = int(float(seat.get("price") or 0))
-        current_available = bool(seat.get("available"))
-        target_price = int(target["price"])
-        target_available = bool(target["available"])
-
-        if current_price == target_price and current_available == target_available:
-            skipped += 1
-            continue
-
-        patch_seat(
-            session=session,
-            api_base=args.api_base.rstrip("/"),
-            seat=seat,
-            price=target_price,
-            available=target_available,
-            timeout=args.timeout,
-        )
-        updated += 1
-        print(
-            f"Updated {seat['section']}: {seat['row']}-{seat['number']} "
-            f"-> price={target_price}, available={target_available}"
-        )
-
+    updated, skipped = apply_prices(session, api_base, args.timeout)
     print(f"Done. Updated {updated} seats, skipped {skipped}.")
     return 0
 

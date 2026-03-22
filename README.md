@@ -20,13 +20,42 @@
 ./scripts/init_deploy.sh
 ```
 
-При необходимости можно передать параметры создания события в `set_prices.py`:
+`init_deploy.sh` теперь использует отдельный сидинг-скрипт и по умолчанию:
+- создаёт отсутствующие места
+- создаёт событие только если событий ещё нет
+- перезаписывает цены и доступность мест по текущим правилам
+
+Запустить установку данных отдельно:
+
+```bash
+./scripts/install_data.sh --api-base https://example.com/api/booking
+```
+
+По умолчанию `install_data.sh` использует безопасный режим `--event-create-mode if-empty`, то есть не создаёт повторное событие, если события уже есть. Если нужно создать новое событие явно:
+
+```bash
+./scripts/install_data.sh \
+  --api-base https://example.com/api/booking \
+  --event-create-mode always \
+  --event-title "Концерт 2026" \
+  --event-date 2026-04-01
+```
+
+При необходимости можно передать параметры создания события:
 
 ```bash
 ./scripts/init_deploy.sh \
   --event-title "Концерт 2026" \
   --event-date 2026-04-01 \
   --event-image-url https://example.com/poster.jpg
+```
+
+Можно управлять поведением отдельно:
+
+```bash
+./scripts/install_data.sh --api-base https://example.com/api/booking --skip-seats
+./scripts/install_data.sh --api-base https://example.com/api/booking --skip-prices
+./scripts/install_data.sh --api-base https://example.com/api/booking --event-create-mode never
 ```
 
 Обычный деплой/редеплой без создания нового события:
