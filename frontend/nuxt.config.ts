@@ -2,6 +2,11 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: process.env.NUXT_DEVTOOLS !== 'false' },
+  app: {
+    head: {
+      title: 'Бронирование | Simadancing'
+    }
+  },
 
   modules: [
     '@nuxt/eslint',
