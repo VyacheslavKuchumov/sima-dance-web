@@ -73,6 +73,9 @@ bash "$root_dir/scripts/install_data.sh" \
   --event-create-mode if-empty \
   "${set_prices_args[@]}"
 
+echo "Ensuring signup groups exist..."
+bash "$root_dir/scripts/set_groups.sh" --docker --env-file "$env_file" --skip-migrate
+
 if [ "$skip_superuser" != true ]; then
   required_superuser_vars=(
     DJANGO_SUPERUSER_USERNAME

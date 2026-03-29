@@ -1,7 +1,9 @@
+from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from .group_defaults import DEFAULT_SIGNUP_GROUP_NAMES, LEGACY_DEFAULT_GROUP_NAME
 from .models import UserGroup, UserProfile
 
 
@@ -37,15 +39,42 @@ class AccountsApiTests(APITestCase):
 
     def test_signup_groups_endpoint_lists_groups(self):
         extra_group = UserGroup.objects.create(name='Another group')
-        default_group = UserGroup.objects.get(name='Основная группа')
 
         response = self.client.get('/api/accounts/signup-groups/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             [item['name'] for item in response.data],
-            sorted([default_group.name, self.group.name, self.other_group.name, extra_group.name]),
+            DEFAULT_SIGNUP_GROUP_NAMES + [self.other_group.name, extra_group.name, self.group.name],
         )
+
+    def test_set_groups_command_removes_unused_legacy_group(self):
+        UserGroup.objects.get_or_create(name=LEGACY_DEFAULT_GROUP_NAME)
+
+        call_command('set_groups')
+
+        self.assertFalse(UserGroup.objects.filter(name=LEGACY_DEFAULT_GROUP_NAME).exists())
+        self.assertEqual(
+            UserGroup.objects.filter(name__in=DEFAULT_SIGNUP_GROUP_NAMES).count(),
+            len(DEFAULT_SIGNUP_GROUP_NAMES),
+        )
+
+    def test_set_groups_command_keeps_used_legacy_group(self):
+        legacy_group = UserGroup.objects.create(name=LEGACY_DEFAULT_GROUP_NAME)
+        legacy_user = User.objects.create_user(
+            username='legacy-user',
+            password='StartPass123!',
+        )
+        UserProfile.objects.create(
+            user=legacy_user,
+            group=legacy_group,
+            full_name='Пользователь Наследия',
+            child_full_name='Ребенок Наследия',
+        )
+
+        call_command('set_groups')
+
+        self.assertTrue(UserGroup.objects.filter(name=LEGACY_DEFAULT_GROUP_NAME).exists())
 
     def test_signup_creates_user_profile_with_group(self):
         response = self.client.post(

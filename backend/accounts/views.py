@@ -1,3 +1,4 @@
+from django.db.models import Case, IntegerField, Value, When
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -10,6 +11,7 @@ from .serializers import (
     UserUpdateSerializer,
     ChangePasswordSerializer,
 )
+from .group_defaults import DEFAULT_SIGNUP_GROUP_NAMES
 from .models import UserGroup
 
 User = get_user_model()
@@ -70,6 +72,14 @@ class SignupGroupsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        groups = UserGroup.objects.all()
+        custom_order = Case(
+            *[
+                When(name=name, then=Value(index))
+                for index, name in enumerate(DEFAULT_SIGNUP_GROUP_NAMES)
+            ],
+            default=Value(len(DEFAULT_SIGNUP_GROUP_NAMES)),
+            output_field=IntegerField(),
+        )
+        groups = UserGroup.objects.annotate(signup_order=custom_order).order_by("signup_order", "name")
         serializer = SignupGroupSerializer(groups, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

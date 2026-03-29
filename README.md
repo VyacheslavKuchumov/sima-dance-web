@@ -24,6 +24,7 @@
 - создаёт отсутствующие места
 - создаёт событие только если событий ещё нет
 - перезаписывает цены и доступность мест по текущим правилам
+- синхронизирует регистрационные группы (`1 группа`-`10 группа`, `соло`, `дуэты`)
 - создаёт или обновляет Django superuser из `.env.production`
 
 Запустить установку данных отдельно:
@@ -63,6 +64,8 @@
 ./scripts/install_data.sh --api-base https://example.com/api/booking --skip-seats
 ./scripts/install_data.sh --api-base https://example.com/api/booking --skip-prices
 ./scripts/install_data.sh --api-base https://example.com/api/booking --event-create-mode never
+./scripts/set_groups.sh
+./scripts/set_groups.sh --docker --env-file /path/to/.env.production
 ```
 
 Обычный деплой/редеплой без создания нового события:
