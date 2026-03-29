@@ -141,7 +141,8 @@ wait_for_service "backend" "running" 60
 wait_for_service "frontend" "running" 60
 wait_for_service "traefik" "running" 60
 
-wait_for_http "https://${TRAEFIK_API_HOST}/api/booking/events/" "$TRAEFIK_API_HOST" "backend" '^[234][0-9][0-9]$'
+wait_for_http "https://${TRAEFIK_API_HOST}/api/booking/events/" "$TRAEFIK_API_HOST" "backend events API" '^200$'
+wait_for_http "https://${TRAEFIK_API_HOST}/api/booking/seats/" "$TRAEFIK_API_HOST" "backend seats API" '^200$'
 wait_for_http "https://${TRAEFIK_WEB_HOST}/" "$TRAEFIK_WEB_HOST" "frontend" '^[23][0-9][0-9]$'
 
 if [ "$run_set_prices" = true ]; then
