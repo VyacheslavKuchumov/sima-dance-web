@@ -18,12 +18,12 @@
             <h3 class="text-base font-semibold">Информация о месте</h3>
 
             <div class="mt-3 space-y-2 text-sm text-gray-600">
-              <p><span class="font-medium text-gray-900">Секция:</span> {{ detail.seat.section }}</p>
-              <p><span class="font-medium text-gray-900">Ряд:</span> {{ detail.seat.row }}</p>
-              <p><span class="font-medium text-gray-900">Место:</span> {{ detail.seat.number }}</p>
-              <p><span class="font-medium text-gray-900">Цена:</span> {{ formatPrice(detail.seat.price) }}</p>
-              <p><span class="font-medium text-gray-900">Доступность:</span> {{ detail.seat.available ? 'Доступно' : 'Отключено' }}</p>
-              <p><span class="font-medium text-gray-900">Событие:</span> {{ detail.event.title }}</p>
+              <p>Секция: {{ detail.seat.section }}</p>
+              <p>Ряд: {{ detail.seat.row }}</p>
+              <p>Место: {{ detail.seat.number }}</p>
+              <p>Цена: {{ formatPrice(detail.seat.price) }}</p>
+              <p>Доступность: {{ detail.seat.available ? 'Доступно' : 'Отключено' }}</p>
+              <p>Событие: {{ detail.event.title }}</p>
             </div>
           </section>
 
@@ -40,11 +40,11 @@
             </div>
 
             <div v-if="currentBooking" class="mt-3 space-y-2 text-sm text-gray-600">
-              <p><span class="font-medium text-gray-900">Пользователь:</span> {{ userLabel(currentBooking) }}</p>
-              <p><span class="font-medium text-gray-900">ФИО:</span> {{ currentBooking.user_details?.profile?.full_name || '—' }}</p>
-              <p><span class="font-medium text-gray-900">ФИО ребенка:</span> {{ currentBooking.user_details?.profile?.child_full_name || '—' }}</p>
-              <p><span class="font-medium text-gray-900">Создано:</span> {{ formatDateTime(currentBooking.created_at) }}</p>
-              <p><span class="font-medium text-gray-900">Действует до:</span> {{ formatDateTime(currentBooking.expires_at) }}</p>
+              <p>Пользователь: {{ userLabel(currentBooking) }}</p>
+              <p>ФИО: {{ currentBooking.user_details?.profile?.full_name || '—' }}</p>
+              <p>ФИО ребенка: {{ currentBooking.user_details?.profile?.child_full_name || '—' }}</p>
+              <p>Создано: {{ formatDateTime(currentBooking.created_at) }}</p>
+              <p>Действует до: {{ formatDateTime(currentBooking.expires_at) }}</p>
             </div>
 
             <UAlert
@@ -62,81 +62,99 @@
           <div class="space-y-1">
             <h3 class="text-base font-semibold">Назначить бронь пользователю</h3>
             <p class="text-sm text-gray-500">
-              Если у места уже есть бронь другого пользователя, сначала удалите её, затем назначьте новую.
+              Назначение доступно только для свободного места без активной брони.
             </p>
           </div>
 
-          <div class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_220px_180px]">
-            <UInput
-              v-model="userSearch"
-              class="w-full"
-              placeholder="Фильтр по пользователям"
-            />
-
-            <select
-              v-model="selectedUserId"
-              class="w-full"
-            >
-              <option value="" disabled>Выберите пользователя</option>
-              <option v-for="user in visibleUsers" :key="user.id" :value="String(user.id)">
-                {{ userOptionLabel(user) }}
-              </option>
-            </select>
-
-            <select
-              v-model="selectedStatus"
-              class="w-full"
-            >
-              <option value="booked">Подтвержденная бронь</option>
-              <option value="held">Удержание</option>
-            </select>
-          </div>
-
-          <div v-if="selectedStatus === 'held'" class="mt-3 max-w-xs">
-            <UFormField label="Держать место, минут">
-              <UInput
-                v-model="holdMinutes"
-                class="w-full"
-                type="number"
-                min="1"
-                max="1440"
-              />
-            </UFormField>
-          </div>
-        </section>
-
-        <section class="rounded-2xl border border-gray-200 p-4">
-          <h3 class="text-base font-semibold">Последние записи по месту</h3>
-
-          <div v-if="detail.recent_bookings?.length" class="mt-3 space-y-3">
-            <article
-              v-for="booking in detail.recent_bookings"
-              :key="booking.id"
-              class="rounded-xl bg-gray-50 p-3"
-            >
-              <div class="flex items-start justify-between gap-3">
-                <div class="space-y-1 text-sm text-gray-600">
-                  <p class="font-medium text-gray-900">{{ userLabel(booking) }}</p>
-                  <p>Статус: {{ booking.status === 'booked' ? 'Подтверждено' : 'Удержание' }}</p>
-                  <p>Создано: {{ formatDateTime(booking.created_at) }}</p>
-                </div>
-
-                <UBadge :color="booking.status === 'booked' ? 'success' : 'warning'" variant="subtle">
-                  #{{ booking.id }}
-                </UBadge>
-              </div>
-            </article>
-          </div>
-
           <UAlert
-            v-else
-            class="mt-3"
-            color="neutral"
+            v-if="currentBooking"
+            class="mt-4"
+            color="warning"
             variant="subtle"
-            title="История пуста"
-            description="По этому месту ещё не было записей в рамках текущего концерта."
+            title="Сначала освободите место"
+            description="Пока у места есть активная бронь, назначение нового пользователя недоступно."
           />
+
+          <template v-else>
+            <div class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_220px_180px]">
+              <UInput
+                v-model="userSearch"
+                class="w-full"
+                placeholder="Фильтр по пользователям"
+              />
+
+              <select
+                v-model="selectedUserId"
+                class="w-full"
+              >
+                <option value="" disabled>Выберите пользователя</option>
+                <option v-for="user in visibleUsers" :key="user.id" :value="String(user.id)">
+                  {{ userOptionLabel(user) }}
+                </option>
+              </select>
+
+              <select
+                v-model="selectedStatus"
+                class="w-full"
+              >
+                <option value="booked">Подтвержденная бронь</option>
+                <option value="held">Удержание</option>
+              </select>
+            </div>
+
+            <div v-if="selectedStatus === 'held'" class="mt-3 max-w-xs">
+              <UFormField label="Держать место, минут">
+                <UInput
+                  v-model="holdMinutes"
+                  class="w-full"
+                  type="number"
+                  min="1"
+                  max="1440"
+                />
+              </UFormField>
+            </div>
+          </template>
         </section>
+      </div>
+    </template>
+
+    <template #footer>
+      <UButton
+        v-if="currentBooking"
+        color="error"
+        :loading="deleting"
+        @click="openDeleteConfirmation"
+      >
+        Удалить бронь
+      </UButton>
+
+      <UButton
+        v-else
+        color="primary"
+        :loading="saving"
+        :disabled="!selectedUserId"
+        @click="assignBooking"
+      >
+        Назначить бронь
+      </UButton>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="deleteConfirmationOpen" title="Удалить бронь?">
+    <template #body>
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600">
+          После удаления место снова станет свободным, и на него можно будет назначить новую бронь.
+        </p>
+
+        <div
+          v-if="bookingPendingDeletion"
+          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900"
+        >
+          <p>Событие: {{ detail?.event?.title || '—' }}</p>
+          <p>Место: {{ detail?.seat?.section }}, ряд {{ detail?.seat?.row }}, место {{ detail?.seat?.number }}</p>
+          <p>Пользователь: {{ userLabel(bookingPendingDeletion) }}</p>
+        </div>
       </div>
     </template>
 
@@ -144,28 +162,18 @@
       <UButton
         color="neutral"
         variant="outline"
-        :disabled="saving || deleting"
-        @click="close"
+        :disabled="deleting"
+        @click="closeDeleteConfirmation"
       >
-        Закрыть
+        Отмена
       </UButton>
 
       <UButton
-        v-if="currentBooking"
         color="error"
         :loading="deleting"
         @click="deleteCurrentBooking"
       >
         Удалить бронь
-      </UButton>
-
-      <UButton
-        color="primary"
-        :loading="saving"
-        :disabled="!selectedUserId"
-        @click="assignBooking"
-      >
-        {{ currentBooking ? 'Обновить бронь' : 'Назначить бронь' }}
       </UButton>
     </template>
   </UModal>
@@ -201,6 +209,8 @@ const userSearch = ref('')
 const selectedUserId = ref('')
 const selectedStatus = ref('booked')
 const holdMinutes = ref('30')
+const deleteConfirmationOpen = ref(false)
+const bookingPendingDeletion = ref(null)
 
 const modalTitle = computed(() => {
   if (!props.seat) return 'Управление местом'
@@ -233,8 +243,15 @@ function onOpenChange(value) {
   emit('update:open', value)
 }
 
-function close() {
-  emit('update:open', false)
+function openDeleteConfirmation() {
+  if (!currentBooking.value) return
+  bookingPendingDeletion.value = currentBooking.value
+  deleteConfirmationOpen.value = true
+}
+
+function closeDeleteConfirmation() {
+  deleteConfirmationOpen.value = false
+  bookingPendingDeletion.value = null
 }
 
 function formatDateTime(value) {
@@ -282,10 +299,12 @@ function syncFormFromDetail() {
     selectedUserId.value = String(currentBooking.value.user_id ?? '')
     selectedStatus.value = currentBooking.value.status ?? 'booked'
   } else {
-    selectedStatus.value = 'booked'
+    if (selectedStatus.value !== 'held' && selectedStatus.value !== 'booked') {
+      selectedStatus.value = 'booked'
+    }
   }
 
-  if (!selectedUserId.value) {
+  if (!currentBooking.value && !selectedUserId.value) {
     selectedUserId.value = ''
   }
 }
@@ -324,7 +343,7 @@ async function loadDialog() {
 }
 
 async function assignBooking() {
-  if (!selectedUserId.value || !props.seat?.id) return
+  if (!selectedUserId.value || !props.seat?.id || currentBooking.value) return
 
   saving.value = true
 
@@ -344,8 +363,8 @@ async function assignBooking() {
     syncFormFromDetail()
     emit('changed')
     toast.add({
-      title: 'Бронь обновлена',
-      description: 'Настройки места сохранены.',
+      title: 'Бронь назначена',
+      description: 'Место закреплено за выбранным пользователем.',
       color: 'success',
     })
   } catch (error) {
@@ -361,17 +380,18 @@ async function assignBooking() {
 }
 
 async function deleteCurrentBooking() {
-  if (!currentBooking.value?.id) return
+  if (!bookingPendingDeletion.value?.id) return
 
   deleting.value = true
 
   try {
-    await request(`/api/backend/booking/bookings/${currentBooking.value.id}/release/`, {
+    await request(`/api/backend/booking/bookings/${bookingPendingDeletion.value.id}/release/`, {
       method: 'POST',
     })
 
     await loadDetail()
     syncFormFromDetail()
+    closeDeleteConfirmation()
     emit('changed')
     toast.add({
       title: 'Бронь удалена',
@@ -397,5 +417,13 @@ watch(
     void loadDialog()
   },
   { immediate: true },
+)
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) return
+    closeDeleteConfirmation()
+  },
 )
 </script>

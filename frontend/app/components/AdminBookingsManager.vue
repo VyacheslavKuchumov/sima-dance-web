@@ -9,7 +9,7 @@
           </p>
         </div>
 
-        <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_220px_180px_180px_auto]">
+        <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_220px_180px_auto]">
           <UInput
             v-model="filters.search"
             class="w-full"
@@ -35,13 +35,6 @@
             <option value="held">Только удержания</option>
             <option value="booked">Только подтвержденные</option>
           </select>
-
-          <UInput
-            v-model="filters.userId"
-            class="w-full"
-            placeholder="ID пользователя"
-            @keyup.enter="applyFilters"
-          />
 
           <div class="flex gap-2">
             <UButton color="primary" :loading="loading" @click="applyFilters">
@@ -103,7 +96,7 @@
             <UButton
               color="error"
               :loading="removingBookingId === booking.id"
-              @click="removeBooking(booking)"
+              @click="openDeleteConfirmation(booking)"
             >
               Удалить бронь
             </UButton>
@@ -112,6 +105,44 @@
       </article>
     </div>
   </UCard>
+
+  <UModal v-model:open="deleteConfirmationOpen" title="Удалить бронь?">
+    <template #body>
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600">
+          После удаления место снова станет доступным в схеме зала.
+        </p>
+
+        <div
+          v-if="bookingPendingDeletion"
+          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900"
+        >
+          <p><span class="font-medium">Событие:</span> {{ bookingPendingDeletion.event_title || `Событие #${bookingPendingDeletion.event}` }}</p>
+          <p><span class="font-medium">Место:</span> {{ seatLabel(bookingPendingDeletion) }}</p>
+          <p><span class="font-medium">Пользователь:</span> {{ userLabel(bookingPendingDeletion) }}</p>
+        </div>
+      </div>
+    </template>
+
+    <template #footer>
+      <UButton
+        color="neutral"
+        variant="outline"
+        :disabled="Boolean(removingBookingId)"
+        @click="closeDeleteConfirmation"
+      >
+        Отмена
+      </UButton>
+
+      <UButton
+        color="error"
+        :loading="Boolean(removingBookingId)"
+        @click="confirmRemoveBooking"
+      >
+        Удалить бронь
+      </UButton>
+    </template>
+  </UModal>
 </template>
 
 <script setup>
@@ -124,6 +155,8 @@ const loading = ref(false)
 const removingBookingId = ref(null)
 const bookings = ref([])
 const events = ref([])
+const deleteConfirmationOpen = ref(false)
+const bookingPendingDeletion = ref(null)
 
 const filters = reactive({
   search: '',
@@ -208,12 +241,13 @@ async function loadBookings() {
 }
 
 async function applyFilters() {
+  filters.userId = ''
+
   await router.replace({
     query: {
       ...(filters.search.trim() ? { search: filters.search.trim() } : {}),
       ...(filters.status && filters.status !== 'held,booked' ? { status: filters.status } : {}),
       ...(filters.eventId ? { eventId: filters.eventId } : {}),
-      ...(filters.userId ? { userId: filters.userId } : {}),
     },
   })
 }
@@ -226,7 +260,20 @@ async function resetFilters() {
   await router.replace({ query: {} })
 }
 
-async function removeBooking(booking) {
+function openDeleteConfirmation(booking) {
+  bookingPendingDeletion.value = booking
+  deleteConfirmationOpen.value = true
+}
+
+function closeDeleteConfirmation() {
+  deleteConfirmationOpen.value = false
+  bookingPendingDeletion.value = null
+}
+
+async function confirmRemoveBooking() {
+  if (!bookingPendingDeletion.value) return
+
+  const booking = bookingPendingDeletion.value
   removingBookingId.value = booking.id
 
   try {
@@ -238,6 +285,7 @@ async function removeBooking(booking) {
       description: 'Место снова доступно в схеме зала.',
       color: 'success',
     })
+    closeDeleteConfirmation()
     await loadBookings()
   } catch (error) {
     console.error('Failed to remove admin booking', error)

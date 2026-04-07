@@ -5,9 +5,6 @@
         <div class="flex items-center justify-between gap-3">
           <div>
             <h2 class="text-xl font-semibold">План зала</h2>
-            <p class="text-sm text-gray-500">
-              Карта обновляется по push-событиям, без перезагрузки страницы и без polling.
-            </p>
           </div>
 
           <UBadge
@@ -30,8 +27,8 @@
         <div class="legend">
           <template v-if="isAdminMode">
             <div class="legend-item"><span class="legend-dot seat-available" /> Свободно</div>
-            <div class="legend-item"><span class="legend-dot seat-held" /> Удерживается</div>
-            <div class="legend-item"><span class="legend-dot seat-booked" /> Подтверждено</div>
+            <div class="legend-item"><span class="legend-dot seat-held-admin" /> Удерживается</div>
+            <div class="legend-item"><span class="legend-dot seat-booked-admin" /> Подтверждено</div>
             <div class="legend-item"><span class="legend-dot seat-unavailable" /> Отключено</div>
           </template>
 
@@ -74,10 +71,12 @@
                   class="seat-circle"
                   :class="{
                     'seat-available': seatStatus(seat) === 'available',
-                    'seat-held': seatStatus(seat) === 'held',
-                    'seat-held-current': seatStatus(seat) === 'held-current',
-                    'seat-booked': seatStatus(seat) === 'booked',
-                    'seat-booked-current': seatStatus(seat) === 'booked-current',
+                    'seat-held': !isAdminMode && seatStatus(seat) === 'held',
+                    'seat-held-current': !isAdminMode && seatStatus(seat) === 'held-current',
+                    'seat-booked': !isAdminMode && seatStatus(seat) === 'booked',
+                    'seat-booked-current': !isAdminMode && seatStatus(seat) === 'booked-current',
+                    'seat-held-admin': isAdminMode && ['held', 'held-current'].includes(seatStatus(seat)),
+                    'seat-booked-admin': isAdminMode && ['booked', 'booked-current'].includes(seatStatus(seat)),
                     'seat-unavailable': seatStatus(seat) === 'unavailable',
                     'seat-busy': activeSeatId === seat.id,
                   }"
@@ -417,6 +416,12 @@ watch(adminDialogOpen, (value) => {
   color: #1e3a8a;
 }
 
+.seat-held-admin {
+  background: #ffedd5;
+  border-color: #f97316;
+  color: #9a3412;
+}
+
 .seat-unavailable {
   background: #f3f3f4;
   color: #8a8a8a;
@@ -433,6 +438,12 @@ watch(adminDialogOpen, (value) => {
   background: #fff1c6;
   border-color: #d49e2d;
   color: #5a3d00;
+}
+
+.seat-booked-admin {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
 }
 
 .seat-busy {

@@ -165,17 +165,11 @@ class AdminSeatBookingView(APIView):
             .order_by("status", "-created_at")
             .first()
         )
-        recent_bookings = (
-            Booking.objects.filter(event=event, seat=seat)
-            .select_related("seat", "event", "user", "user__profile__group")
-            .order_by("-created_at")[:5]
-        )
 
         return Response({
             "event": EventSerializer(event).data,
             "seat": SeatSerializer(seat).data,
             "current_booking": BookingSerializer(current_booking).data if current_booking else None,
-            "recent_bookings": BookingSerializer(recent_bookings, many=True).data,
         })
 
     def post(self, request, event_id, seat_id):
@@ -220,32 +214,25 @@ class AdminSeatBookingView(APIView):
 
             created = False
             if active_booking:
-                if active_booking.user_id != requested_user.id:
-                    return Response(
-                        {
-                            "detail": (
-                                "У места уже есть активная бронь другого пользователя. "
-                                "Сначала удалите текущую бронь."
-                            )
-                        },
-                        status=status.HTTP_409_CONFLICT,
-                    )
-
-                active_booking.status = requested_status
-                active_booking.expires_at = expires_at
-                active_booking.price_snapshot = locked_seat.price
-                active_booking.save(update_fields=["status", "expires_at", "price_snapshot", "updated_at"])
-                booking = active_booking
-            else:
-                booking = Booking.objects.create(
-                    user=requested_user,
-                    seat=locked_seat,
-                    event=event,
-                    status=requested_status,
-                    expires_at=expires_at,
-                    price_snapshot=locked_seat.price,
+                return Response(
+                    {
+                        "detail": (
+                            "На этом месте уже есть активная бронь. "
+                            "Сначала удалите текущую бронь."
+                        )
+                    },
+                    status=status.HTTP_409_CONFLICT,
                 )
-                created = True
+
+            booking = Booking.objects.create(
+                user=requested_user,
+                seat=locked_seat,
+                event=event,
+                status=requested_status,
+                expires_at=expires_at,
+                price_snapshot=locked_seat.price,
+            )
+            created = True
 
         response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(BookingSerializer(booking).data, status=response_status)

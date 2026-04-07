@@ -247,6 +247,18 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(response.data["user_id"], self.other_user.id)
         self.assertEqual(response.data["status"], Booking.STATUS_BOOKED)
 
+    def test_superuser_cannot_assign_booking_when_seat_already_has_active_booking(self):
+        Booking.create_hold(self.user, self.seat, self.event)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.post(
+            reverse("admin-seat-booking", args=[self.event.id, self.seat.id]),
+            {"user_id": self.other_user.id, "status": Booking.STATUS_BOOKED},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
     def test_admin_seat_endpoint_returns_current_booking(self):
         booking = Booking.create_hold(self.user, self.seat, self.event)
 
