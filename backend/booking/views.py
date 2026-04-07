@@ -207,7 +207,9 @@ class AdminSeatBookingView(APIView):
                         & (Q(expires_at__isnull=True) | Q(expires_at__gt=now))
                     )
                 )
-                .select_related("seat", "event", "user", "user__profile__group")
+                # Keep FOR UPDATE away from nullable profile joins; PostgreSQL rejects
+                # locking queries that outer-join optional one-to-one relations.
+                .select_related("seat", "event", "user")
                 .order_by("status", "-created_at")
                 .first()
             )
@@ -341,7 +343,6 @@ class ReleaseBookingView(APIView):
                 "seat",
                 "event",
                 "user",
-                "user__profile__group",
             )
             if not request.user.is_superuser:
                 queryset = queryset.filter(user=request.user)

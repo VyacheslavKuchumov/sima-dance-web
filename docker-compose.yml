@@ -83,6 +83,7 @@ services:
     environment:
       NUXT_BACKEND_URL: http://backend:8000
       BACKEND_URL: http://backend:8000
+      NUXT_PUBLIC_BACKEND_WS_URL: https://${TRAEFIK_API_HOST:-api.sima.local}
       NODE_ENV: production
       NITRO_HOST: 0.0.0.0
       NITRO_PORT: 3000
