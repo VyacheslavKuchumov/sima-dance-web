@@ -1,5 +1,5 @@
 <template>
-  <header class="border-b border-gray-200 shadow-sm :dark:border-gray-700">
+  <header class="border-b border-default shadow-sm">
     <nav class="container mx-auto flex items-center justify-between py-4 px-6">
       <h1 class="text-xl font-bold" @click="$router.push('/')">Simadancing 💃</h1>
 

@@ -4,7 +4,7 @@
       <div class="space-y-4">
         <div class="space-y-1">
           <h1 class="text-2xl font-semibold">Управление бронями</h1>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-muted">
             Просматривайте все активные удержания и подтвержденные места, удаляйте бронь и переходите к нужному концерту.
           </p>
         </div>
@@ -63,7 +63,7 @@
       <article
         v-for="booking in bookings"
         :key="booking.id"
-        class="rounded-2xl border border-gray-200 p-4"
+        class="rounded-2xl border border-default p-4"
       >
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="space-y-2">
@@ -74,13 +74,13 @@
               </UBadge>
             </div>
 
-            <div class="grid gap-2 text-sm text-gray-600 md:grid-cols-2">
-              <p><span class="font-medium text-gray-900">Пользователь:</span> {{ userLabel(booking) }}</p>
-              <p><span class="font-medium text-gray-900">Место:</span> {{ seatLabel(booking) }}</p>
-              <p><span class="font-medium text-gray-900">Создано:</span> {{ formatDateTime(booking.created_at) }}</p>
-              <p><span class="font-medium text-gray-900">Действует до:</span> {{ formatDateTime(booking.expires_at) }}</p>
-              <p><span class="font-medium text-gray-900">Стоимость:</span> {{ formatPrice(booking.price_snapshot) }}</p>
-              <p><span class="font-medium text-gray-900">ID брони:</span> {{ booking.id }}</p>
+            <div class="grid gap-2 text-sm text-toned md:grid-cols-2">
+              <p><span class="font-semibold">Пользователь:</span> {{ userLabel(booking) }}</p>
+              <p><span class="font-semibold">Место:</span> {{ seatLabel(booking) }}</p>
+              <p><span class="font-semibold">Создано:</span> {{ formatDateTime(booking.created_at) }}</p>
+              <p><span class="font-semibold">Действует до:</span> {{ formatDateTime(booking.expires_at) }}</p>
+              <p><span class="font-semibold">Стоимость:</span> {{ formatPrice(booking.price_snapshot) }}</p>
+              <p><span class="font-semibold">ID брони:</span> {{ booking.id }}</p>
             </div>
           </div>
 
@@ -109,17 +109,17 @@
   <UModal v-model:open="deleteConfirmationOpen" title="Удалить бронь?">
     <template #body>
       <div class="space-y-3">
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-toned">
           После удаления место снова станет доступным в схеме зала.
         </p>
 
         <div
           v-if="bookingPendingDeletion"
-          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900"
+          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100"
         >
-          <p><span class="font-medium">Событие:</span> {{ bookingPendingDeletion.event_title || `Событие #${bookingPendingDeletion.event}` }}</p>
-          <p><span class="font-medium">Место:</span> {{ seatLabel(bookingPendingDeletion) }}</p>
-          <p><span class="font-medium">Пользователь:</span> {{ userLabel(bookingPendingDeletion) }}</p>
+          <p><span class="font-semibold">Событие:</span> {{ bookingPendingDeletion.event_title || `Событие #${bookingPendingDeletion.event}` }}</p>
+          <p><span class="font-semibold">Место:</span> {{ seatLabel(bookingPendingDeletion) }}</p>
+          <p><span class="font-semibold">Пользователь:</span> {{ userLabel(bookingPendingDeletion) }}</p>
         </div>
       </div>
     </template>

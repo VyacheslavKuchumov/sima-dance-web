@@ -14,20 +14,20 @@
         />
 
         <div class="grid gap-4 lg:grid-cols-2">
-          <section class="rounded-2xl border border-gray-200 p-4">
+          <section class="rounded-2xl border border-default p-4">
             <h3 class="text-base font-semibold">Информация о месте</h3>
 
-            <div class="mt-3 space-y-2 text-sm text-gray-600">
-              <p>Секция: {{ detail.seat.section }}</p>
-              <p>Ряд: {{ detail.seat.row }}</p>
-              <p>Место: {{ detail.seat.number }}</p>
-              <p>Цена: {{ formatPrice(detail.seat.price) }}</p>
-              <p>Доступность: {{ detail.seat.available ? 'Доступно' : 'Отключено' }}</p>
-              <p>Событие: {{ detail.event.title }}</p>
+            <div class="mt-3 space-y-2 text-sm text-toned">
+              <p><span class="font-semibold">Секция:</span> {{ detail.seat.section }}</p>
+              <p><span class="font-semibold">Ряд:</span> {{ detail.seat.row }}</p>
+              <p><span class="font-semibold">Место:</span> {{ detail.seat.number }}</p>
+              <p><span class="font-semibold">Цена:</span> {{ formatPrice(detail.seat.price) }}</p>
+              <p><span class="font-semibold">Доступность:</span> {{ detail.seat.available ? 'Доступно' : 'Отключено' }}</p>
+              <p><span class="font-semibold">Событие:</span> {{ detail.event.title }}</p>
             </div>
           </section>
 
-          <section class="rounded-2xl border border-gray-200 p-4">
+          <section class="rounded-2xl border border-default p-4">
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-base font-semibold">Текущая бронь</h3>
               <UBadge
@@ -39,12 +39,12 @@
               </UBadge>
             </div>
 
-            <div v-if="currentBooking" class="mt-3 space-y-2 text-sm text-gray-600">
-              <p>Пользователь: {{ userLabel(currentBooking) }}</p>
-              <p>ФИО: {{ currentBooking.user_details?.profile?.full_name || '—' }}</p>
-              <p>ФИО ребенка: {{ currentBooking.user_details?.profile?.child_full_name || '—' }}</p>
-              <p>Создано: {{ formatDateTime(currentBooking.created_at) }}</p>
-              <p>Действует до: {{ formatDateTime(currentBooking.expires_at) }}</p>
+            <div v-if="currentBooking" class="mt-3 space-y-2 text-sm text-toned">
+              <p><span class="font-semibold">Пользователь:</span> {{ userLabel(currentBooking) }}</p>
+              <p><span class="font-semibold">ФИО:</span> {{ currentBooking.user_details?.profile?.full_name || '—' }}</p>
+              <p><span class="font-semibold">ФИО ребенка:</span> {{ currentBooking.user_details?.profile?.child_full_name || '—' }}</p>
+              <p><span class="font-semibold">Создано:</span> {{ formatDateTime(currentBooking.created_at) }}</p>
+              <p><span class="font-semibold">Действует до:</span> {{ formatDateTime(currentBooking.expires_at) }}</p>
             </div>
 
             <UAlert
@@ -58,10 +58,10 @@
           </section>
         </div>
 
-        <section class="rounded-2xl border border-gray-200 p-4">
+        <section class="rounded-2xl border border-default p-4">
           <div class="space-y-1">
             <h3 class="text-base font-semibold">Назначить бронь пользователю</h3>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-muted">
               Назначение доступно только для свободного места без активной брони.
             </p>
           </div>
@@ -143,17 +143,17 @@
   <UModal v-model:open="deleteConfirmationOpen" title="Удалить бронь?">
     <template #body>
       <div class="space-y-3">
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-toned">
           После удаления место снова станет свободным, и на него можно будет назначить новую бронь.
         </p>
 
         <div
           v-if="bookingPendingDeletion"
-          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900"
+          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100"
         >
-          <p>Событие: {{ detail?.event?.title || '—' }}</p>
-          <p>Место: {{ detail?.seat?.section }}, ряд {{ detail?.seat?.row }}, место {{ detail?.seat?.number }}</p>
-          <p>Пользователь: {{ userLabel(bookingPendingDeletion) }}</p>
+          <p><span class="font-semibold">Событие:</span> {{ detail?.event?.title || '—' }}</p>
+          <p><span class="font-semibold">Место:</span> {{ detail?.seat?.section }}, ряд {{ detail?.seat?.row }}, место {{ detail?.seat?.number }}</p>
+          <p><span class="font-semibold">Пользователь:</span> {{ userLabel(bookingPendingDeletion) }}</p>
         </div>
       </div>
     </template>

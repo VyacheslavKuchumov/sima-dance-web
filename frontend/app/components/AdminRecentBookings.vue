@@ -4,7 +4,7 @@
       <div class="flex items-start justify-between gap-3">
         <div>
           <h2 class="text-xl font-semibold">Последние брони</h2>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-muted">
             Свежие удержания и подтверждения по текущему концерту.
           </p>
         </div>
@@ -33,7 +33,7 @@
       <article
         v-for="booking in visibleBookings"
         :key="booking.id"
-        class="rounded-2xl border border-gray-200 p-4"
+        class="rounded-2xl border border-default p-4"
       >
         <div class="space-y-2">
           <div class="flex items-center justify-between gap-3">
@@ -43,8 +43,8 @@
             </UBadge>
           </div>
 
-          <p class="text-sm text-gray-600">{{ userLabel(booking) }}</p>
-          <p class="text-sm text-gray-500">Создано: {{ formatDateTime(booking.created_at) }}</p>
+          <p class="text-sm text-toned"><span class="font-semibold">Пользователь:</span> {{ userLabel(booking) }}</p>
+          <p class="text-sm text-muted"><span class="font-semibold">Создано:</span> {{ formatDateTime(booking.created_at) }}</p>
         </div>
       </article>
     </div>

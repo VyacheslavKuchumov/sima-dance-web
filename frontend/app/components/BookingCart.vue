@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <h2 class="text-xl font-semibold">{{ title }}</h2>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-muted">
             Удержанные места хранятся на сервере и восстановятся после обновления страницы.
           </p>
         </div>
@@ -56,17 +56,17 @@
           <div
             v-for="booking in heldBookings"
             :key="booking.id"
-            class="rounded-xl border border-gray-200 p-4"
+            class="rounded-xl border border-default p-4"
           >
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="font-medium">
                   {{ booking.seat.section }}, ряд {{ booking.seat.row }}, место {{ booking.seat.number }}
                 </p>
-                <p v-if="!eventId" class="text-sm text-gray-500">
+                <p v-if="!eventId" class="text-sm text-muted">
                   {{ booking.event_title || `Событие #${booking.event}` }}
                 </p>
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-muted">
                   Удержание до {{ formatDateTime(booking.expires_at) }}
                 </p>
               </div>
@@ -98,17 +98,17 @@
           <div
             v-for="booking in bookedBookings"
             :key="booking.id"
-            class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4"
+            class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-800 dark:bg-emerald-950/30"
           >
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="font-medium">
                   {{ booking.seat.section }}, ряд {{ booking.seat.row }}, место {{ booking.seat.number }}
                 </p>
-                <p v-if="!eventId" class="text-sm text-emerald-700">
+                <p v-if="!eventId" class="text-sm text-emerald-700 dark:text-emerald-300">
                   {{ booking.event_title || `Событие #${booking.event}` }}
                 </p>
-                <p class="text-sm text-emerald-700">
+                <p class="text-sm text-emerald-700 dark:text-emerald-300">
                   Бронь подтверждена
                 </p>
               </div>
@@ -135,12 +135,12 @@
       <div class="space-y-4">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p class="text-sm text-gray-500">{{ summaryLabel }}</p>
+            <p class="text-sm text-muted">{{ summaryLabel }}</p>
             <p class="text-2xl font-semibold">{{ formatPrice(summaryTotal) }}</p>
-            <p v-if="hasHeldBookings" class="text-sm text-amber-700">
+            <p v-if="hasHeldBookings" class="text-sm text-amber-700 dark:text-amber-300">
               Сначала подтвердите бронь, затем откроется QR-код.
             </p>
-            <p v-else-if="hasBookedBookings" class="text-sm text-emerald-700">
+            <p v-else-if="hasBookedBookings" class="text-sm text-emerald-700 dark:text-emerald-300">
               Бронь уже подтверждена. QR-код доступен в любое время.
             </p>
           </div>
@@ -167,7 +167,7 @@
           </div>
         </div>
 
-        <div v-if="bookedBookings.length" class="text-sm text-gray-500">
+        <div v-if="bookedBookings.length" class="text-sm text-muted">
           Подтверждено на сумму {{ formatPrice(bookedTotal) }}.
         </div>
       </div>
@@ -181,13 +181,13 @@
           <div class="qr-pattern" />
         </div>
 
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-toned">
           Это заглушка QR-кода. После подтверждения брони откройте его и покажите на входе или
           используйте для дальнейшего шага оплаты, если он нужен.
         </p>
 
-        <div v-if="bookedBookings.length" class="rounded-xl bg-gray-50 p-4 text-sm text-gray-600">
-          <p class="font-medium text-gray-900">Подтвержденные места</p>
+        <div v-if="bookedBookings.length" class="rounded-xl bg-elevated p-4 text-sm text-toned">
+          <p class="font-semibold">Подтвержденные места</p>
           <ul class="mt-2 space-y-1">
             <li
               v-for="booking in bookedBookings"
@@ -214,13 +214,13 @@
   <UModal v-model:open="bookedCancellationOpen" title="Удалить подтвержденную бронь?">
     <template #body>
       <div class="space-y-3">
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-toned">
           Подтвержденное место будет снято, и оно снова станет доступно для бронирования.
         </p>
 
         <div
           v-if="bookingPendingCancellation"
-          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900"
+          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100"
         >
           {{ bookingPendingCancellation.seat.section }}, ряд {{ bookingPendingCancellation.seat.row }},
           место {{ bookingPendingCancellation.seat.number }}

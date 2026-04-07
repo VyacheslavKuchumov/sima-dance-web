@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div class="space-y-1">
           <h1 class="text-2xl font-semibold">Управление пользователями</h1>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-muted">
             Список всех пользователей системы, включая группы, профили и количество броней.
           </p>
         </div>
@@ -42,7 +42,7 @@
       <article
         v-for="user in users"
         :key="user.id"
-        class="rounded-2xl border border-gray-200 p-4"
+        class="rounded-2xl border border-default p-4"
       >
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="space-y-2">
@@ -55,19 +55,19 @@
               </UBadge>
             </div>
 
-            <div class="grid gap-2 text-sm text-gray-600 md:grid-cols-2">
-              <p><span class="font-medium text-gray-900">Email:</span> {{ user.email || '—' }}</p>
-              <p><span class="font-medium text-gray-900">Группа:</span> {{ user.profile?.group?.name || '—' }}</p>
-              <p><span class="font-medium text-gray-900">ФИО:</span> {{ user.profile?.full_name || '—' }}</p>
-              <p><span class="font-medium text-gray-900">ФИО ребенка:</span> {{ user.profile?.child_full_name || '—' }}</p>
-              <p><span class="font-medium text-gray-900">Дата регистрации:</span> {{ formatDateTime(user.date_joined) }}</p>
-              <p><span class="font-medium text-gray-900">Последний вход:</span> {{ formatDateTime(user.last_login) }}</p>
+            <div class="grid gap-2 text-sm text-toned md:grid-cols-2">
+              <p><span class="font-semibold">Email:</span> {{ user.email || '—' }}</p>
+              <p><span class="font-semibold">Группа:</span> {{ user.profile?.group?.name || '—' }}</p>
+              <p><span class="font-semibold">ФИО:</span> {{ user.profile?.full_name || '—' }}</p>
+              <p><span class="font-semibold">ФИО ребенка:</span> {{ user.profile?.child_full_name || '—' }}</p>
+              <p><span class="font-semibold">Дата регистрации:</span> {{ formatDateTime(user.date_joined) }}</p>
+              <p><span class="font-semibold">Последний вход:</span> {{ formatDateTime(user.last_login) }}</p>
             </div>
           </div>
 
           <div class="flex flex-col gap-2 lg:items-end">
-            <div class="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Броней в системе: <span class="font-semibold text-gray-900">{{ user.bookings_count ?? 0 }}</span>
+            <div class="rounded-xl bg-elevated px-4 py-3 text-sm text-toned">
+              <span class="font-semibold">Броней в системе:</span> {{ user.bookings_count ?? 0 }}
             </div>
 
             <UButton

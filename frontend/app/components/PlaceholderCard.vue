@@ -1,12 +1,12 @@
 <template>
   <UCard
     variant="soft"
-    class="max-w-3xl mx-auto p-4 bg-white shadow-md rounded-lg">
+    class="mx-auto max-w-3xl rounded-lg p-4 shadow-md">
     <template #header>
       <h2 class="text-xl font-semibold">Главная</h2>
     </template>
 
-    <p class="text-gray-700">
+    <p class="text-toned">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut 
       labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco 
       laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in 
@@ -27,4 +27,3 @@
     </template>
   </UCard>
 </template>
-

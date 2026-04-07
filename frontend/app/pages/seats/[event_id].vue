@@ -1,11 +1,11 @@
 <template>
   <div class="w-full space-y-6">
     <header class="space-y-2">
-      <p class="text-sm uppercase tracking-[0.2em] text-gray-500">Бронирование</p>
+      <p class="text-sm uppercase tracking-[0.2em] text-muted">Бронирование</p>
       <h1 class="text-3xl font-semibold">
         {{ event?.title || 'Выбор мест' }}
       </h1>
-      <p class="text-sm text-gray-500">
+      <p class="text-sm text-muted">
         {{ eventDateLabel }}
       </p>
     </header>

@@ -104,7 +104,7 @@
     </DraggableContainer>
 
     <template #footer>
-      <p class="text-sm text-gray-500">
+      <p class="text-sm text-muted">
         {{
           isAdminMode
             ? 'Нажмите на любое место, чтобы открыть расширенное управление бронью. Удаление самого места в этом окне недоступно.'

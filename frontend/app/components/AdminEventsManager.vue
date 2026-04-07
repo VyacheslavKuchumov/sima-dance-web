@@ -5,7 +5,7 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div class="space-y-1">
             <h1 class="text-2xl font-semibold">Управление концертами</h1>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-muted">
               Создавайте новые события, редактируйте карточки концертов и управляйте архивом.
             </p>
           </div>
@@ -47,7 +47,7 @@
         <article
           v-for="event in filteredEvents"
           :key="event.id"
-          class="rounded-2xl border border-gray-200 p-4"
+          class="rounded-2xl border border-default p-4"
         >
           <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="space-y-2">
@@ -58,9 +58,9 @@
                 </UBadge>
               </div>
 
-              <div class="space-y-1 text-sm text-gray-600">
-                <p><span class="font-medium text-gray-900">Дата:</span> {{ formatDate(event.starts_at) }}</p>
-                <p><span class="font-medium text-gray-900">Изображение:</span> {{ event.img_url || 'Стандартное изображение карточки' }}</p>
+              <div class="space-y-1 text-sm text-toned">
+                <p><span class="font-semibold">Дата:</span> {{ formatDate(event.starts_at) }}</p>
+                <p><span class="font-semibold">Изображение:</span> {{ event.img_url || 'Стандартное изображение карточки' }}</p>
               </div>
             </div>
 
@@ -115,7 +115,7 @@
             />
           </UFormField>
 
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700">
+          <label class="flex items-center gap-3 rounded-xl border border-default px-4 py-3 text-sm text-toned">
             <input
               v-model="form.archived"
               type="checkbox"
