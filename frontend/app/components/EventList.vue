@@ -1,5 +1,5 @@
 <template>
-    <UContainer>
+  <UContainer>
     <!-- show loader while fetching -->
     <UProgress v-if="pending" animation="swing" />
 
@@ -21,44 +21,62 @@
       <p>{{ formatDate.isoToRu(event.starts_at) }}</p>
 
       <template #footer>
-        <UButton color="primary" block @click="() => showEventSeats(event.id)">
-          Бронировать места
-        </UButton>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <UButton color="primary" block @click="() => showEventSeats(event.id)">
+            {{ auth.isSuperuser ? 'Открыть схему' : 'Бронировать места' }}
+          </UButton>
+
+          <UButton
+            v-if="auth.isSuperuser"
+            color="neutral"
+            variant="outline"
+            block
+            @click="() => editEvent(event.id)"
+          >
+            Редактировать
+          </UButton>
+        </div>
       </template>
     </UCard>
-
-
   </UContainer>
 </template>
 
 <script setup>
-
-// composables used in your original component
+const auth = useAuthStore()
+const router = useRouter()
 const formatDate = useDateConverter()
 const toast = useAppToast()
 
-// Fetch events with useFetch (no store)
-// Adjust endpoint if your API route differs
 const { data, pending, error } = useFetch('/api/backend/booking/events/', {
-  // automatic fetch on setup; remove or change options if needed
-  // e.g. headers, credentials, baseURL, etc.
+  server: false,
+  default: () => [],
 })
 
-// Computed array for template safety (always an array)
 const events = computed(() => {
-  // If API returns { results: [...] } adapt accordingly:
-  // return events.value?.results ?? []
+  if (Array.isArray(data.value)) return data.value
   return data.value?.results ?? []
 })
 
-if (error.value){
-  toast.add({ title: 'Ошибка', description: `Не удалось загрузить события ${error.value}`, color: 'error' })
+watch(error, (value) => {
+  if (!value) return
+
+  toast.add({
+    title: 'Ошибка',
+    description: value.message ?? 'Не удалось загрузить события.',
+    color: 'error',
+  })
+})
+
+function showEventSeats(eventId) {
+  router.push(`/seats/${eventId}`)
 }
 
-
-// navigation to seats page
-function showEventSeats(eventId) {
-  const router = useRouter()
-  router.push(`/seats/${eventId}`)
+function editEvent(eventId) {
+  router.push({
+    path: '/admin/events',
+    query: {
+      edit: String(eventId),
+    },
+  })
 }
 </script>

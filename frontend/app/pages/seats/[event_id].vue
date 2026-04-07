@@ -13,10 +13,18 @@
     <div class="layout-grid">
       <SeatsList
         :event-id="eventId"
+        @admin-changed="adminRefreshKey += 1"
       />
 
       <div class="hidden lg:block">
+        <AdminRecentBookings
+          v-if="auth.isSuperuser"
+          :event-id="eventId"
+          :refresh-key="adminRefreshKey"
+        />
+
         <BookingCart
+          v-else
           :event-id="eventId"
         />
       </div>
@@ -26,6 +34,8 @@
 
 <script setup>
 const route = useRoute()
+const auth = useAuthStore()
+const adminRefreshKey = ref(0)
 
 const eventId = computed(() => String(route.params.event_id))
 

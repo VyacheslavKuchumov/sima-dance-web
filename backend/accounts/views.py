@@ -1,10 +1,12 @@
-from django.db.models import Case, IntegerField, Value, When
+from django.db.models import Case, Count, IntegerField, Q, Value, When
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from app.permissions import IsSuperUser
 from .serializers import (
+    AdminUserSerializer,
     SignupGroupSerializer,
     UserSerializer,
     UserSignupSerializer,
@@ -82,4 +84,31 @@ class SignupGroupsView(APIView):
         )
         groups = UserGroup.objects.annotate(signup_order=custom_order).order_by("signup_order", "name")
         serializer = SignupGroupSerializer(groups, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminUsersListView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def get(self, request):
+        search = (request.query_params.get('search') or '').strip()
+        users = User.objects.select_related('profile__group').annotate(
+            bookings_count=Count('bookings', distinct=True),
+        )
+
+        if search:
+            users = users.filter(
+                Q(username__icontains=search)
+                | Q(email__icontains=search)
+                | Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(profile__full_name__icontains=search)
+                | Q(profile__child_full_name__icontains=search)
+                | Q(profile__group__name__icontains=search)
+            )
+
+        serializer = AdminUserSerializer(
+            users.order_by('-is_superuser', 'username', 'id'),
+            many=True,
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)

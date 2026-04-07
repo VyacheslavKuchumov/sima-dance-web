@@ -28,10 +28,19 @@
         </div>
 
         <div class="legend">
-          <div class="legend-item"><span class="legend-dot seat-available" /> Свободно</div>
-          <div class="legend-item"><span class="legend-dot seat-held-current" /> В вашей корзине</div>
-          <div class="legend-item"><span class="legend-dot seat-booked-current" /> Уже подтверждено</div>
-          <div class="legend-item"><span class="legend-dot seat-booked" /> Недоступно</div>
+          <template v-if="isAdminMode">
+            <div class="legend-item"><span class="legend-dot seat-available" /> Свободно</div>
+            <div class="legend-item"><span class="legend-dot seat-held" /> Удерживается</div>
+            <div class="legend-item"><span class="legend-dot seat-booked" /> Подтверждено</div>
+            <div class="legend-item"><span class="legend-dot seat-unavailable" /> Отключено</div>
+          </template>
+
+          <template v-else>
+            <div class="legend-item"><span class="legend-dot seat-available" /> Свободно</div>
+            <div class="legend-item"><span class="legend-dot seat-held-current" /> В вашей корзине</div>
+            <div class="legend-item"><span class="legend-dot seat-booked-current" /> Уже подтверждено</div>
+            <div class="legend-item"><span class="legend-dot seat-booked" /> Недоступно</div>
+          </template>
         </div>
       </div>
     </template>
@@ -97,10 +106,22 @@
 
     <template #footer>
       <p class="text-sm text-gray-500">
-        Нажмите на свободное место, чтобы удержать его. Повторный клик по месту в вашей корзине снимает удержание.
+        {{
+          isAdminMode
+            ? 'Нажмите на любое место, чтобы открыть расширенное управление бронью. Удаление самого места в этом окне недоступно.'
+            : 'Нажмите на свободное место, чтобы удержать его. Повторный клик по месту в вашей корзине снимает удержание.'
+        }}
       </p>
     </template>
   </UCard>
+
+  <AdminSeatDialog
+    v-if="selectedSeat"
+    v-model:open="adminDialogOpen"
+    :event-id="eventId"
+    :seat="selectedSeat"
+    @changed="handleAdminSeatChanged"
+  />
 </template>
 
 <script setup>
@@ -111,15 +132,20 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['admin-changed'])
+
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
 const toast = useAppToast()
 
 const currentUserId = computed(() => auth.userId ?? auth.user?.id ?? null)
+const isAdminMode = computed(() => auth.isSuperuser)
 const eventId = computed(() => String(props.eventId))
 const activeSeatId = ref(null)
 const isRefreshing = ref(false)
 const refreshQueuePending = ref(false)
+const adminDialogOpen = ref(false)
+const selectedSeat = ref(null)
 
 const { data, pending, error, refresh } = useFetch(
   () => `/api/backend/booking/events/${eventId.value}/seatmap/`,
@@ -143,6 +169,7 @@ watch(error, (value) => {
 })
 
 async function syncBookings() {
+  if (isAdminMode.value) return []
   await bookingStore.fetchEventBookings({ eventId: eventId.value, force: true })
 }
 
@@ -171,6 +198,12 @@ async function refreshSeatMap({ syncCart = false } = {}) {
 }
 
 async function onSeatClick(seat) {
+  if (isAdminMode.value) {
+    selectedSeat.value = seat
+    adminDialogOpen.value = true
+    return
+  }
+
   const status = seatStatus(seat)
   activeSeatId.value = seat.id
 
@@ -240,12 +273,23 @@ async function onSeatClick(seat) {
   }
 }
 
+async function handleAdminSeatChanged() {
+  await refreshSeatMap({ syncCart: false })
+  emit('admin-changed')
+}
+
 const { connectionState } = useSeatmapRealtimeSync({
   eventId,
   onMessage: () => {
-    void refreshSeatMap({ syncCart: true }).catch((error) => {
-      console.error('Failed to refresh seatmap after websocket update', error)
-    })
+    void refreshSeatMap({ syncCart: !isAdminMode.value })
+      .then(() => {
+        if (isAdminMode.value) {
+          emit('admin-changed')
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to refresh seatmap after websocket update', error)
+      })
   },
 })
 
@@ -256,21 +300,29 @@ const {
 } = useVenueSeats(seats, currentUserId)
 
 watch(eventId, () => {
-  void refreshSeatMap({ syncCart: true }).catch((error) => {
+  void refreshSeatMap({ syncCart: !isAdminMode.value }).catch((error) => {
     console.error('Failed to refresh seatmap after event change', error)
   })
 })
 
 onMounted(async () => {
+  if (isAdminMode.value) return
+
   try {
     await syncBookings()
   } catch (error) {
     console.error('Failed to sync bookings on mount', error)
-  toast.add({
-    title: 'Не удалось синхронизировать корзину',
-    description: 'Схема зала останется доступной, попробуйте обновить позже.',
-    color: 'warning',
-  })
+    toast.add({
+      title: 'Не удалось синхронизировать корзину',
+      description: 'Схема зала останется доступной, попробуйте обновить позже.',
+      color: 'warning',
+    })
+  }
+})
+
+watch(adminDialogOpen, (value) => {
+  if (!value) {
+    selectedSeat.value = null
   }
 })
 </script>

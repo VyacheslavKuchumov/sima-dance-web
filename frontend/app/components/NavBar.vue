@@ -58,16 +58,33 @@ const menuOpen = ref(false)
 // Build navigation items dynamically depending on authentication
 const items = computed<NavigationMenuItem[][]>(() => {
   if (auth.isAuthenticated) {
-    return [[
+    const baseItems: NavigationMenuItem[] = [
       { label: 'Главная', icon: 'i-lucide-home', to: '/' },
       { label: 'Корзина', icon: 'i-lucide-shopping-cart', to: '/cart' },
       { label: 'Профиль', icon: 'i-lucide-user', to: '/profile' },
+    ]
+
+    const adminItems: NavigationMenuItem[] = auth.isSuperuser
+      ? [
+          { label: 'Управление пользователями', icon: 'i-lucide-users', to: '/admin/users' },
+          { label: 'Управление концертами', icon: 'i-lucide-music-4', to: '/admin/events' },
+          { label: 'Управление бронями', icon: 'i-lucide-ticket', to: '/admin/bookings' },
+        ]
+      : []
+
+    const actionItems: NavigationMenuItem[] = [
       {
         label: 'Выйти',
         icon: 'i-lucide-log-out',
         action: 'logout',
-      }
-    ]]
+      },
+    ]
+
+    return [
+      baseItems,
+      ...(adminItems.length ? [adminItems] : []),
+      actionItems,
+    ]
   } else {
     return [[
       { label: 'Войти', icon: 'i-lucide-log-in', to: '/login' }

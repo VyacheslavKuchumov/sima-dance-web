@@ -7,15 +7,21 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError
 from django.db.models import Q
 from .models import Event, Seat, Booking
-from .serializers import EventSerializer, SeatSerializer, BookingSerializer
+from .serializers import (
+    AdminSeatAssignmentSerializer,
+    BookingSerializer,
+    EventSerializer,
+    SeatSerializer,
+)
 from django_filters.rest_framework import DjangoFilterBackend
+from app.permissions import IsSuperUser, ReadOnlyOrSuperUser
 
 
 # Event viewset used by local setup scripts and frontend reads
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by("-starts_at")
     serializer_class = EventSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [ReadOnlyOrSuperUser]
     lookup_field = "id"
 
 class SeatViewSet(viewsets.ModelViewSet):
@@ -25,7 +31,7 @@ class SeatViewSet(viewsets.ModelViewSet):
     """
     queryset = Seat.objects.all().order_by("section", "row", "number")
     serializer_class = SeatSerializer
-    permission_classes = [permissions.AllowAny]  # change as needed
+    permission_classes = [ReadOnlyOrSuperUser]
     lookup_field = "id"
     pagination_class = None
     filter_backends = [DjangoFilterBackend]
@@ -139,6 +145,112 @@ class SeatMapView(APIView):
         return Response(data)
 
 
+class AdminSeatBookingView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def get(self, request, event_id, seat_id):
+        event = get_object_or_404(Event, pk=event_id)
+        seat = get_object_or_404(Seat, pk=seat_id)
+        now = timezone.now()
+        current_booking = (
+            Booking.objects.filter(event=event, seat=seat)
+            .filter(
+                Q(status=Booking.STATUS_BOOKED)
+                | (
+                    Q(status=Booking.STATUS_HELD)
+                    & (Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+                )
+            )
+            .select_related("seat", "event", "user", "user__profile__group")
+            .order_by("status", "-created_at")
+            .first()
+        )
+        recent_bookings = (
+            Booking.objects.filter(event=event, seat=seat)
+            .select_related("seat", "event", "user", "user__profile__group")
+            .order_by("-created_at")[:5]
+        )
+
+        return Response({
+            "event": EventSerializer(event).data,
+            "seat": SeatSerializer(seat).data,
+            "current_booking": BookingSerializer(current_booking).data if current_booking else None,
+            "recent_bookings": BookingSerializer(recent_bookings, many=True).data,
+        })
+
+    def post(self, request, event_id, seat_id):
+        serializer = AdminSeatAssignmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        event = get_object_or_404(Event, pk=event_id)
+        seat = get_object_or_404(Seat, pk=seat_id)
+
+        if not seat.available:
+            return Response(
+                {"detail": "Это место помечено как недоступное."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        requested_user = serializer.validated_data["user"]
+        requested_status = serializer.validated_data["status"]
+        hold_minutes = serializer.validated_data["hold_minutes"]
+        now = timezone.now()
+        expires_at = (
+            now + timezone.timedelta(minutes=hold_minutes)
+            if requested_status == Booking.STATUS_HELD
+            else None
+        )
+
+        with transaction.atomic():
+            locked_seat = Seat.objects.select_for_update().get(pk=seat.pk)
+            active_booking = (
+                Booking.objects.select_for_update()
+                .filter(event=event, seat=locked_seat)
+                .filter(
+                    Q(status=Booking.STATUS_BOOKED)
+                    | (
+                        Q(status=Booking.STATUS_HELD)
+                        & (Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+                    )
+                )
+                .select_related("seat", "event", "user", "user__profile__group")
+                .order_by("status", "-created_at")
+                .first()
+            )
+
+            created = False
+            if active_booking:
+                if active_booking.user_id != requested_user.id:
+                    return Response(
+                        {
+                            "detail": (
+                                "У места уже есть активная бронь другого пользователя. "
+                                "Сначала удалите текущую бронь."
+                            )
+                        },
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+                active_booking.status = requested_status
+                active_booking.expires_at = expires_at
+                active_booking.price_snapshot = locked_seat.price
+                active_booking.save(update_fields=["status", "expires_at", "price_snapshot", "updated_at"])
+                booking = active_booking
+            else:
+                booking = Booking.objects.create(
+                    user=requested_user,
+                    seat=locked_seat,
+                    event=event,
+                    status=requested_status,
+                    expires_at=expires_at,
+                    price_snapshot=locked_seat.price,
+                )
+                created = True
+
+        response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(BookingSerializer(booking).data, status=response_status)
+
+
 # Create holds for a list of seat ids
 class HoldSeatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -238,10 +350,18 @@ class ReleaseBookingView(APIView):
         now = timezone.now()
 
         with transaction.atomic():
+            queryset = Booking.objects.select_for_update().select_related(
+                "seat",
+                "event",
+                "user",
+                "user__profile__group",
+            )
+            if not request.user.is_superuser:
+                queryset = queryset.filter(user=request.user)
+
             booking = get_object_or_404(
-                Booking.objects.select_for_update().select_related("seat", "event"),
+                queryset,
                 pk=booking_id,
-                user=request.user,
             )
 
             if booking.status not in {Booking.STATUS_HELD, Booking.STATUS_BOOKED}:
@@ -265,32 +385,39 @@ class ReleaseBookingView(APIView):
 
 # Booking viewset: users can list their bookings; admins can view all
 class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.select_related("seat", "event", "user").all().order_by("-created_at")
+    queryset = Booking.objects.select_related(
+        "seat",
+        "event",
+        "user",
+        "user__profile__group",
+    ).all().order_by("-created_at")
     serializer_class = BookingSerializer
     pagination_class = None
 
     def get_permissions(self):
         all_users = self.request.query_params.get("all_users")
-        if (
-            self.request.method in ("GET", "HEAD", "OPTIONS")
-            and self.request.user
-            and self.request.user.is_staff
-            and all_users in {"1", "true", "yes"}
-        ):
-            return [permissions.IsAdminUser()]
+        if self.request.method in ("GET", "HEAD", "OPTIONS") and all_users in {"1", "true", "yes"}:
+            return [IsSuperUser()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Booking.objects.filter(user=user).select_related("seat", "event").order_by("-created_at")
+        queryset = Booking.objects.filter(user=user).select_related(
+            "seat",
+            "event",
+            "user",
+            "user__profile__group",
+        ).order_by("-created_at")
         all_users = self.request.query_params.get("all_users")
 
-        if user.is_authenticated and user.is_staff and all_users in {"1", "true", "yes"}:
+        if user.is_authenticated and user.is_superuser and all_users in {"1", "true", "yes"}:
             queryset = super().get_queryset()
 
         status_param = self.request.query_params.get("status")
         event_id = self.request.query_params.get("event_id")
         active_only = self.request.query_params.get("active_only")
+        user_id = self.request.query_params.get("user_id")
+        search = (self.request.query_params.get("search") or "").strip()
         now = timezone.now()
 
         if status_param:
@@ -300,9 +427,22 @@ class BookingViewSet(viewsets.ModelViewSet):
         if event_id:
             queryset = queryset.filter(event_id=event_id)
 
+        if user_id and user.is_authenticated and user.is_superuser and all_users in {"1", "true", "yes"}:
+            queryset = queryset.filter(user_id=user_id)
+
         if active_only in {"1", "true", "yes"}:
             queryset = queryset.exclude(
                 Q(status=Booking.STATUS_HELD) & Q(expires_at__lt=now)
+            )
+
+        if search:
+            queryset = queryset.filter(
+                Q(user__username__icontains=search)
+                | Q(user__email__icontains=search)
+                | Q(user__profile__full_name__icontains=search)
+                | Q(user__profile__child_full_name__icontains=search)
+                | Q(event__title__icontains=search)
+                | Q(seat__section__icontains=search)
             )
 
         return queryset

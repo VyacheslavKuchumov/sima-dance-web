@@ -27,7 +27,17 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'is_active',
+            'is_staff',
+            'is_superuser',
+            'profile',
+        ]
 
     def get_profile(self, obj):
         try:
@@ -35,6 +45,13 @@ class UserSerializer(serializers.ModelSerializer):
         except UserProfile.DoesNotExist:
             return None
         return UserProfileSerializer(profile).data
+
+
+class AdminUserSerializer(UserSerializer):
+    bookings_count = serializers.IntegerField(read_only=True)
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ['date_joined', 'last_login', 'bookings_count']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

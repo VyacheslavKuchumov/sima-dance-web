@@ -12,6 +12,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/login')
   }
 
+  if (auth.isAuthenticated && !auth.user) {
+    try {
+      await auth.fetchUser()
+    } catch (error) {
+      console.error('Failed to fetch current user in global middleware', error)
+    }
+  }
+
   if (auth.isAuthenticated && isPublicPage) {
     return navigateTo('/')
   }

@@ -19,6 +19,7 @@ class BookingFlowTests(APITestCase):
         self.user = User.objects.create_user(username="alice", password="password123")
         self.other_user = User.objects.create_user(username="bob", password="password123")
         self.staff_user = User.objects.create_user(username="admin", password="password123", is_staff=True)
+        self.superuser = User.objects.create_superuser(username="root", password="password123", email="root@example.com")
         self.event = Event.objects.create(title="Spring Gala", starts_at=date(2026, 4, 1))
         self.other_event = Event.objects.create(title="Summer Gala", starts_at=date(2026, 4, 2))
         self.seat = Seat.objects.create(section="Партер", row=1, number=1, price="1500.00")
@@ -143,12 +144,12 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["event"], self.event.id)
 
-    def test_staff_booking_list_defaults_to_current_user_only(self):
+    def test_superuser_booking_list_defaults_to_current_user_only(self):
         Booking.create_hold(self.user, self.seat, self.event)
         other_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1500.00")
-        staff_booking = Booking.create_hold(self.staff_user, other_seat, self.event)
+        super_booking = Booking.create_hold(self.superuser, other_seat, self.event)
 
-        self.client.force_authenticate(self.staff_user)
+        self.client.force_authenticate(self.superuser)
         response = self.client.get(
             reverse("booking-list"),
             {"status": "held", "active_only": "true"},
@@ -156,14 +157,14 @@ class BookingFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], staff_booking.id)
+        self.assertEqual(response.data[0]["id"], super_booking.id)
 
-    def test_staff_can_request_all_users_bookings_explicitly(self):
+    def test_superuser_can_request_all_users_bookings_explicitly(self):
         first_booking = Booking.create_hold(self.user, self.seat, self.event)
         other_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1500.00")
-        second_booking = Booking.create_hold(self.staff_user, other_seat, self.event)
+        second_booking = Booking.create_hold(self.superuser, other_seat, self.event)
 
-        self.client.force_authenticate(self.staff_user)
+        self.client.force_authenticate(self.superuser)
         response = self.client.get(
             reverse("booking-list"),
             {"status": "held", "active_only": "true", "all_users": "true"},
@@ -171,6 +172,17 @@ class BookingFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual({item["id"] for item in response.data}, {first_booking.id, second_booking.id})
+
+    def test_staff_cannot_request_all_users_bookings(self):
+        Booking.create_hold(self.user, self.seat, self.event)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.get(
+            reverse("booking-list"),
+            {"status": "held", "active_only": "true", "all_users": "true"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_seatmap_includes_booking_status(self):
         self.hold_seat()
@@ -182,8 +194,23 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(response.data[0]["booking_status"], "held")
         self.assertIn("held_until", response.data[0])
 
-    def test_events_endpoint_allows_create(self):
+    def test_events_endpoint_blocks_create_for_anonymous_user(self):
         self.client.force_authenticate(None)
+        response = self.client.post(
+            reverse("event-list"),
+            {
+                "title": "Autumn Gala",
+                "starts_at": "2026-05-01",
+                "img_url": "",
+                "archived": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_superuser_can_create_event(self):
+        self.client.force_authenticate(self.superuser)
         response = self.client.post(
             reverse("event-list"),
             {
@@ -197,3 +224,35 @@ class BookingFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["title"], "Autumn Gala")
+
+    def test_superuser_can_release_another_users_booking(self):
+        hold_response = self.hold_seat()
+        booking_id = hold_response.data["id"]
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.post(reverse("release-booking", args=[booking_id]), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Booking.objects.filter(pk=booking_id).exists())
+
+    def test_superuser_can_assign_booking_through_admin_seat_endpoint(self):
+        self.client.force_authenticate(self.superuser)
+        response = self.client.post(
+            reverse("admin-seat-booking", args=[self.event.id, self.seat.id]),
+            {"user_id": self.other_user.id, "status": Booking.STATUS_BOOKED},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["user_id"], self.other_user.id)
+        self.assertEqual(response.data["status"], Booking.STATUS_BOOKED)
+
+    def test_admin_seat_endpoint_returns_current_booking(self):
+        booking = Booking.create_hold(self.user, self.seat, self.event)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.get(reverse("admin-seat-booking", args=[self.event.id, self.seat.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["current_booking"]["id"], booking.id)
+        self.assertEqual(response.data["seat"]["id"], self.seat.id)

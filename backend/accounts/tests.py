@@ -27,6 +27,11 @@ class AccountsApiTests(APITestCase):
             full_name='Старое ФИО',
             child_full_name='Старое ФИО ребенка',
         )
+        self.superuser = User.objects.create_superuser(
+            username='root-user',
+            password='RootPass123!',
+            email='root@example.com',
+        )
         token_response = self.client.post(
             '/api/accounts/token/',
             {'username': 'profile-user', 'password': 'StartPass123!'},
@@ -149,3 +154,31 @@ class AccountsApiTests(APITestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('BetterPass456!'))
         self.assertFalse(self.user.check_password('StartPass123!'))
+
+    def test_me_endpoint_returns_superuser_flag(self):
+        response = self.client.get('/api/accounts/me/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_superuser'])
+
+    def test_admin_users_endpoint_requires_superuser(self):
+        response = self.client.get('/api/accounts/admin/users/')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_superuser_can_list_all_users_for_admin_panel(self):
+        token_response = self.client.post(
+            '/api/accounts/token/',
+            {'username': 'root-user', 'password': 'RootPass123!'},
+            format='json',
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {token_response.data['access']}"
+        )
+
+        response = self.client.get('/api/accounts/admin/users/', {'search': 'profile'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['username'], 'profile-user')
+        self.assertIn('bookings_count', response.data[0])

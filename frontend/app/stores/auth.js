@@ -35,6 +35,7 @@ export const useAuthStore = defineStore('auth', {
       if (!expiryMs) return false
       return Date.now() < expiryMs
     },
+    isSuperuser: (state) => Boolean(state.user?.is_superuser),
   },
   persist: true,  // requires @pinia/plugin-persistedstate
   actions: {
@@ -123,7 +124,7 @@ export const useAuthStore = defineStore('auth', {
       if (!ok) return null
 
       this.user = await $fetch('/api/backend/accounts/me/', {
-        headers: this.authHeader()
+        headers: this.authHeader(),
       })
       this.userId = Number(this.user?.id) || this.userId
       return this.user
