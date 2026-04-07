@@ -75,7 +75,7 @@
 
             <select
               v-model="selectedUserId"
-              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
+              class="w-full"
             >
               <option value="" disabled>Выберите пользователя</option>
               <option v-for="user in visibleUsers" :key="user.id" :value="String(user.id)">
@@ -85,7 +85,7 @@
 
             <select
               v-model="selectedStatus"
-              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
+              class="w-full"
             >
               <option value="booked">Подтвержденная бронь</option>
               <option value="held">Удержание</option>

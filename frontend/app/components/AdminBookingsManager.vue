@@ -19,7 +19,7 @@
 
           <select
             v-model="filters.eventId"
-            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
+            class="w-full"
           >
             <option value="">Все концерты</option>
             <option v-for="event in events" :key="event.id" :value="String(event.id)">
@@ -29,7 +29,7 @@
 
           <select
             v-model="filters.status"
-            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
+            class="w-full"
           >
             <option value="held,booked">Все статусы</option>
             <option value="held">Только удержания</option>

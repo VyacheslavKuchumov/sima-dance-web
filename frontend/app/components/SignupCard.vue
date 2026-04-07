@@ -16,7 +16,7 @@
           id="groupId"
           v-model="state.groupId"
           name="groupId"
-          class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
+          class="w-full"
           :disabled="loading || !signupGroups.length"
         >
           <option value="" disabled>
