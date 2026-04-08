@@ -272,6 +272,67 @@ function isUpdatingBooking(bookingId) {
   return Boolean(updatingBookingIds[bookingId])
 }
 
+function matchesBooleanFilter(value, filterValue) {
+  if (!filterValue) return true
+
+  if (filterValue === 'true') return Boolean(value)
+  if (filterValue === 'false') return !value
+
+  return true
+}
+
+function matchesStatusFilter(booking) {
+  if (!filters.status) return true
+
+  const allowedStatuses = filters.status
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  if (!allowedStatuses.length) return true
+
+  return allowedStatuses.includes(booking.status)
+}
+
+function matchesBookingFilters(booking) {
+  if (filters.eventId && String(booking.event) !== filters.eventId) {
+    return false
+  }
+
+  if (filters.userId && String(booking.user_id) !== filters.userId) {
+    return false
+  }
+
+  if (filters.groupId && String(booking.user_details?.profile?.group?.id ?? '') !== filters.groupId) {
+    return false
+  }
+
+  return (
+    matchesStatusFilter(booking)
+    && matchesBooleanFilter(booking.is_paid, filters.isPaid)
+    && matchesBooleanFilter(booking.is_ticket_issued, filters.isTicketIssued)
+  )
+}
+
+function replaceBookingInList(updatedBooking) {
+  const bookingIndex = bookings.value.findIndex((booking) => booking.id === updatedBooking.id)
+  if (bookingIndex === -1) return
+
+  if (!matchesBookingFilters(updatedBooking)) {
+    bookings.value.splice(bookingIndex, 1)
+    return
+  }
+
+  bookings.value.splice(bookingIndex, 1, updatedBooking)
+}
+
+function removeBookingFromList(bookingId) {
+  const bookingIndex = bookings.value.findIndex((booking) => booking.id === bookingId)
+  if (bookingIndex === -1) return
+
+  bookings.value.splice(bookingIndex, 1)
+}
+
 async function loadEvents() {
   try {
     const response = await request('/api/backend/booking/events/')
@@ -360,16 +421,16 @@ async function updateBookingFlags(booking, updates) {
   updatingBookingIds[booking.id] = true
 
   try {
-    await request(`/api/backend/booking/bookings/${booking.id}/`, {
+    const updatedBooking = await request(`/api/backend/booking/bookings/${booking.id}/`, {
       method: 'PATCH',
       body: updates,
     })
+    replaceBookingInList(updatedBooking)
     toast.add({
       title: 'Флаги брони обновлены',
       description: 'Изменения сохранены.',
       color: 'success',
     })
-    await loadBookings()
   } catch (error) {
     console.error('Failed to update admin booking flags', error)
     toast.add({
@@ -392,13 +453,13 @@ async function confirmRemoveBooking() {
     await request(`/api/backend/booking/bookings/${booking.id}/release/`, {
       method: 'POST',
     })
+    removeBookingFromList(booking.id)
     toast.add({
       title: 'Бронь удалена',
       description: 'Место снова доступно в схеме зала.',
       color: 'success',
     })
     closeDeleteConfirmation()
-    await loadBookings()
   } catch (error) {
     console.error('Failed to remove admin booking', error)
     toast.add({
