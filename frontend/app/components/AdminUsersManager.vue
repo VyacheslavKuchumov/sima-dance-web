@@ -93,6 +93,15 @@
             </UButton>
 
             <UButton
+              color="error"
+              variant="soft"
+              :loading="resettingPasswordUserId === user.id"
+              @click="openResetPasswordConfirmation(user)"
+            >
+              Сбросить пароль
+            </UButton>
+
+            <UButton
               color="neutral"
               variant="outline"
               :to="{
@@ -109,6 +118,78 @@
       </article>
     </div>
   </UCard>
+
+  <UModal v-model:open="resetPasswordConfirmationOpen" title="Сбросить пароль?">
+    <template #body>
+      <div class="space-y-3">
+        <p class="text-sm text-toned">
+          Новый пароль будет создан автоматически. Старый пароль пользователя сразу перестанет работать.
+        </p>
+
+        <div
+          v-if="userPendingPasswordReset"
+          class="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100"
+        >
+          <p><span class="font-semibold">Пользователь:</span> {{ userPendingPasswordReset.username }}</p>
+          <p><span class="font-semibold">Email:</span> {{ userPendingPasswordReset.email || '—' }}</p>
+          <p><span class="font-semibold">ФИО:</span> {{ userPendingPasswordReset.profile?.full_name || '—' }}</p>
+        </div>
+      </div>
+    </template>
+
+    <template #footer>
+      <UButton
+        color="neutral"
+        variant="outline"
+        :disabled="Boolean(resettingPasswordUserId)"
+        @click="closeResetPasswordConfirmation"
+      >
+        Отмена
+      </UButton>
+
+      <UButton
+        color="error"
+        :loading="Boolean(resettingPasswordUserId)"
+        @click="confirmResetPassword"
+      >
+        Сбросить пароль
+      </UButton>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="resetPasswordResultOpen" title="Новый пароль">
+    <template #body>
+      <div class="space-y-4">
+        <UAlert
+          color="success"
+          variant="subtle"
+          title="Пароль обновлён"
+          description="Покажите пользователю новый пароль. Он сгенерирован автоматически и больше не будет показан в этом действии."
+        />
+
+        <div
+          v-if="resetPasswordResult"
+          class="space-y-3 rounded-xl border border-default bg-elevated p-4"
+        >
+          <p class="text-sm text-toned">
+            <span class="font-semibold">Пользователь:</span> {{ resetPasswordResult.user?.username || '—' }}
+          </p>
+          <div>
+            <p class="mb-2 text-xs uppercase tracking-wide text-muted">Новый пароль</p>
+            <div class="rounded-lg border border-default bg-default px-4 py-3 font-mono text-lg">
+              {{ resetPasswordResult.generated_password }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template #footer>
+      <UButton color="primary" @click="closeResetPasswordResult">
+        Закрыть
+      </UButton>
+    </template>
+  </UModal>
 </template>
 
 <script setup>
@@ -122,6 +203,11 @@ const search = ref('')
 const users = ref([])
 const registeredUsersCount = ref(0)
 const impersonatingUserId = ref(null)
+const resettingPasswordUserId = ref(null)
+const resetPasswordConfirmationOpen = ref(false)
+const resetPasswordResultOpen = ref(false)
+const userPendingPasswordReset = ref(null)
+const resetPasswordResult = ref(null)
 
 function formatDateTime(value) {
   if (!value) return '—'
@@ -184,6 +270,74 @@ async function impersonate(user) {
     impersonatingUserId.value = null
   }
 }
+
+function openResetPasswordConfirmation(user) {
+  userPendingPasswordReset.value = user
+  resetPasswordConfirmationOpen.value = true
+}
+
+function closeResetPasswordConfirmation() {
+  resetPasswordConfirmationOpen.value = false
+  userPendingPasswordReset.value = null
+}
+
+function closeResetPasswordResult() {
+  resetPasswordResultOpen.value = false
+  resetPasswordResult.value = null
+}
+
+async function confirmResetPassword() {
+  if (!userPendingPasswordReset.value) return
+
+  const user = userPendingPasswordReset.value
+  resettingPasswordUserId.value = user.id
+
+  try {
+    const response = await request('/api/backend/accounts/admin/reset-password/', {
+      method: 'POST',
+      body: {
+        user_id: user.id,
+      },
+    })
+
+    closeResetPasswordConfirmation()
+    resetPasswordResult.value = response
+    resetPasswordResultOpen.value = true
+
+    toast.add({
+      title: 'Пароль сброшен',
+      description: `Для ${user.username} создан новый пароль.`,
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Failed to reset user password', error)
+    toast.add({
+      title: 'Не удалось сбросить пароль',
+      description: error?.data?.user_id?.[0] ?? error?.message ?? 'Попробуйте ещё раз.',
+      color: 'error',
+    })
+  } finally {
+    resettingPasswordUserId.value = null
+  }
+}
+
+watch(resetPasswordConfirmationOpen, (value) => {
+  if (!value && !resettingPasswordUserId.value) {
+    userPendingPasswordReset.value = null
+  }
+})
+
+watch(resettingPasswordUserId, (value) => {
+  if (!value && !resetPasswordConfirmationOpen.value) {
+    userPendingPasswordReset.value = null
+  }
+})
+
+watch(resetPasswordResultOpen, (value) => {
+  if (!value) {
+    resetPasswordResult.value = null
+  }
+})
 
 onMounted(() => {
   void loadUsers()

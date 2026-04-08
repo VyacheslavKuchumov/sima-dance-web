@@ -175,6 +175,15 @@ class AccountsApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_admin_reset_password_endpoint_requires_superuser(self):
+        response = self.client.post(
+            '/api/accounts/admin/reset-password/',
+            {'user_id': self.user.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_superuser_can_list_all_users_for_admin_panel(self):
         token_response = self.client.post(
             '/api/accounts/token/',
@@ -221,6 +230,34 @@ class AccountsApiTests(APITestCase):
         self.assertEqual(me_response.status_code, status.HTTP_200_OK)
         self.assertEqual(me_response.data['id'], self.user.id)
         self.assertFalse(me_response.data['is_superuser'])
+
+    def test_superuser_can_reset_user_password(self):
+        token_response = self.client.post(
+            '/api/accounts/token/',
+            {'username': 'root-user', 'password': 'RootPass123!'},
+            format='json',
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {token_response.data['access']}"
+        )
+
+        response = self.client.post(
+            '/api/accounts/admin/reset-password/',
+            {'user_id': self.user.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['user']['id'], self.user.id)
+        self.assertEqual(response.data['user']['username'], self.user.username)
+        self.assertEqual(len(response.data['generated_password']), 8)
+        self.assertTrue(response.data['generated_password'].isalnum())
+        self.assertTrue(any(char.isalpha() for char in response.data['generated_password']))
+        self.assertTrue(any(char.isdigit() for char in response.data['generated_password']))
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(response.data['generated_password']))
+        self.assertFalse(self.user.check_password('StartPass123!'))
 
     def test_superuser_cannot_impersonate_inactive_user(self):
         inactive_user = User.objects.create_user(

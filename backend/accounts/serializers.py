@@ -72,6 +72,13 @@ class AdminUserImpersonationSerializer(serializers.Serializer):
         return value
 
 
+class AdminUserPasswordResetSerializer(serializers.Serializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='user',
+    )
+
+
 class UserUpdateSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=UserGroup.objects.all(), required=False)
     full_name = serializers.CharField(max_length=255, required=False)
