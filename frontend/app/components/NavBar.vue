@@ -1,49 +1,66 @@
 <template>
   <header class="border-b border-default shadow-sm">
-    <nav class="container mx-auto flex items-center justify-between py-4 px-6">
+    <nav class="container mx-auto flex items-center justify-between gap-3 py-4 px-6">
       <h1 class="text-xl font-bold" @click="$router.push('/')">Simadancing 💃</h1>
 
-      <!-- Slideover Menu -->
-      <USlideover v-model:open="menuOpen" title="Меню" close-icon="i-lucide-x">
-        <UButton
-          icon="i-lucide-menu"
-          color="neutral"
-          variant="ghost"
-        />
-        <template #body>
-          <UNavigationMenu
-            orientation="vertical"
-            
-            :items="items"
-          >
-          <template #item="{ item }">
-            <!-- Normal navigation item -->
-            <UButton
-              v-if="item.to"
-              :icon="item.icon"
-              variant="ghost"
-              color="neutral"
-              :to="item.to"
-              class="w-full justify-start"
-            >
-              {{ item.label }}
-            </UButton>
+      <div class="flex items-center gap-2">
+        <div v-if="auth.isImpersonating" class="flex items-center gap-2">
+          <UBadge color="warning" variant="soft" class="hidden sm:inline-flex">
+            Вы вошли как {{ auth.user?.username || 'пользователь' }}
+          </UBadge>
 
-            <!-- Logout special item -->
-            <UButton
-              v-else-if="item.action === 'logout'"
-              :icon="item.icon"
-              variant="ghost"
-              color="error"
-              class="w-full justify-start"
-              @click="auth.logout"
+          <UButton
+            color="warning"
+            variant="soft"
+            size="sm"
+            icon="i-lucide-undo-2"
+            @click="stopImpersonation"
+          >
+            Вернуться в админку
+          </UButton>
+        </div>
+
+        <!-- Slideover Menu -->
+        <USlideover v-model:open="menuOpen" title="Меню" close-icon="i-lucide-x">
+          <UButton
+            icon="i-lucide-menu"
+            color="neutral"
+            variant="ghost"
+          />
+          <template #body>
+            <UNavigationMenu
+              orientation="vertical"
+              :items="items"
             >
-              {{ item.label }}
-            </UButton>
-          </template>
-        </UNavigationMenu>
+              <template #item="{ item }">
+                <!-- Normal navigation item -->
+                <UButton
+                  v-if="item.to"
+                  :icon="item.icon"
+                  variant="ghost"
+                  color="neutral"
+                  :to="item.to"
+                  class="w-full justify-start"
+                >
+                  {{ item.label }}
+                </UButton>
+
+                <!-- Logout special item -->
+                <UButton
+                  v-else-if="item.action === 'logout'"
+                  :icon="item.icon"
+                  variant="ghost"
+                  color="error"
+                  class="w-full justify-start"
+                  @click="auth.logout"
+                >
+                  {{ item.label }}
+                </UButton>
+              </template>
+            </UNavigationMenu>
         </template>
-      </USlideover>
+        </USlideover>
+      </div>
     </nav>
   </header>
 </template>
@@ -53,6 +70,8 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
+const toast = useAppToast()
 const menuOpen = ref(false)
 
 // Build navigation items dynamically depending on authentication
@@ -95,4 +114,24 @@ const items = computed<NavigationMenuItem[][]>(() => {
 watch(() => route.fullPath, () => {
   menuOpen.value = false
 })
+
+async function stopImpersonation() {
+  try {
+    await auth.stopImpersonation()
+    toast.add({
+      title: 'Возврат в админку выполнен',
+      description: 'Исходная сессия администратора восстановлена.',
+      color: 'success',
+    })
+    menuOpen.value = false
+    await router.push('/admin/users')
+  } catch (error) {
+    console.error('Failed to restore admin session', error)
+    toast.add({
+      title: 'Не удалось восстановить админскую сессию',
+      description: error?.message ?? 'Пожалуйста, войдите снова.',
+      color: 'error',
+    })
+  }
+}
 </script>

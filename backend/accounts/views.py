@@ -3,10 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from app.permissions import IsSuperUser
 from .serializers import (
     AdminUserSerializer,
+    AdminUserImpersonationSerializer,
     SignupGroupSerializer,
     UserSerializer,
     UserSignupSerializer,
@@ -112,3 +114,28 @@ class AdminUsersListView(APIView):
             many=True,
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminUserImpersonationView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def post(self, request):
+        serializer = AdminUserImpersonationSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        target_user = serializer.validated_data['user']
+        refresh = RefreshToken.for_user(target_user)
+        refresh['impersonation'] = True
+        refresh['impersonated_by'] = request.user.id
+
+        return Response(
+            {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserSerializer(target_user).data,
+            },
+            status=status.HTTP_200_OK,
+        )

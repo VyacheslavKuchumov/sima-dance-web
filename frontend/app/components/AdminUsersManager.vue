@@ -83,6 +83,16 @@
             </div>
 
             <UButton
+              color="warning"
+              variant="soft"
+              :loading="impersonatingUserId === user.id"
+              :disabled="user.id === auth.userId || !user.is_active"
+              @click="impersonate(user)"
+            >
+              {{ user.id === auth.userId ? 'Текущая сессия' : 'Войти как пользователь' }}
+            </UButton>
+
+            <UButton
               color="neutral"
               variant="outline"
               :to="{
@@ -102,6 +112,8 @@
 </template>
 
 <script setup>
+const auth = useAuthStore()
+const router = useRouter()
 const { request } = useAdminApi()
 const toast = useAppToast()
 
@@ -109,6 +121,7 @@ const loading = ref(false)
 const search = ref('')
 const users = ref([])
 const registeredUsersCount = ref(0)
+const impersonatingUserId = ref(null)
 
 function formatDateTime(value) {
   if (!value) return '—'
@@ -146,6 +159,29 @@ async function loadUsers() {
     })
   } finally {
     loading.value = false
+  }
+}
+
+async function impersonate(user) {
+  impersonatingUserId.value = user.id
+
+  try {
+    await auth.impersonateUser(user.id)
+    toast.add({
+      title: 'Сессия переключена',
+      description: `Вы вошли как ${user.username}.`,
+      color: 'warning',
+    })
+    await router.push('/')
+  } catch (error) {
+    console.error('Failed to impersonate user', error)
+    toast.add({
+      title: 'Не удалось войти за пользователя',
+      description: error?.data?.user_id?.[0] ?? error?.message ?? 'Попробуйте ещё раз.',
+      color: 'error',
+    })
+  } finally {
+    impersonatingUserId.value = null
   }
 }
 

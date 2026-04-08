@@ -54,6 +54,24 @@ class AdminUserSerializer(UserSerializer):
         fields = UserSerializer.Meta.fields + ['date_joined', 'last_login', 'bookings_count']
 
 
+class AdminUserImpersonationSerializer(serializers.Serializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='user',
+    )
+
+    def validate_user_id(self, value):
+        request = self.context.get('request')
+
+        if request and value.pk == request.user.pk:
+            raise serializers.ValidationError('Вы уже авторизованы под этим пользователем.')
+
+        if not value.is_active:
+            raise serializers.ValidationError('Нельзя войти под неактивным пользователем.')
+
+        return value
+
+
 class UserUpdateSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=UserGroup.objects.all(), required=False)
     full_name = serializers.CharField(max_length=255, required=False)

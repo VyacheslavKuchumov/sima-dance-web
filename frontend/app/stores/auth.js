@@ -27,6 +27,7 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     userId: null,
     signupGroups: [],
+    impersonationSession: null,
   }),
   getters: {
     isAuthenticated: (state) => {
@@ -36,9 +37,26 @@ export const useAuthStore = defineStore('auth', {
       return Date.now() < expiryMs
     },
     isSuperuser: (state) => Boolean(state.user?.is_superuser),
+    isImpersonating: (state) => Boolean(state.impersonationSession?.refreshToken),
   },
   persist: true,  // requires @pinia/plugin-persistedstate
   actions: {
+    applySession({ accessToken = null, refreshToken = null, user = null, userId = null } = {}) {
+      this.accessToken = accessToken
+      this.refreshToken = refreshToken
+      this.user = user
+      this.userId = userId
+    },
+
+    captureSession() {
+      return {
+        accessToken: this.accessToken,
+        refreshToken: this.refreshToken,
+        user: this.user,
+        userId: this.userId,
+      }
+    },
+
     authHeader() {
       if (!this.accessToken) return {}
       return { Authorization: `Bearer ${this.accessToken}` }
@@ -75,8 +93,11 @@ export const useAuthStore = defineStore('auth', {
         method: 'POST',
         body: { username, password },
       })
-      this.accessToken = res.access
-      this.refreshToken = res.refresh
+      this.impersonationSession = null
+      this.applySession({
+        accessToken: res.access,
+        refreshToken: res.refresh,
+      })
       this.hydrateFromToken()
       await this.fetchUser()
     },
@@ -115,6 +136,11 @@ export const useAuthStore = defineStore('auth', {
         return true
       } catch (err) {
         console.error('Refresh token failed', err)
+
+        if (this.restoreOriginalSession()) {
+          return this.ensureAccessToken()
+        }
+
         this.logout(false)
         return false
       }
@@ -128,6 +154,61 @@ export const useAuthStore = defineStore('auth', {
       })
       this.userId = Number(this.user?.id) || this.userId
       return this.user
+    },
+    restoreOriginalSession() {
+      if (!this.impersonationSession) return false
+
+      const originalSession = this.impersonationSession
+      this.impersonationSession = null
+      this.applySession(originalSession)
+      this.hydrateFromToken()
+
+      return true
+    },
+    async impersonateUser(userId) {
+      const ok = await this.ensureAccessToken()
+      if (!ok) {
+        throw new Error('Нужна активная сессия администратора.')
+      }
+
+      const originalSession = this.captureSession()
+      const res = await $fetch('/api/backend/accounts/admin/impersonate/', {
+        method: 'POST',
+        body: { user_id: userId },
+        headers: this.authHeader(),
+      })
+
+      if (!this.impersonationSession) {
+        this.impersonationSession = originalSession
+      }
+
+      this.applySession({
+        accessToken: res.access,
+        refreshToken: res.refresh,
+        user: res.user ?? null,
+        userId: Number(res.user?.id) || null,
+      })
+      this.hydrateFromToken()
+
+      if (!this.user) {
+        const loadedUser = await this.fetchUser()
+        if (!loadedUser) {
+          throw new Error('Не удалось завершить вход за пользователя.')
+        }
+      }
+
+      return this.user
+    },
+    async stopImpersonation() {
+      const restored = this.restoreOriginalSession()
+      if (!restored) return false
+
+      const restoredUser = await this.fetchUser()
+      if (!restoredUser) {
+        throw new Error('Не удалось восстановить исходную сессию.')
+      }
+
+      return true
     },
     async updateProfile(payload) {
       const ok = await this.ensureAccessToken()
@@ -153,11 +234,9 @@ export const useAuthStore = defineStore('auth', {
       return true
     },
     logout(redirect = true) {
-      this.accessToken = null
-      this.refreshToken = null
-      this.user = null
-      this.userId = null
+      this.applySession()
       this.signupGroups = []
+      this.impersonationSession = null
       if (redirect) {
         const router = useRouter()
         router.push('/login')

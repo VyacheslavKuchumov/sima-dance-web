@@ -166,6 +166,15 @@ class AccountsApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_admin_impersonation_endpoint_requires_superuser(self):
+        response = self.client.post(
+            '/api/accounts/admin/impersonate/',
+            {'user_id': self.superuser.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_superuser_can_list_all_users_for_admin_panel(self):
         token_response = self.client.post(
             '/api/accounts/token/',
@@ -182,3 +191,57 @@ class AccountsApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'profile-user')
         self.assertIn('bookings_count', response.data[0])
+
+    def test_superuser_can_impersonate_user(self):
+        token_response = self.client.post(
+            '/api/accounts/token/',
+            {'username': 'root-user', 'password': 'RootPass123!'},
+            format='json',
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {token_response.data['access']}"
+        )
+
+        response = self.client.post(
+            '/api/accounts/admin/impersonate/',
+            {'user_id': self.user.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['user']['id'], self.user.id)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}"
+        )
+        me_response = self.client.get('/api/accounts/me/')
+
+        self.assertEqual(me_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(me_response.data['id'], self.user.id)
+        self.assertFalse(me_response.data['is_superuser'])
+
+    def test_superuser_cannot_impersonate_inactive_user(self):
+        inactive_user = User.objects.create_user(
+            username='inactive-user',
+            password='StartPass123!',
+            is_active=False,
+        )
+        token_response = self.client.post(
+            '/api/accounts/token/',
+            {'username': 'root-user', 'password': 'RootPass123!'},
+            format='json',
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {token_response.data['access']}"
+        )
+
+        response = self.client.post(
+            '/api/accounts/admin/impersonate/',
+            {'user_id': inactive_user.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('user_id', response.data)
