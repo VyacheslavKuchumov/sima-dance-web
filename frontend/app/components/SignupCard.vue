@@ -32,7 +32,7 @@
         <UInput
           v-model="state.username"
           class="w-full"
-          placeholder="Придумайте логин"
+          placeholder="ivanov123"
           :disabled="loading"
         />
       </UFormField>

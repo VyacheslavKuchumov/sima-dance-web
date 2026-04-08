@@ -17,7 +17,7 @@ test('user can sign up successfully', async ({ page }) => {
   }, signupGroups[0].id)
   await page.locator('select[name="groupId"]').selectOption(String(signupGroups[0].id))
 
-  await page.getByPlaceholder('Придумайте логин').fill(username)
+  await page.getByPlaceholder('ivanov123').fill(username)
   await page.getByPlaceholder('Иванов Иван Иванович').fill('Иван Иванов')
   await page.getByPlaceholder('Иванов Петр Иванович').fill('Петр Иванов')
   await page.getByPlaceholder('Придумайте пароль').fill(password)

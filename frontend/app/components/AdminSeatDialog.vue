@@ -22,8 +22,6 @@
               <p><span class="font-semibold">Ряд:</span> {{ detail.seat.row }}</p>
               <p><span class="font-semibold">Место:</span> {{ detail.seat.number }}</p>
               <p><span class="font-semibold">Цена:</span> {{ formatPrice(detail.seat.price) }}</p>
-              <p><span class="font-semibold">Доступность:</span> {{ detail.seat.available ? 'Доступно' : 'Отключено' }}</p>
-              <p><span class="font-semibold">Событие:</span> {{ detail.event.title }}</p>
             </div>
           </section>
 
