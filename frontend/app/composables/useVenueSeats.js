@@ -32,9 +32,16 @@ export function useVenueSeats(seatsRaw, currentUserId = null) {
     }
   }
 
+  function normalizeUserId(value) {
+    const numericId = Number(value)
+    return Number.isFinite(numericId) && numericId > 0 ? numericId : null
+  }
+
   function isCurrentUserSeat(seat) {
-    const resolvedUserId = isRef(currentUserId) ? currentUserId.value : currentUserId
-    return resolvedUserId != null && seat.user_id === resolvedUserId
+    const resolvedUserId = normalizeUserId(isRef(currentUserId) ? currentUserId.value : currentUserId)
+    const seatUserId = normalizeUserId(seat?.user_id)
+
+    return resolvedUserId != null && seatUserId === resolvedUserId
   }
 
   function seatStatus(seat) {

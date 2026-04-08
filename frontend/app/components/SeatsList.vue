@@ -36,7 +36,7 @@
             <div class="legend-item"><span class="legend-dot seat-available-user" /> Свободно</div>
             <div class="legend-item"><span class="legend-dot seat-held-current" /> В вашей корзине</div>
             <div class="legend-item"><span class="legend-dot seat-booked-current" /> Уже подтверждено</div>
-            <div class="legend-item"><span class="legend-dot seat-booked" /> Забронировано</div>
+            <div class="legend-item"><span class="legend-dot seat-booked" /> Занято другим пользователем</div>
           </template>
         </div>
       </div>
@@ -429,12 +429,6 @@ watch(adminDialogOpen, (value) => {
   color: #1e3a8a;
 }
 
-.seat-held {
-  background: #f3f3f4;
-  color: #8a8a8a;
-  cursor: not-allowed;
-}
-
 .seat-held-current {
   background: #ffedd5;
   border-color: #f97316;
@@ -453,10 +447,11 @@ watch(adminDialogOpen, (value) => {
   cursor: not-allowed;
 }
 
+.seat-held,
 .seat-booked {
-  background: #dcfce7;
-  border-color: #16a34a;
-  color: #166534;
+  background: #f3f3f4;
+  border-color: #d4d4d8;
+  color: #71717a;
   cursor: not-allowed;
 }
 
