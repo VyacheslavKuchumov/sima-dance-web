@@ -178,13 +178,36 @@
     <template #body>
       <div class="space-y-4">
         <div class="qr-placeholder">
-          <div class="qr-pattern" />
+          <img
+            v-if="qrCodeDataUrl"
+            :src="qrCodeDataUrl"
+            alt="QR-код для оплаты брони"
+            class="qr-image"
+          >
+
+          <div v-else-if="qrCodeLoading" class="qr-status text-sm text-toned">
+            Подготавливаем QR-код...
+          </div>
+
+          <div v-else class="qr-status text-sm text-error">
+            {{ qrCodeError || 'Не удалось подготовить QR-код.' }}
+          </div>
         </div>
 
         <p class="text-sm text-toned">
-          Это заглушка QR-кода. После подтверждения брони откройте его и покажите на входе или
-          используйте для дальнейшего шага оплаты, если он нужен.
+          Отсканируйте QR-код для оплаты или откройте ссылку вручную, если удобнее.
         </p>
+
+        <UButton
+          color="primary"
+          variant="soft"
+          icon="i-lucide-external-link"
+          :to="paymentUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Открыть ссылку оплаты
+        </UButton>
 
         <div v-if="bookedBookings.length" class="rounded-xl bg-elevated p-4 text-sm text-toned">
           <p class="font-semibold">Подтвержденные места</p>
@@ -269,6 +292,10 @@ const checkoutOpen = ref(false)
 const bookedCancellationOpen = ref(false)
 const bookingPendingCancellation = ref(null)
 const defaultPaymentReference = 'QR-SIMA-DEMO'
+const paymentUrl = 'https://www.tinkoff.ru/rm/r_iCdYDMrwvW.BwUpeoaRMs/vew3Y94568'
+const qrCodeDataUrl = ref('')
+const qrCodeLoading = ref(false)
+const qrCodeError = ref('')
 
 const loading = computed(() => bookingStore.loadingForEvent(props.eventId))
 const heldBookings = computed(() => bookingStore.heldBookingsForEvent(props.eventId))
@@ -410,6 +437,31 @@ async function confirmHeldSeats() {
 
 function openCheckoutDialog() {
   checkoutOpen.value = true
+  void ensurePaymentQrCode()
+}
+
+async function ensurePaymentQrCode() {
+  if (qrCodeDataUrl.value || qrCodeLoading.value) return
+
+  qrCodeLoading.value = true
+  qrCodeError.value = ''
+
+  try {
+    const { toDataURL } = await import('qrcode')
+    qrCodeDataUrl.value = await toDataURL(paymentUrl, {
+      width: 220,
+      margin: 1,
+      color: {
+        dark: '#111827',
+        light: '#FFFFFF',
+      },
+    })
+  } catch (error) {
+    console.error('Failed to generate payment QR code', error)
+    qrCodeError.value = 'QR-код временно недоступен.'
+  } finally {
+    qrCodeLoading.value = false
+  }
 }
 
 onMounted(() => {
@@ -433,24 +485,29 @@ watch(() => props.eventId, () => {
 <style scoped>
 .qr-placeholder {
   display: flex;
+  align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  border: 1px dashed #9ca3af;
+  min-height: 240px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 1rem;
   background:
-    linear-gradient(135deg, rgba(20, 83, 45, 0.08), rgba(30, 64, 175, 0.08));
+    radial-gradient(circle at top left, rgba(20, 83, 45, 0.08), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(30, 64, 175, 0.08), transparent 55%),
+    #f8fafc;
 }
 
-.qr-pattern {
-  width: 180px;
-  height: 180px;
+.qr-image {
+  width: min(220px, 100%);
+  height: auto;
   border-radius: 1rem;
-  background:
-    linear-gradient(90deg, #111827 10px, transparent 10px) 0 0 / 30px 30px,
-    linear-gradient(#111827 10px, transparent 10px) 0 0 / 30px 30px,
-    linear-gradient(90deg, transparent 20px, #111827 20px) 0 0 / 30px 30px,
-    linear-gradient(transparent 20px, #111827 20px) 0 0 / 30px 30px,
-    #f9fafb;
-  box-shadow: inset 0 0 0 12px #f9fafb;
+  background: #fff;
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.12),
+    0 0 0 12px rgba(255, 255, 255, 0.9);
+}
+
+.qr-status {
+  text-align: center;
 }
 </style>
