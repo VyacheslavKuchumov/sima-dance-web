@@ -31,6 +31,18 @@
     <UProgress v-if="loading" animation="swing" />
 
     <div v-else class="space-y-4">
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="rounded-2xl bg-elevated px-4 py-4">
+          <p class="text-xs uppercase tracking-wide text-muted">Зарегистрировано пользователей</p>
+          <p class="mt-2 text-3xl font-semibold">{{ registeredUsersCount }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-elevated px-4 py-4">
+          <p class="text-xs uppercase tracking-wide text-muted">Показано в списке</p>
+          <p class="mt-2 text-3xl font-semibold">{{ users.length }}</p>
+        </div>
+      </div>
+
       <UAlert
         v-if="!users.length"
         color="neutral"
@@ -96,6 +108,7 @@ const toast = useAppToast()
 const loading = ref(false)
 const search = ref('')
 const users = ref([])
+const registeredUsersCount = ref(0)
 
 function formatDateTime(value) {
   if (!value) return '—'
@@ -118,7 +131,12 @@ async function loadUsers() {
         ? { search: search.value.trim() }
         : {},
     })
-    users.value = Array.isArray(response) ? response : []
+    const normalizedUsers = Array.isArray(response) ? response : []
+    users.value = normalizedUsers
+
+    if (!search.value.trim()) {
+      registeredUsersCount.value = normalizedUsers.length
+    }
   } catch (error) {
     console.error('Failed to load admin users', error)
     toast.add({

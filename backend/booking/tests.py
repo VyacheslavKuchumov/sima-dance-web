@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework.test import APIRequestFactory
 
+from accounts.models import UserGroup, UserProfile
 from .models import Booking, Event, Seat
 from .serializers import BookingSerializer
 
@@ -268,3 +269,122 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["current_booking"]["id"], booking.id)
         self.assertEqual(response.data["seat"]["id"], self.seat.id)
+
+    def test_superuser_can_update_booking_flags(self):
+        booking = Booking.create_hold(self.user, self.seat, self.event)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.patch(
+            reverse("booking-detail", args=[booking.id]),
+            {"is_paid": True, "is_ticket_issued": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        booking.refresh_from_db()
+        self.assertTrue(booking.is_paid)
+        self.assertTrue(booking.is_ticket_issued)
+
+    def test_regular_user_cannot_update_booking_flags(self):
+        booking = Booking.create_hold(self.user, self.seat, self.event)
+
+        response = self.client.patch(
+            reverse("booking-detail", args=[booking.id]),
+            {"is_paid": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        booking.refresh_from_db()
+        self.assertFalse(booking.is_paid)
+
+    def test_superuser_can_filter_bookings_by_flags(self):
+        paid_booking = Booking.create_hold(self.user, self.seat, self.event)
+        paid_booking.is_paid = True
+        paid_booking.is_ticket_issued = True
+        paid_booking.save(update_fields=["is_paid", "is_ticket_issued", "updated_at"])
+
+        other_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1500.00")
+        Booking.create_hold(self.superuser, other_seat, self.event)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.get(
+            reverse("booking-list"),
+            {
+                "all_users": "true",
+                "active_only": "true",
+                "is_paid": "true",
+                "is_ticket_issued": "true",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], paid_booking.id)
+
+    def test_superuser_can_filter_bookings_by_user_group(self):
+        junior_group = UserGroup.objects.create(name="Junior")
+        senior_group = UserGroup.objects.create(name="Senior")
+        UserProfile.objects.create(
+            user=self.user,
+            group=junior_group,
+            full_name="Alice Example",
+            child_full_name="Child Example",
+        )
+        UserProfile.objects.create(
+            user=self.superuser,
+            group=senior_group,
+            full_name="Root Example",
+            child_full_name="Admin Child",
+        )
+
+        first_booking = Booking.create_hold(self.user, self.seat, self.event)
+        other_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1500.00")
+        Booking.create_hold(self.superuser, other_seat, self.event)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.get(
+            reverse("booking-list"),
+            {
+                "all_users": "true",
+                "active_only": "true",
+                "group_id": junior_group.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], first_booking.id)
+        self.assertEqual(response.data[0]["user_details"]["profile"]["group"]["id"], junior_group.id)
+
+    def test_events_endpoint_includes_active_bookings_count_from_all_seats(self):
+        second_seat = Seat.objects.create(section="Партер", row=1, number=2, price="1700.00")
+
+        active_hold = Booking.create_hold(self.user, self.seat, self.event)
+        booked = Booking.create_hold(self.superuser, second_seat, self.event)
+        booked.status = Booking.STATUS_BOOKED
+        booked.expires_at = None
+        booked.save(update_fields=["status", "expires_at", "updated_at"])
+
+        Booking.objects.create(
+            user=self.user,
+            seat=self.seat,
+            event=self.other_event,
+            status=Booking.STATUS_HELD,
+            expires_at=timezone.now() - timedelta(minutes=5),
+            price_snapshot="1500.00",
+        )
+
+        self.client.force_authenticate(None)
+        response = self.client.get(reverse("event-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        events = response.data if isinstance(response.data, list) else response.data["results"]
+        event_data = next(item for item in events if item["id"] == self.event.id)
+        other_event_data = next(item for item in events if item["id"] == self.other_event.id)
+
+        self.assertEqual(event_data["total_seats_count"], 2)
+        self.assertEqual(event_data["active_bookings_count"], 2)
+        self.assertEqual(other_event_data["active_bookings_count"], 0)

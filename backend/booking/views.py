@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction, IntegrityError
-from django.db.models import Q
+from django.db.models import Count, IntegerField, Q, Value
 from .models import Event, Seat, Booking
 from .serializers import (
     AdminSeatAssignmentSerializer,
@@ -17,12 +17,32 @@ from django_filters.rest_framework import DjangoFilterBackend
 from app.permissions import IsSuperUser, ReadOnlyOrSuperUser
 
 
+def get_annotated_events_queryset():
+    now = timezone.now()
+    active_booking_filter = Q(bookings__status=Booking.STATUS_BOOKED) | (
+        Q(bookings__status=Booking.STATUS_HELD)
+        & (Q(bookings__expires_at__isnull=True) | Q(bookings__expires_at__gt=now))
+    )
+    total_seats_count = Seat.objects.count()
+
+    return Event.objects.annotate(
+        active_bookings_count=Count(
+            "bookings__seat",
+            filter=active_booking_filter,
+            distinct=True,
+        ),
+        total_seats_count=Value(total_seats_count, output_field=IntegerField()),
+    ).order_by("-starts_at")
+
+
 # Event viewset used by local setup scripts and frontend reads
 class EventViewSet(viewsets.ModelViewSet):
-    queryset = Event.objects.all().order_by("-starts_at")
     serializer_class = EventSerializer
     permission_classes = [ReadOnlyOrSuperUser]
     lookup_field = "id"
+
+    def get_queryset(self):
+        return get_annotated_events_queryset()
 
 class SeatViewSet(viewsets.ModelViewSet):
     """
@@ -149,7 +169,7 @@ class AdminSeatBookingView(APIView):
     permission_classes = [IsSuperUser]
 
     def get(self, request, event_id, seat_id):
-        event = get_object_or_404(Event, pk=event_id)
+        event = get_object_or_404(get_annotated_events_queryset(), pk=event_id)
         seat = get_object_or_404(Seat, pk=seat_id)
         now = timezone.now()
         current_booking = (
@@ -384,6 +404,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         all_users = self.request.query_params.get("all_users")
+        if self.request.method in ("PATCH", "PUT", "DELETE"):
+            return [IsSuperUser()]
         if self.request.method in ("GET", "HEAD", "OPTIONS") and all_users in {"1", "true", "yes"}:
             return [IsSuperUser()]
         return [permissions.IsAuthenticated()]
@@ -397,14 +419,24 @@ class BookingViewSet(viewsets.ModelViewSet):
             "user__profile__group",
         ).order_by("-created_at")
         all_users = self.request.query_params.get("all_users")
+        is_admin_write_request = (
+            user.is_authenticated
+            and user.is_superuser
+            and self.request.method not in ("GET", "HEAD", "OPTIONS")
+        )
 
-        if user.is_authenticated and user.is_superuser and all_users in {"1", "true", "yes"}:
+        if is_admin_write_request or (
+            user.is_authenticated
+            and user.is_superuser
+            and all_users in {"1", "true", "yes"}
+        ):
             queryset = super().get_queryset()
 
         status_param = self.request.query_params.get("status")
         event_id = self.request.query_params.get("event_id")
         active_only = self.request.query_params.get("active_only")
         user_id = self.request.query_params.get("user_id")
+        group_id = self.request.query_params.get("group_id")
         search = (self.request.query_params.get("search") or "").strip()
         now = timezone.now()
 
@@ -417,6 +449,9 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         if user_id and user.is_authenticated and user.is_superuser and all_users in {"1", "true", "yes"}:
             queryset = queryset.filter(user_id=user_id)
+
+        if group_id:
+            queryset = queryset.filter(user__profile__group_id=group_id)
 
         if active_only in {"1", "true", "yes"}:
             queryset = queryset.exclude(
@@ -432,6 +467,22 @@ class BookingViewSet(viewsets.ModelViewSet):
                 | Q(event__title__icontains=search)
                 | Q(seat__section__icontains=search)
             )
+
+        is_paid = self.request.query_params.get("is_paid")
+        if is_paid is not None:
+            normalized_is_paid = is_paid.strip().lower()
+            if normalized_is_paid in {"1", "true", "yes"}:
+                queryset = queryset.filter(is_paid=True)
+            elif normalized_is_paid in {"0", "false", "no"}:
+                queryset = queryset.filter(is_paid=False)
+
+        is_ticket_issued = self.request.query_params.get("is_ticket_issued")
+        if is_ticket_issued is not None:
+            normalized_is_ticket_issued = is_ticket_issued.strip().lower()
+            if normalized_is_ticket_issued in {"1", "true", "yes"}:
+                queryset = queryset.filter(is_ticket_issued=True)
+            elif normalized_is_ticket_issued in {"0", "false", "no"}:
+                queryset = queryset.filter(is_ticket_issued=False)
 
         return queryset
 

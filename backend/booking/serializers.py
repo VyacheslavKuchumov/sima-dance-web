@@ -8,9 +8,21 @@ User = get_user_model()
 
 
 class EventSerializer(serializers.ModelSerializer):
+    total_seats_count = serializers.IntegerField(read_only=True)
+    active_bookings_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Event
-        fields = ["id", "title", "img_url", "archived", "starts_at", "created_at"]
+        fields = [
+            "id",
+            "title",
+            "img_url",
+            "archived",
+            "starts_at",
+            "created_at",
+            "total_seats_count",
+            "active_bookings_count",
+        ]
 
 
 class SeatSerializer(serializers.ModelSerializer):
@@ -88,8 +100,6 @@ class BookingSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "price_snapshot",
-            "is_paid",
-            "is_ticket_issued",
         ]
 
     def create(self, validated_data):
@@ -113,8 +123,18 @@ class BookingSerializer(serializers.ModelSerializer):
         For example: allow seat to be reused across events, but you could
         add constraints if needed.
         """
-        seat = attrs.get("seat")
-        event = attrs.get("event")
+        seat = attrs.get("seat", getattr(self.instance, "seat", None))
+        event = attrs.get("event", getattr(self.instance, "event", None))
+        request = self.context.get("request")
+
+        if (
+            request
+            and not request.user.is_superuser
+            and any(field in self.initial_data for field in ("is_paid", "is_ticket_issued"))
+        ):
+            raise serializers.ValidationError(
+                "Только администраторы могут менять флаги оплаты и выписки билета."
+            )
 
         if not seat:
             raise serializers.ValidationError("A seat must be provided.")

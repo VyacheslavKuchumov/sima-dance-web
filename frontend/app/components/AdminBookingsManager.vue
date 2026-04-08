@@ -9,7 +9,7 @@
           </p>
         </div>
 
-        <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_220px_180px_auto]">
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(0,2fr)_220px_220px_180px_180px_180px_auto]">
           <UInput
             v-model="filters.search"
             class="w-full"
@@ -34,6 +34,34 @@
             <option value="held,booked">Все статусы</option>
             <option value="held">Только удержания</option>
             <option value="booked">Только подтвержденные</option>
+          </select>
+
+          <select
+            v-model="filters.groupId"
+            class="w-full"
+          >
+            <option value="">Все группы</option>
+            <option v-for="group in groups" :key="group.id" :value="String(group.id)">
+              {{ group.name }}
+            </option>
+          </select>
+
+          <select
+            v-model="filters.isPaid"
+            class="w-full"
+          >
+            <option value="">Любая оплата</option>
+            <option value="true">Только оплаченные</option>
+            <option value="false">Только неоплаченные</option>
+          </select>
+
+          <select
+            v-model="filters.isTicketIssued"
+            class="w-full"
+          >
+            <option value="">Любой статус билета</option>
+            <option value="true">Только выписанные</option>
+            <option value="false">Только не выписанные</option>
           </select>
 
           <div class="flex gap-2">
@@ -72,10 +100,17 @@
               <UBadge :color="booking.status === 'booked' ? 'success' : 'warning'" variant="subtle">
                 {{ booking.status === 'booked' ? 'Подтверждено' : 'Удержание' }}
               </UBadge>
+              <UBadge :color="booking.is_paid ? 'success' : 'neutral'" variant="subtle">
+                {{ booking.is_paid ? 'Оплачено' : 'Не оплачено' }}
+              </UBadge>
+              <UBadge :color="booking.is_ticket_issued ? 'primary' : 'neutral'" variant="subtle">
+                {{ booking.is_ticket_issued ? 'Билет выписан' : 'Билет не выписан' }}
+              </UBadge>
             </div>
 
             <div class="grid gap-2 text-sm text-toned md:grid-cols-2">
               <p><span class="font-semibold">Пользователь:</span> {{ userLabel(booking) }}</p>
+              <p><span class="font-semibold">Группа:</span> {{ booking.user_details?.profile?.group?.name || '—' }}</p>
               <p><span class="font-semibold">Место:</span> {{ seatLabel(booking) }}</p>
               <p><span class="font-semibold">Создано:</span> {{ formatDateTime(booking.created_at) }}</p>
               <p><span class="font-semibold">Действует до:</span> {{ formatDateTime(booking.expires_at) }}</p>
@@ -85,6 +120,28 @@
           </div>
 
           <div class="flex flex-col gap-2 sm:flex-row lg:flex-col">
+            <div class="rounded-2xl border border-default p-3 text-sm text-toned">
+              <label class="flex items-center justify-between gap-3">
+                <span class="font-medium">Оплачено</span>
+                <input
+                  :checked="Boolean(booking.is_paid)"
+                  type="checkbox"
+                  :disabled="Boolean(removingBookingId) || isUpdatingBooking(booking.id)"
+                  @change="updateBookingFlags(booking, { is_paid: $event.target.checked })"
+                >
+              </label>
+
+              <label class="mt-3 flex items-center justify-between gap-3">
+                <span class="font-medium">Билет выписан</span>
+                <input
+                  :checked="Boolean(booking.is_ticket_issued)"
+                  type="checkbox"
+                  :disabled="Boolean(removingBookingId) || isUpdatingBooking(booking.id)"
+                  @change="updateBookingFlags(booking, { is_ticket_issued: $event.target.checked })"
+                >
+              </label>
+            </div>
+
             <UButton
               color="neutral"
               variant="outline"
@@ -155,14 +212,19 @@ const loading = ref(false)
 const removingBookingId = ref(null)
 const bookings = ref([])
 const events = ref([])
+const groups = ref([])
 const deleteConfirmationOpen = ref(false)
 const bookingPendingDeletion = ref(null)
+const updatingBookingIds = reactive({})
 
 const filters = reactive({
   search: '',
   status: 'held,booked',
   eventId: '',
   userId: '',
+  groupId: '',
+  isPaid: '',
+  isTicketIssued: '',
 })
 
 function syncFiltersFromRoute() {
@@ -170,6 +232,9 @@ function syncFiltersFromRoute() {
   filters.status = typeof route.query.status === 'string' ? route.query.status : 'held,booked'
   filters.eventId = typeof route.query.eventId === 'string' ? route.query.eventId : ''
   filters.userId = typeof route.query.userId === 'string' ? route.query.userId : ''
+  filters.groupId = typeof route.query.groupId === 'string' ? route.query.groupId : ''
+  filters.isPaid = typeof route.query.isPaid === 'string' ? route.query.isPaid : ''
+  filters.isTicketIssued = typeof route.query.isTicketIssued === 'string' ? route.query.isTicketIssued : ''
 }
 
 function formatDateTime(value) {
@@ -203,12 +268,25 @@ function userLabel(booking) {
   return booking?.user_details?.username || booking?.user || `Пользователь #${booking?.user_id ?? '—'}`
 }
 
+function isUpdatingBooking(bookingId) {
+  return Boolean(updatingBookingIds[bookingId])
+}
+
 async function loadEvents() {
   try {
     const response = await request('/api/backend/booking/events/')
     events.value = Array.isArray(response) ? response : response?.results ?? []
   } catch (error) {
     console.error('Failed to load events for admin bookings', error)
+  }
+}
+
+async function loadGroups() {
+  try {
+    const response = await request('/api/backend/accounts/signup-groups/')
+    groups.value = Array.isArray(response) ? response : response?.results ?? []
+  } catch (error) {
+    console.error('Failed to load groups for admin bookings', error)
   }
 }
 
@@ -223,6 +301,9 @@ async function loadBookings() {
         status: filters.status,
         ...(filters.eventId ? { event_id: filters.eventId } : {}),
         ...(filters.userId ? { user_id: filters.userId } : {}),
+        ...(filters.groupId ? { group_id: filters.groupId } : {}),
+        ...(filters.isPaid ? { is_paid: filters.isPaid } : {}),
+        ...(filters.isTicketIssued ? { is_ticket_issued: filters.isTicketIssued } : {}),
         ...(filters.search.trim() ? { search: filters.search.trim() } : {}),
       },
     })
@@ -241,13 +322,15 @@ async function loadBookings() {
 }
 
 async function applyFilters() {
-  filters.userId = ''
-
   await router.replace({
     query: {
       ...(filters.search.trim() ? { search: filters.search.trim() } : {}),
       ...(filters.status && filters.status !== 'held,booked' ? { status: filters.status } : {}),
       ...(filters.eventId ? { eventId: filters.eventId } : {}),
+      ...(filters.userId ? { userId: filters.userId } : {}),
+      ...(filters.groupId ? { groupId: filters.groupId } : {}),
+      ...(filters.isPaid ? { isPaid: filters.isPaid } : {}),
+      ...(filters.isTicketIssued ? { isTicketIssued: filters.isTicketIssued } : {}),
     },
   })
 }
@@ -257,6 +340,9 @@ async function resetFilters() {
   filters.status = 'held,booked'
   filters.eventId = ''
   filters.userId = ''
+  filters.groupId = ''
+  filters.isPaid = ''
+  filters.isTicketIssued = ''
   await router.replace({ query: {} })
 }
 
@@ -268,6 +354,32 @@ function openDeleteConfirmation(booking) {
 function closeDeleteConfirmation() {
   deleteConfirmationOpen.value = false
   bookingPendingDeletion.value = null
+}
+
+async function updateBookingFlags(booking, updates) {
+  updatingBookingIds[booking.id] = true
+
+  try {
+    await request(`/api/backend/booking/bookings/${booking.id}/`, {
+      method: 'PATCH',
+      body: updates,
+    })
+    toast.add({
+      title: 'Флаги брони обновлены',
+      description: 'Изменения сохранены.',
+      color: 'success',
+    })
+    await loadBookings()
+  } catch (error) {
+    console.error('Failed to update admin booking flags', error)
+    toast.add({
+      title: 'Не удалось обновить флаги брони',
+      description: error?.message ?? 'Попробуйте ещё раз.',
+      color: 'error',
+    })
+  } finally {
+    delete updatingBookingIds[booking.id]
+  }
 }
 
 async function confirmRemoveBooking() {
@@ -310,6 +422,6 @@ watch(
 
 onMounted(() => {
   syncFiltersFromRoute()
-  void loadEvents()
+  void Promise.all([loadEvents(), loadGroups()])
 })
 </script>

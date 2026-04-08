@@ -26,17 +26,17 @@
 
         <div class="legend">
           <template v-if="isAdminMode">
-            <div class="legend-item"><span class="legend-dot seat-available" /> Свободно</div>
+            <div class="legend-item"><span class="legend-dot seat-available-admin" /> Свободно</div>
             <div class="legend-item"><span class="legend-dot seat-held-admin" /> Удерживается</div>
             <div class="legend-item"><span class="legend-dot seat-booked-admin" /> Подтверждено</div>
             <div class="legend-item"><span class="legend-dot seat-unavailable" /> Отключено</div>
           </template>
 
           <template v-else>
-            <div class="legend-item"><span class="legend-dot seat-available" /> Свободно</div>
+            <div class="legend-item"><span class="legend-dot seat-available-user" /> Свободно</div>
             <div class="legend-item"><span class="legend-dot seat-held-current" /> В вашей корзине</div>
             <div class="legend-item"><span class="legend-dot seat-booked-current" /> Уже подтверждено</div>
-            <div class="legend-item"><span class="legend-dot seat-booked" /> Недоступно</div>
+            <div class="legend-item"><span class="legend-dot seat-booked" /> Забронировано</div>
           </template>
         </div>
       </div>
@@ -70,7 +70,8 @@
                   type="button"
                   class="seat-circle"
                   :class="{
-                    'seat-available': seatStatus(seat) === 'available',
+                    'seat-available-admin': isAdminMode && seatStatus(seat) === 'available',
+                    'seat-available-user': !isAdminMode && seatStatus(seat) === 'available',
                     'seat-held': !isAdminMode && seatStatus(seat) === 'held',
                     'seat-held-current': !isAdminMode && seatStatus(seat) === 'held-current',
                     'seat-booked': !isAdminMode && seatStatus(seat) === 'booked',
@@ -256,9 +257,27 @@ async function onSeatClick(seat) {
       return
     }
 
+    if (status === 'booked') {
+      toast.add({
+        title: 'Место забронировано',
+        description: 'Оно уже подтверждено другим пользователем.',
+        color: 'warning',
+      })
+      return
+    }
+
+    if (status === 'held') {
+      toast.add({
+        title: 'Место временно занято',
+        description: 'Сейчас оно находится в корзине другого пользователя.',
+        color: 'warning',
+      })
+      return
+    }
+
     toast.add({
       title: 'Место недоступно',
-      description: 'Оно уже занято или удерживается другим пользователем.',
+      description: 'Оно сейчас недоступно для бронирования.',
       color: 'warning',
     })
   } catch (err) {
@@ -398,10 +417,16 @@ watch(adminDialogOpen, (value) => {
   text-align: center;
 }
 
-.seat-available {
+.seat-available-admin {
   background: #e6ffed;
   border-color: #49a36b;
   color: #0b4d28;
+}
+
+.seat-available-user {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1e3a8a;
 }
 
 .seat-held {
@@ -411,9 +436,9 @@ watch(adminDialogOpen, (value) => {
 }
 
 .seat-held-current {
-  background: #dbeafe;
-  border-color: #2563eb;
-  color: #1e3a8a;
+  background: #ffedd5;
+  border-color: #f97316;
+  color: #9a3412;
 }
 
 .seat-held-admin {
@@ -429,15 +454,16 @@ watch(adminDialogOpen, (value) => {
 }
 
 .seat-booked {
-  background: #f3f3f4;
-  color: #8a8a8a;
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
   cursor: not-allowed;
 }
 
 .seat-booked-current {
-  background: #fff1c6;
-  border-color: #d49e2d;
-  color: #5a3d00;
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
 }
 
 .seat-booked-admin {

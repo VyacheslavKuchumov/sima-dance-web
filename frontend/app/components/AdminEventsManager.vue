@@ -56,10 +56,14 @@
                 <UBadge :color="event.archived ? 'neutral' : 'success'" variant="subtle">
                   {{ event.archived ? 'В архиве' : 'Активен' }}
                 </UBadge>
+                <UBadge color="primary" variant="subtle">
+                  Броней: {{ event.active_bookings_count ?? 0 }} / {{ event.total_seats_count ?? 0 }}
+                </UBadge>
               </div>
 
               <div class="space-y-1 text-sm text-toned">
                 <p><span class="font-semibold">Дата:</span> {{ formatDate(event.starts_at) }}</p>
+                <p><span class="font-semibold">Занято мест:</span> {{ event.active_bookings_count ?? 0 }} из {{ event.total_seats_count ?? 0 }}</p>
                 <p><span class="font-semibold">Изображение:</span> {{ event.img_url || 'Стандартное изображение карточки' }}</p>
               </div>
             </div>
