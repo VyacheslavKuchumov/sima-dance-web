@@ -257,10 +257,10 @@ async function onSeatClick(seat) {
       return
     }
 
-    if (status === 'booked') {
+    if (status === 'booked' || status === 'unavailable') {
       toast.add({
-        title: 'Место забронировано',
-        description: 'Оно уже подтверждено другим пользователем.',
+        title: 'Место забронировано другим пользователем',
+        description: 'Выберите другое место на схеме зала.',
         color: 'warning',
       })
       return
