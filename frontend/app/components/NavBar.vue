@@ -79,7 +79,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
   if (auth.isAuthenticated) {
     const baseItems: NavigationMenuItem[] = [
       { label: 'Главная', icon: 'i-lucide-home', to: '/' },
-      { label: 'Корзина', icon: 'i-lucide-shopping-cart', to: '/cart' },
+      { label: 'Мои брони', icon: 'i-lucide-shopping-cart', to: '/cart' },
       { label: 'Профиль', icon: 'i-lucide-user', to: '/profile' },
     ]
 

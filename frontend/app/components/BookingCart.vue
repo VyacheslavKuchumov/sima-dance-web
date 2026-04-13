@@ -48,7 +48,7 @@
           v-else
           color="neutral"
           variant="subtle"
-          title="Корзина пока пустая"
+          title="Пока нет броней"
           description="Нажмите на свободные места в схеме, чтобы удержать их и затем подтвердить бронь."
         />
 
@@ -170,6 +170,14 @@
         <div v-if="bookedBookings.length" class="text-sm text-muted">
           Подтверждено на сумму {{ formatPrice(bookedTotal) }}.
         </div>
+
+        <UAlert
+          v-if="bookedBookings.length"
+          color="info"
+          variant="subtle"
+          title="После оплаты отправьте подтверждение"
+          description="Пожалуйста, после оплаты отправьте подтверждение об оплате в мессенджере."
+        />
       </div>
     </template>
   </UCard>
@@ -197,6 +205,14 @@
         <p class="text-sm text-toned">
           Отсканируйте QR-код для оплаты или откройте ссылку вручную, если удобнее.
         </p>
+
+        <div
+          v-if="bookedBookings.length"
+          class="rounded-xl border border-primary/20 bg-primary/5 p-4"
+        >
+          <p class="text-sm text-muted">Сумма к оплате</p>
+          <p class="text-2xl font-semibold">{{ formatPrice(bookedTotal) }}</p>
+        </div>
 
         <UButton
           color="primary"
@@ -279,7 +295,7 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: 'Корзина',
+    default: 'Мои брони',
   },
 })
 
@@ -292,7 +308,7 @@ const checkoutOpen = ref(false)
 const bookedCancellationOpen = ref(false)
 const bookingPendingCancellation = ref(null)
 const defaultPaymentReference = 'QR-SIMA-DEMO'
-const paymentUrl = 'https://www.tinkoff.ru/rm/r_iCdYDMrwvW.BwUpeoaRMs/vew3Y94568'
+const paymentUrl = 'https://payment.alfabank.ru/sc/TzMfqhRHpufumcmu'
 const qrCodeDataUrl = ref('')
 const qrCodeLoading = ref(false)
 const qrCodeError = ref('')
@@ -343,14 +359,14 @@ async function refreshCart(showToast = false) {
 
     if (showToast) {
       toast.add({
-        title: 'Корзина обновлена',
+        title: 'Мои брони обновлены',
         description: 'Синхронизировали брони с сервером.',
         color: 'success',
       })
     }
   } catch (err) {
     toast.add({
-      title: 'Не удалось обновить корзину',
+      title: 'Не удалось обновить брони',
       description: err?.message ?? 'Попробуйте ещё раз.',
       color: 'error',
     })

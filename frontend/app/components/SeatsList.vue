@@ -34,7 +34,7 @@
 
           <template v-else>
             <div class="legend-item"><span class="legend-dot seat-available-user" /> Свободно</div>
-            <div class="legend-item"><span class="legend-dot seat-held-current" /> В вашей корзине</div>
+            <div class="legend-item"><span class="legend-dot seat-held-current" /> В моих бронях</div>
             <div class="legend-item"><span class="legend-dot seat-booked-current" /> Уже подтверждено</div>
             <div class="legend-item"><span class="legend-dot seat-booked" /> Занято другим пользователем</div>
           </template>
@@ -109,7 +109,7 @@
         {{
           isAdminMode
             ? 'Нажмите на любое место, чтобы открыть расширенное управление бронью. Удаление самого места в этом окне недоступно.'
-            : 'Нажмите на свободное место, чтобы удержать его. Повторный клик по месту в вашей корзине снимает удержание.'
+            : 'Нажмите на свободное место, чтобы удержать его. Повторный клик по месту в ваших бронях снимает удержание.'
         }}
       </p>
     </template>
@@ -133,6 +133,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['admin-changed'])
+const STATUS_TOAST_ID = 'seat-booking-status'
 
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
@@ -156,6 +157,8 @@ const { data, pending, error, refresh } = useFetch(
 )
 
 const seats = computed(() => data.value ?? [])
+const heldBookings = computed(() => bookingStore.heldBookingsForEvent(eventId.value))
+const bookedBookings = computed(() => bookingStore.bookedBookingsForEvent(eventId.value))
 const heldBookingsBySeat = computed(() => bookingStore.heldBookingMapForEvent(eventId.value))
 
 watch(error, (value) => {
@@ -197,6 +200,49 @@ async function refreshSeatMap({ syncCart = false } = {}) {
   }
 }
 
+function syncBookingStatusToast() {
+  if (isAdminMode.value) {
+    toast.remove(STATUS_TOAST_ID)
+    return
+  }
+
+  if (heldBookings.value.length > 0) {
+    toast.add({
+      id: STATUS_TOAST_ID,
+      title: 'Нужно подтвердить места и оплатить билеты',
+      description: 'Откройте «Мои брони», подтвердите выбранные места и перейдите к оплате билетов.',
+      color: 'warning',
+      duration: false,
+      actions: [{
+        label: 'Мои брони',
+        color: 'neutral',
+        variant: 'outline',
+        to: '/cart',
+      }],
+    })
+    return
+  }
+
+  if (bookedBookings.value.length > 0) {
+    toast.add({
+      id: STATUS_TOAST_ID,
+      title: 'Не забудьте оплатить билеты',
+      description: 'Если оплата еще не выполнена, откройте «Мои брони» и завершите ее.',
+      color: 'success',
+      duration: 5000,
+      actions: [{
+        label: 'Мои брони',
+        color: 'neutral',
+        variant: 'outline',
+        to: '/cart',
+      }],
+    })
+    return
+  }
+
+  toast.remove(STATUS_TOAST_ID)
+}
+
 async function onSeatClick(seat) {
   if (isAdminMode.value) {
     selectedSeat.value = seat
@@ -213,10 +259,10 @@ async function onSeatClick(seat) {
 
       toast.add({
         title: 'Место удержано',
-        description: 'Место добавлено. Откройте корзину, чтобы подтвердить бронь.',
+        description: 'Место добавлено. Откройте раздел «Мои брони», чтобы подтвердить бронь.',
         color: 'success',
         actions: [{
-          label: 'Перейти в корзину',
+          label: 'Перейти в Мои брони',
           color: 'neutral',
           variant: 'outline',
           to: '/cart',
@@ -251,7 +297,7 @@ async function onSeatClick(seat) {
     if (status === 'booked-current') {
       toast.add({
         title: 'Место уже подтверждено',
-        description: 'Оно уже закреплено за вами и показано в нижнем блоке корзины.',
+        description: 'Оно уже закреплено за вами и показано в блоке «Мои брони».',
         color: 'info',
       })
       return
@@ -269,7 +315,7 @@ async function onSeatClick(seat) {
     if (status === 'held') {
       toast.add({
         title: 'Место временно занято',
-        description: 'Сейчас оно находится в корзине другого пользователя.',
+        description: 'Сейчас оно находится в бронированиях другого пользователя.',
         color: 'warning',
       })
       return
@@ -323,6 +369,14 @@ watch(eventId, () => {
   })
 })
 
+watch(
+  () => [isAdminMode.value, eventId.value, heldBookings.value.length, bookedBookings.value.length],
+  () => {
+    syncBookingStatusToast()
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
   if (isAdminMode.value) return
 
@@ -331,7 +385,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to sync bookings on mount', error)
     toast.add({
-      title: 'Не удалось синхронизировать корзину',
+      title: 'Не удалось синхронизировать брони',
       description: 'Схема зала останется доступной, попробуйте обновить позже.',
       color: 'warning',
     })
@@ -342,6 +396,10 @@ watch(adminDialogOpen, (value) => {
   if (!value) {
     selectedSeat.value = null
   }
+})
+
+onBeforeUnmount(() => {
+  toast.remove(STATUS_TOAST_ID)
 })
 </script>
 

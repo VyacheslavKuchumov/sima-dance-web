@@ -47,7 +47,7 @@ const { data } = useFetch(() => `/api/backend/booking/events/${eventId.value}/`,
 const event = computed(() => data.value)
 const eventDateLabel = computed(() => {
   if (!event.value?.starts_at) {
-    return 'Выберите места слева и завершите подтверждение через корзину.'
+    return 'Выберите места слева и завершите подтверждение через раздел «Мои брони».'
   }
 
   return new Intl.DateTimeFormat('ru-RU', {

@@ -167,7 +167,7 @@ export const useBookingStore = defineStore('booking', {
       const ok = await auth.ensureAccessToken()
 
       if (!ok) {
-        throw new Error('Нужна авторизация, чтобы убрать место из корзины.')
+        throw new Error('Нужна авторизация, чтобы убрать место из ваших броней.')
       }
 
       this.actionByBookingId[String(bookingId)] = true

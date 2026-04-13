@@ -27,6 +27,8 @@ export function useAppToast() {
     if (!import.meta.client) return
 
     clearToastTimer(id)
+    if (duration == null || duration === false || duration === Infinity) return
+
     const timer = window.setTimeout(() => {
       toast.remove(id)
       toastTimers.delete(id)

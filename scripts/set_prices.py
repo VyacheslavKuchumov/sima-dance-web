@@ -9,6 +9,8 @@ import requests
 
 
 DEFAULT_API_BASE = "http://127.0.0.1:8000/api/booking"
+PRICE_INCREASE = 50
+PARTER_FRONT_ROWS_PRICE = 700
 
 
 def add_rule(
@@ -32,57 +34,61 @@ def add_rule(
     )
 
 
+def bumped(price: int) -> int:
+    return price + PRICE_INCREASE
+
+
 def build_rules() -> list[dict[str, object]]:
     rules: list[dict[str, object]] = []
 
     section = "Балкон"
-    add_rule(rules, section, 7, 1, 26, 350, True)
-    add_rule(rules, section, 6, 1, 24, 350, True)
-    add_rule(rules, section, 5, 1, 24, 400, True)
-    add_rule(rules, section, 4, 1, 24, 400, True)
-    add_rule(rules, section, 3, 1, 24, 500, True)
-    add_rule(rules, section, 2, 1, 28, 500, True)
-    add_rule(rules, section, 1, 1, 28, 550, True)
+    add_rule(rules, section, 7, 1, 26, bumped(350), True)
+    add_rule(rules, section, 6, 1, 24, bumped(350), True)
+    add_rule(rules, section, 5, 1, 24, bumped(400), True)
+    add_rule(rules, section, 4, 1, 24, bumped(400), True)
+    add_rule(rules, section, 3, 1, 24, bumped(500), True)
+    add_rule(rules, section, 2, 1, 28, bumped(500), True)
+    add_rule(rules, section, 1, 1, 28, bumped(550), True)
 
     section = "Амфитеатр"
-    add_rule(rules, section, 18, 1, 31, 350, True)
-    add_rule(rules, section, 17, 1, 6, 350, True)
-    add_rule(rules, section, 17, 7, 20, 400, True)
-    add_rule(rules, section, 17, 21, 26, 350, True)
-    add_rule(rules, section, 16, 1, 26, 400, True)
-    add_rule(rules, section, 15, 1, 6, 400, True)
-    add_rule(rules, section, 15, 7, 20, 500, True)
-    add_rule(rules, section, 15, 21, 26, 400, True)
-    add_rule(rules, section, 14, 1, 6, 400, True)
-    add_rule(rules, section, 14, 7, 20, 500, True)
-    add_rule(rules, section, 14, 21, 26, 400, True)
-    add_rule(rules, section, 13, 2, 11, 550, True)
-    add_rule(rules, section, 13, 16, 26, 550, True)
+    add_rule(rules, section, 18, 1, 31, bumped(350), True)
+    add_rule(rules, section, 17, 1, 6, bumped(350), True)
+    add_rule(rules, section, 17, 7, 20, bumped(400), True)
+    add_rule(rules, section, 17, 21, 26, bumped(350), True)
+    add_rule(rules, section, 16, 1, 26, bumped(400), True)
+    add_rule(rules, section, 15, 1, 6, bumped(400), True)
+    add_rule(rules, section, 15, 7, 20, bumped(500), True)
+    add_rule(rules, section, 15, 21, 26, bumped(400), True)
+    add_rule(rules, section, 14, 1, 6, bumped(400), True)
+    add_rule(rules, section, 14, 7, 20, bumped(500), True)
+    add_rule(rules, section, 14, 21, 26, bumped(400), True)
+    add_rule(rules, section, 13, 2, 11, bumped(550), True)
+    add_rule(rules, section, 13, 16, 26, bumped(550), True)
 
     section = "Партер"
     for row in range(6, 13):
-        add_rule(rules, section, row, 1, 4, 400, True)
-        add_rule(rules, section, row, 5, 8, 500, True)
-        add_rule(rules, section, row, 9, 16, 550, True)
-        add_rule(rules, section, row, 17, 20, 500, True)
-        add_rule(rules, section, row, 21, 24, 400, True)
+        add_rule(rules, section, row, 1, 4, bumped(400), True)
+        add_rule(rules, section, row, 5, 8, bumped(500), True)
+        add_rule(rules, section, row, 9, 16, bumped(550), True)
+        add_rule(rules, section, row, 17, 20, bumped(500), True)
+        add_rule(rules, section, row, 21, 24, bumped(400), True)
 
-    add_rule(rules, section, 5, 1, 3, 400, True)
-    add_rule(rules, section, 5, 4, 7, 500, True)
-    add_rule(rules, section, 5, 8, 15, 550, True)
-    add_rule(rules, section, 5, 16, 19, 500, True)
-    add_rule(rules, section, 5, 20, 22, 400, True)
-    add_rule(rules, section, 4, 1, 22, 550, True)
-    add_rule(rules, section, 3, 1, 20, 550, True)
-    add_rule(rules, section, 2, 1, 18, 550, True)
-    add_rule(rules, section, 1, 1, 16, 550, True)
+    add_rule(rules, section, 5, 1, 3, bumped(400), True)
+    add_rule(rules, section, 5, 4, 7, bumped(500), True)
+    add_rule(rules, section, 5, 8, 15, bumped(550), True)
+    add_rule(rules, section, 5, 16, 19, bumped(500), True)
+    add_rule(rules, section, 5, 20, 22, bumped(400), True)
+    add_rule(rules, section, 4, 1, 22, bumped(550), True)
+    add_rule(rules, section, 3, 1, 20, PARTER_FRONT_ROWS_PRICE, True)
+    add_rule(rules, section, 2, 1, 18, PARTER_FRONT_ROWS_PRICE, True)
+    add_rule(rules, section, 1, 1, 16, PARTER_FRONT_ROWS_PRICE, True)
 
-    add_rule(rules, "Балкон", 1, 13, 21, 550, False)
-    add_rule(rules, "Балкон", 2, 15, 23, 500, False)
-    add_rule(rules, "Балкон", 3, 13, 16, 500, False)
-    add_rule(rules, "Партер", 5, 10, 11, 550, False)
-    add_rule(rules, "Партер", 11, 13, 16, 550, False)
-    add_rule(rules, "Партер", 1, 9, 9, 550, False)
+    add_rule(rules, "Балкон", 1, 13, 21, bumped(550), False)
+    add_rule(rules, "Балкон", 2, 15, 23, bumped(500), False)
+    add_rule(rules, "Балкон", 3, 13, 16, bumped(500), False)
+    add_rule(rules, "Партер", 5, 10, 11, bumped(550), False)
+    add_rule(rules, "Партер", 11, 13, 16, bumped(550), False)
+    add_rule(rules, "Партер", 1, 9, 9, PARTER_FRONT_ROWS_PRICE, False)
 
     return rules
 
