@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 import requests
 
@@ -15,6 +16,16 @@ def parse_args() -> argparse.Namespace:
         description="Install booking data: create missing seats, optionally create an event, and overwrite seat prices.",
     )
     parser.add_argument("--api-base", default=set_prices.DEFAULT_API_BASE, help="Base booking API URL.")
+    parser.add_argument(
+        "--username",
+        default=os.environ.get("DJANGO_SUPERUSER_USERNAME", ""),
+        help="Superuser username for authenticated API writes. Defaults to DJANGO_SUPERUSER_USERNAME.",
+    )
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("DJANGO_SUPERUSER_PASSWORD", ""),
+        help="Superuser password for authenticated API writes. Defaults to DJANGO_SUPERUSER_PASSWORD.",
+    )
     parser.add_argument(
         "--skip-seats",
         action="store_true",
@@ -64,6 +75,13 @@ def main() -> int:
     args = parse_args()
     session = requests.Session()
     api_base = args.api_base.rstrip("/")
+    set_prices.authenticate_session(
+        session=session,
+        api_base=api_base,
+        timeout=args.timeout,
+        username=args.username or None,
+        password=args.password or None,
+    )
 
     seats_created = 0
     seats_skipped = 0

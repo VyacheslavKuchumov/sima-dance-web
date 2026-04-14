@@ -71,6 +71,13 @@ required_vars=(
   DJANGO_SECRET_KEY
 )
 
+if [ "$run_set_prices" = true ]; then
+  required_vars+=(
+    DJANGO_SUPERUSER_USERNAME
+    DJANGO_SUPERUSER_PASSWORD
+  )
+fi
+
 for var_name in "${required_vars[@]}"; do
   if [ -z "${!var_name:-}" ]; then
     echo "Required variable is empty in $env_file: $var_name" >&2

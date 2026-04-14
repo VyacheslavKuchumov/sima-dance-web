@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 import requests
+
+import set_prices
 
 
 DEFAULT_API_BASE = "http://127.0.0.1:8000/api/booking"
@@ -114,6 +117,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--api-base", default=DEFAULT_API_BASE, help="Base booking API URL.")
     parser.add_argument(
+        "--username",
+        default=os.environ.get("DJANGO_SUPERUSER_USERNAME", ""),
+        help="Superuser username for authenticated API writes. Defaults to DJANGO_SUPERUSER_USERNAME.",
+    )
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("DJANGO_SUPERUSER_PASSWORD", ""),
+        help="Superuser password for authenticated API writes. Defaults to DJANGO_SUPERUSER_PASSWORD.",
+    )
+    parser.add_argument(
         "--timeout",
         type=float,
         default=10.0,
@@ -125,6 +138,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     session = requests.Session()
+    set_prices.authenticate_session(
+        session=session,
+        api_base=args.api_base.rstrip("/"),
+        timeout=args.timeout,
+        username=args.username or None,
+        password=args.password or None,
+    )
     created, skipped = install_missing_seats(session, args.api_base.rstrip("/"), args.timeout)
     print(f"Done. Created {created} seats, skipped {skipped} existing seats.")
     return 0

@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import Iterable
 from datetime import date
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
@@ -94,6 +96,58 @@ def build_rules() -> list[dict[str, object]]:
 
 
 RULES = build_rules()
+
+
+def build_accounts_token_url(api_base: str) -> str:
+    parsed = urlsplit(api_base.rstrip("/"))
+    path = parsed.path.rstrip("/")
+
+    if path.endswith("/booking"):
+        path = path[: -len("/booking")]
+
+    token_path = f"{path}/accounts/token/"
+    return urlunsplit((parsed.scheme, parsed.netloc, token_path, "", ""))
+
+
+def resolve_auth_credentials(
+    username: str | None = None,
+    password: str | None = None,
+) -> tuple[str, str]:
+    resolved_username = username or os.environ.get("DJANGO_SUPERUSER_USERNAME", "")
+    resolved_password = password or os.environ.get("DJANGO_SUPERUSER_PASSWORD", "")
+
+    if not resolved_username or not resolved_password:
+        raise ValueError(
+            "Missing superuser credentials. Set DJANGO_SUPERUSER_USERNAME and "
+            "DJANGO_SUPERUSER_PASSWORD or pass --username/--password."
+        )
+
+    return resolved_username, resolved_password
+
+
+def authenticate_session(
+    session: requests.Session,
+    api_base: str,
+    timeout: float,
+    username: str | None = None,
+    password: str | None = None,
+) -> None:
+    resolved_username, resolved_password = resolve_auth_credentials(username, password)
+    token_url = build_accounts_token_url(api_base)
+    response = session.post(
+        token_url,
+        json={"username": resolved_username, "password": resolved_password},
+        timeout=timeout,
+    )
+    response.raise_for_status()
+
+    payload = response.json()
+    access = payload.get("access")
+    if not access:
+        raise ValueError("Token response did not include an access token.")
+
+    session.headers.update({"Authorization": f"Bearer {access}"})
+    print(f"Authenticated as superuser {resolved_username}.")
 
 
 def create_event(
@@ -248,6 +302,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--api-base", default=DEFAULT_API_BASE, help="Base booking API URL.")
     parser.add_argument(
+        "--username",
+        default=os.environ.get("DJANGO_SUPERUSER_USERNAME", ""),
+        help="Superuser username for authenticated API writes. Defaults to DJANGO_SUPERUSER_USERNAME.",
+    )
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("DJANGO_SUPERUSER_PASSWORD", ""),
+        help="Superuser password for authenticated API writes. Defaults to DJANGO_SUPERUSER_PASSWORD.",
+    )
+    parser.add_argument(
         "--event-title",
         default=f"Тестовое событие {today}",
         help="Event title to create before pricing seats.",
@@ -292,6 +356,14 @@ def main() -> int:
     session = requests.Session()
     api_base = args.api_base.rstrip("/")
     event_create_mode = "never" if args.skip_event_create else args.event_create_mode
+
+    authenticate_session(
+        session=session,
+        api_base=api_base,
+        timeout=args.timeout,
+        username=args.username or None,
+        password=args.password or None,
+    )
 
     created_event = ensure_event(
         session=session,
