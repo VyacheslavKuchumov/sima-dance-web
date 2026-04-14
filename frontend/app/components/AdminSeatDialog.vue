@@ -74,42 +74,90 @@
           />
 
           <template v-else>
-            <div class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_220px_180px]">
-              <UInput
-                v-model="userSearch"
-                class="w-full"
-                placeholder="Фильтр по пользователям"
+            <div class="mt-4 space-y-4">
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div class="space-y-1">
+                  <p class="text-sm font-medium text-toned">
+                    Пользователь для назначения
+                  </p>
+                  <p class="text-sm text-muted">
+                    Откройте поиск и выберите пользователя из отдельного окна.
+                  </p>
+                </div>
+
+                <UButton
+                  color="primary"
+                  variant="soft"
+                  icon="i-lucide-search"
+                  @click="userPickerOpen = true"
+                >
+                  {{ selectedUser ? 'Сменить пользователя' : 'Выбрать пользователя' }}
+                </UButton>
+              </div>
+
+              <UAlert
+                v-if="!selectedUser"
+                color="neutral"
+                variant="subtle"
+                title="Пользователь пока не выбран"
+                description="Откройте окно поиска пользователей, чтобы назначить бронь."
               />
 
-              <select
-                v-model="selectedUserId"
-                class="w-full"
+              <article
+                v-else
+                class="rounded-2xl border border-primary/20 bg-primary/5 p-4"
               >
-                <option value="" disabled>Выберите пользователя</option>
-                <option v-for="user in visibleUsers" :key="user.id" :value="String(user.id)">
-                  {{ userOptionLabel(user) }}
-                </option>
-              </select>
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div class="space-y-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h4 class="text-lg font-semibold">{{ selectedUser.username }}</h4>
+                      <UBadge v-if="selectedUser.is_superuser" color="error" variant="subtle">SUPERUSER</UBadge>
+                      <UBadge v-else-if="selectedUser.is_staff" color="warning" variant="subtle">STAFF</UBadge>
+                      <UBadge :color="selectedUser.is_active ? 'success' : 'neutral'" variant="subtle">
+                        {{ selectedUser.is_active ? 'Активен' : 'Выключен' }}
+                      </UBadge>
+                    </div>
 
-              <select
-                v-model="selectedStatus"
-                class="w-full"
-              >
-                <option value="booked">Подтвержденная бронь</option>
-                <option value="held">Удержание</option>
-              </select>
-            </div>
+                    <div class="grid gap-2 text-sm text-toned md:grid-cols-2">
+                      <p><span class="font-semibold">Email:</span> {{ selectedUser.email || '—' }}</p>
+                      <p><span class="font-semibold">Группа:</span> {{ selectedUser.profile?.group?.name || '—' }}</p>
+                      <p><span class="font-semibold">ФИО:</span> {{ selectedUser.profile?.full_name || '—' }}</p>
+                      <p><span class="font-semibold">ФИО ребенка:</span> {{ selectedUser.profile?.child_full_name || '—' }}</p>
+                      <p><span class="font-semibold">Дата регистрации:</span> {{ formatDateTime(selectedUser.date_joined) }}</p>
+                      <p><span class="font-semibold">Последний вход:</span> {{ formatDateTime(selectedUser.last_login) }}</p>
+                    </div>
+                  </div>
 
-            <div v-if="selectedStatus === 'held'" class="mt-3 max-w-xs">
-              <UFormField label="Держать место, минут">
-                <UInput
-                  v-model="holdMinutes"
-                  class="w-full"
-                  type="number"
-                  min="1"
-                  max="1440"
-                />
-              </UFormField>
+                  <div class="rounded-xl bg-elevated px-4 py-3 text-sm text-toned">
+                    <span class="font-semibold">Броней в системе:</span> {{ selectedUser.bookings_count ?? 0 }}
+                  </div>
+                </div>
+              </article>
+
+              <div class="grid gap-3 lg:grid-cols-[220px_180px]">
+                <div>
+                  <p class="mb-2 text-sm font-medium text-toned">Статус брони</p>
+                  <select
+                    v-model="selectedStatus"
+                    class="w-full"
+                  >
+                    <option value="booked">Подтвержденная бронь</option>
+                    <option value="held">Удержание</option>
+                  </select>
+                </div>
+
+                <div v-if="selectedStatus === 'held'">
+                  <UFormField label="Держать место, минут">
+                    <UInput
+                      v-model="holdMinutes"
+                      class="w-full"
+                      type="number"
+                      min="1"
+                      max="1440"
+                    />
+                  </UFormField>
+                </div>
+              </div>
             </div>
           </template>
         </section>
@@ -175,6 +223,12 @@
       </UButton>
     </template>
   </UModal>
+
+  <AdminUserPickerDialog
+    v-model:open="userPickerOpen"
+    :selected-user-id="selectedUserId"
+    @select="handleUserSelected"
+  />
 </template>
 
 <script setup>
@@ -202,13 +256,13 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const detail = ref(null)
-const users = ref([])
-const userSearch = ref('')
+const selectedUser = ref(null)
 const selectedUserId = ref('')
 const selectedStatus = ref('booked')
 const holdMinutes = ref('30')
 const deleteConfirmationOpen = ref(false)
 const bookingPendingDeletion = ref(null)
+const userPickerOpen = ref(false)
 
 const modalTitle = computed(() => {
   if (!props.seat) return 'Управление местом'
@@ -216,26 +270,6 @@ const modalTitle = computed(() => {
 })
 
 const currentBooking = computed(() => detail.value?.current_booking ?? null)
-const visibleUsers = computed(() => {
-  const query = userSearch.value.trim().toLowerCase()
-
-  if (!query) return users.value
-
-  return users.value.filter((user) => {
-    const haystack = [
-      user.username,
-      user.email,
-      user.profile?.full_name,
-      user.profile?.child_full_name,
-      user.profile?.group?.name,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-
-    return haystack.includes(query)
-  })
-})
 
 function onOpenChange(value) {
   emit('update:open', value)
@@ -278,40 +312,40 @@ function userLabel(booking) {
   return booking?.user_details?.username || booking?.user || `Пользователь #${booking?.user_id ?? '—'}`
 }
 
-function userOptionLabel(user) {
-  const parts = [user.username]
+function buildSelectedUserFromBooking(booking) {
+  if (!booking?.user_details) return null
 
-  if (user.profile?.full_name) {
-    parts.push(user.profile.full_name)
+  return {
+    id: booking.user_id ?? booking.user_details.id,
+    username: booking.user_details.username,
+    email: booking.user_details.email,
+    is_superuser: booking.user_details.is_superuser,
+    is_staff: booking.user_details.is_staff,
+    is_active: booking.user_details.is_active,
+    date_joined: booking.user_details.date_joined,
+    last_login: booking.user_details.last_login,
+    bookings_count: booking.user_details.bookings_count,
+    profile: booking.user_details.profile,
   }
+}
 
-  if (user.profile?.group?.name) {
-    parts.push(user.profile.group.name)
-  }
-
-  return parts.join(' • ')
+function handleUserSelected(user) {
+  selectedUser.value = user
+  selectedUserId.value = String(user?.id ?? '')
 }
 
 function syncFormFromDetail() {
   if (currentBooking.value) {
     selectedUserId.value = String(currentBooking.value.user_id ?? '')
+    selectedUser.value = buildSelectedUserFromBooking(currentBooking.value)
     selectedStatus.value = currentBooking.value.status ?? 'booked'
   } else {
+    selectedUserId.value = ''
+    selectedUser.value = null
     if (selectedStatus.value !== 'held' && selectedStatus.value !== 'booked') {
       selectedStatus.value = 'booked'
     }
   }
-
-  if (!currentBooking.value && !selectedUserId.value) {
-    selectedUserId.value = ''
-  }
-}
-
-async function loadUsers() {
-  if (users.value.length) return
-
-  const response = await request('/api/backend/accounts/admin/users/')
-  users.value = Array.isArray(response) ? response : []
 }
 
 async function loadDetail() {
@@ -326,7 +360,7 @@ async function loadDialog() {
   loading.value = true
 
   try {
-    await Promise.all([loadUsers(), loadDetail()])
+    await loadDetail()
     syncFormFromDetail()
   } catch (error) {
     console.error('Failed to load admin seat dialog', error)
@@ -422,6 +456,7 @@ watch(
   (isOpen) => {
     if (isOpen) return
     closeDeleteConfirmation()
+    userPickerOpen.value = false
   },
 )
 </script>
