@@ -9,17 +9,19 @@
           </p>
         </div>
 
-        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(0,2fr)_220px_220px_180px_180px_180px_auto]">
-          <UInput
-            v-model="filters.search"
-            class="w-full"
-            placeholder="Поиск по пользователю, событию или секции"
-            @keyup.enter="applyFilters"
-          />
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+          <div class="min-w-0 md:col-span-2 xl:col-span-2 2xl:col-span-2">
+            <UInput
+              v-model="filters.search"
+              class="w-full"
+              placeholder="Поиск по пользователю, событию или секции"
+              @keyup.enter="applyFilters"
+            />
+          </div>
 
           <select
             v-model="filters.eventId"
-            class="w-full"
+            class="min-w-0 w-full"
           >
             <option value="">Все концерты</option>
             <option v-for="event in events" :key="event.id" :value="String(event.id)">
@@ -29,7 +31,7 @@
 
           <select
             v-model="filters.status"
-            class="w-full"
+            class="min-w-0 w-full"
           >
             <option value="held,booked">Все статусы</option>
             <option value="held">Только удержания</option>
@@ -38,7 +40,7 @@
 
           <select
             v-model="filters.groupId"
-            class="w-full"
+            class="min-w-0 w-full"
           >
             <option value="">Все группы</option>
             <option v-for="group in groups" :key="group.id" :value="String(group.id)">
@@ -48,7 +50,7 @@
 
           <select
             v-model="filters.isPaid"
-            class="w-full"
+            class="min-w-0 w-full"
           >
             <option value="">Любая оплата</option>
             <option value="true">Только оплаченные</option>
@@ -57,14 +59,14 @@
 
           <select
             v-model="filters.isTicketIssued"
-            class="w-full"
+            class="min-w-0 w-full"
           >
             <option value="">Любой статус билета</option>
             <option value="true">Только выписанные</option>
             <option value="false">Только не выписанные</option>
           </select>
 
-          <div class="flex gap-2">
+          <div class="flex flex-col gap-2 md:col-span-2 sm:flex-row sm:flex-wrap sm:justify-end xl:col-span-4 2xl:col-span-5">
             <UButton color="primary" :loading="loading" @click="applyFilters">
               Применить
             </UButton>
