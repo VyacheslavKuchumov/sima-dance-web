@@ -256,18 +256,6 @@ async function onSeatClick(seat) {
   try {
     if (status === 'available') {
       await bookingStore.holdSeat({ eventId: eventId.value, seatId: seat.id })
-
-      toast.add({
-        title: 'Место удержано',
-        description: 'Место добавлено. Откройте раздел «Мои брони», чтобы подтвердить бронь.',
-        color: 'success',
-        actions: [{
-          label: 'Перейти в Мои брони',
-          color: 'neutral',
-          variant: 'outline',
-          to: '/cart',
-        }],
-      })
       await refreshSeatMap({ syncCart: true })
       return
     }
