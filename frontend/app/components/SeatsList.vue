@@ -34,8 +34,8 @@
 
           <template v-else>
             <div class="legend-item"><span class="legend-dot seat-available-user" /> Свободно</div>
-            <div class="legend-item"><span class="legend-dot seat-held-current" /> В моих бронях</div>
-            <div class="legend-item"><span class="legend-dot seat-booked-current" /> Уже подтверждено</div>
+            <div class="legend-item"><span class="legend-dot seat-held-current" /> Ожидает подтверждения</div>
+            <div class="legend-item"><span class="legend-dot seat-booked-current" /> Забронировано</div>
             <div class="legend-item"><span class="legend-dot seat-booked" /> Занято другим пользователем</div>
           </template>
         </div>
@@ -147,6 +147,7 @@ const isRefreshing = ref(false)
 const refreshQueuePending = ref(false)
 const adminDialogOpen = ref(false)
 const selectedSeat = ref(null)
+const BOOKING_TOAST_ACTION_CLASS = 'bg-accented text-default hover:bg-accented/85 active:bg-accented/85 focus-visible:bg-accented/85'
 
 const { data, pending, error, refresh } = useFetch(
   () => `/api/backend/booking/events/${eventId.value}/seatmap/`,
@@ -216,7 +217,8 @@ function syncBookingStatusToast() {
       actions: [{
         label: 'Мои брони',
         color: 'neutral',
-        variant: 'outline',
+        variant: 'soft',
+        class: BOOKING_TOAST_ACTION_CLASS,
         to: '/cart',
       }],
     })
@@ -233,7 +235,8 @@ function syncBookingStatusToast() {
       actions: [{
         label: 'Мои брони',
         color: 'neutral',
-        variant: 'outline',
+        variant: 'soft',
+        class: BOOKING_TOAST_ACTION_CLASS,
         to: '/cart',
       }],
     })
@@ -284,7 +287,7 @@ async function onSeatClick(seat) {
 
     if (status === 'booked-current') {
       toast.add({
-        title: 'Место уже подтверждено',
+        title: 'Место уже забронировано',
         description: 'Оно уже закреплено за вами и показано в блоке «Мои брони».',
         color: 'info',
       })
@@ -464,53 +467,54 @@ onBeforeUnmount(() => {
 }
 
 .seat-available-admin {
-  background: #e6ffed;
-  border-color: #49a36b;
-  color: #0b4d28;
+  background: #bbf7d0;
+  border-color: #16a34a;
+  color: #14532d;
 }
 
 .seat-available-user {
-  background: #dbeafe;
+  background: #bfdbfe;
   border-color: #2563eb;
   color: #1e3a8a;
 }
 
 .seat-held-current {
-  background: #ffedd5;
-  border-color: #f97316;
+  background: #fed7aa;
+  border-color: #ea580c;
   color: #9a3412;
 }
 
 .seat-held-admin {
-  background: #ffedd5;
-  border-color: #f97316;
-  color: #9a3412;
+  background: #fdba74;
+  border-color: #ea580c;
+  color: #7c2d12;
 }
 
 .seat-unavailable {
-  background: #f3f3f4;
-  color: #8a8a8a;
+  background: #e5e7eb;
+  border-color: #cbd5e1;
+  color: #6b7280;
   cursor: not-allowed;
 }
 
 .seat-held,
 .seat-booked {
-  background: #f3f3f4;
-  border-color: #d4d4d8;
-  color: #71717a;
+  background: #fecaca;
+  border-color: #dc2626;
+  color: #991b1b;
   cursor: not-allowed;
 }
 
 .seat-booked-current {
-  background: #dcfce7;
+  background: #bbf7d0;
   border-color: #16a34a;
   color: #166534;
 }
 
 .seat-booked-admin {
-  background: #fee2e2;
+  background: #fca5a5;
   border-color: #dc2626;
-  color: #991b1b;
+  color: #7f1d1d;
 }
 
 .seat-busy {

@@ -1,7 +1,7 @@
 <template>
   <UCard class="w-full">
     <template #header>
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 class="text-xl font-semibold">{{ title }}</h2>
           <p class="text-sm text-muted">
@@ -9,15 +9,36 @@
           </p>
         </div>
 
-        <UButton
-          icon="i-lucide-refresh-cw"
-          color="neutral"
-          variant="outline"
-          :loading="loading"
-          @click="refreshCart(true)"
-        >
-          Обновить
-        </UButton>
+        <div class="flex flex-col gap-2 sm:items-end">
+          <UButton
+            v-if="hasHeldBookings"
+            color="primary"
+            icon="i-lucide-shield-check"
+            :loading="bookingStore.confirmingForEvent(props.eventId)"
+            @click="confirmHeldSeats"
+          >
+            Подтвердить бронь
+          </UButton>
+
+          <UButton
+            v-else-if="hasBookedBookings"
+            color="primary"
+            icon="i-lucide-qr-code"
+            @click="openCheckoutDialog"
+          >
+            Перейти к оплате
+          </UButton>
+
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="outline"
+            :loading="loading"
+            @click="refreshCart(true)"
+          >
+            Обновить
+          </UButton>
+        </div>
       </div>
     </template>
 
@@ -143,27 +164,6 @@
             <p v-else-if="hasBookedBookings" class="text-sm text-emerald-700 dark:text-emerald-300">
               Бронь уже подтверждена. QR-код доступен в любое время.
             </p>
-          </div>
-
-          <div class="flex flex-col gap-2 sm:items-end">
-            <UButton
-              v-if="hasHeldBookings"
-              color="primary"
-              icon="i-lucide-shield-check"
-              :loading="bookingStore.confirmingForEvent(props.eventId)"
-              @click="confirmHeldSeats"
-            >
-              Подтвердить бронь
-            </UButton>
-
-            <UButton
-              v-else-if="hasBookedBookings"
-              color="primary"
-              icon="i-lucide-qr-code"
-              @click="openCheckoutDialog"
-            >
-              Перейти к оплате
-            </UButton>
           </div>
         </div>
 
