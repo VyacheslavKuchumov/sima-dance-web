@@ -16,7 +16,7 @@
         @admin-changed="adminRefreshKey += 1"
       />
 
-      <div class="hidden lg:block">
+      <div :class="auth.isSuperuser ? 'hidden lg:block' : 'block'">
         <AdminRecentBookings
           v-if="auth.isSuperuser"
           :event-id="eventId"

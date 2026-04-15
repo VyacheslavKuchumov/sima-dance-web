@@ -147,7 +147,6 @@ const isRefreshing = ref(false)
 const refreshQueuePending = ref(false)
 const adminDialogOpen = ref(false)
 const selectedSeat = ref(null)
-const BOOKING_TOAST_ACTION_CLASS = 'bg-accented text-default hover:bg-accented/85 active:bg-accented/85 focus-visible:bg-accented/85'
 
 const { data, pending, error, refresh } = useFetch(
   () => `/api/backend/booking/events/${eventId.value}/seatmap/`,
@@ -214,13 +213,7 @@ function syncBookingStatusToast() {
       description: 'Откройте «Мои брони», подтвердите выбранные места и перейдите к оплате билетов.',
       color: 'warning',
       duration: false,
-      actions: [{
-        label: 'Мои брони',
-        color: 'neutral',
-        variant: 'soft',
-        class: BOOKING_TOAST_ACTION_CLASS,
-        to: '/cart',
-      }],
+      actions: [createBookingToastAction()],
     })
     return
   }
@@ -232,18 +225,22 @@ function syncBookingStatusToast() {
       description: 'Если оплата еще не выполнена, откройте «Мои брони» и завершите ее.',
       color: 'success',
       duration: 5000,
-      actions: [{
-        label: 'Мои брони',
-        color: 'neutral',
-        variant: 'soft',
-        class: BOOKING_TOAST_ACTION_CLASS,
-        to: '/cart',
-      }],
+      actions: [createBookingToastAction()],
     })
     return
   }
 
   toast.remove(STATUS_TOAST_ID)
+}
+
+function createBookingToastAction() {
+  return {
+    label: 'Мои брони',
+    color: 'primary',
+    variant: 'solid',
+    size: 'lg',
+    to: '/cart',
+  }
 }
 
 async function onSeatClick(seat) {
