@@ -171,13 +171,6 @@
           Подтверждено на сумму {{ formatPrice(bookedTotal) }}.
         </div>
 
-        <UAlert
-          v-if="bookedBookings.length"
-          color="info"
-          variant="subtle"
-          title="После оплаты отправьте подтверждение"
-          description="Пожалуйста, после оплаты отправьте подтверждение об оплате в мессенджере."
-        />
       </div>
     </template>
   </UCard>
@@ -224,6 +217,13 @@
         >
           Открыть ссылку оплаты
         </UButton>
+
+        <UAlert
+          color="info"
+          variant="subtle"
+          title="После оплаты отправьте подтверждение"
+          description="Пожалуйста, после оплаты отправьте подтверждение об оплате в мессенджере."
+        />
 
         <div v-if="bookedBookings.length" class="rounded-xl bg-elevated p-4 text-sm text-toned">
           <p class="font-semibold">Подтвержденные места</p>
