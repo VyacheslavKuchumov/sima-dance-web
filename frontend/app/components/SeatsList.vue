@@ -239,7 +239,7 @@ function createBookingToastAction() {
     color: 'primary',
     variant: 'solid',
     size: 'lg',
-    class: 'mx-auto self-center',
+    class: 'mx-auto flex min-w-48 justify-center self-center px-6',
     to: '/cart',
   }
 }
