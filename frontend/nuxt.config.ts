@@ -4,7 +4,13 @@ export default defineNuxtConfig({
   devtools: { enabled: process.env.NUXT_DEVTOOLS !== 'false' },
   app: {
     head: {
-      title: 'Бронирование | Simadancing'
+      title: 'Бронирование | Simadancing',
+      meta: [
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+        },
+      ],
     }
   },
 

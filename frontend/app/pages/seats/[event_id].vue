@@ -62,6 +62,11 @@ const eventDateLabel = computed(() => {
 .layout-grid {
   display: grid;
   gap: 1.5rem;
+  min-width: 0;
+}
+
+.layout-grid > * {
+  min-width: 0;
 }
 
 @media (min-width: 1024px) {

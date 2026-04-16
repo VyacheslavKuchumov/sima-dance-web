@@ -1,5 +1,5 @@
 <template>
-  <UCard class="w-full">
+  <UCard class="w-full min-w-0 overflow-hidden">
     <template #header>
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-3">

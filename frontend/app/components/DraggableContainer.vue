@@ -1,12 +1,13 @@
 <template>
-    <UCard class="h-full w-full" shadow="lg" rounded="md" >
+    <UCard class="draggable-card h-full w-full min-w-0 overflow-hidden" shadow="lg" rounded="md">
         <template #header>
             <h2 class="text-lg font-medium">{{ label }}</h2>
         </template>
-        <div ref="panzoomContainer" class="h-full w-full">
-            <slot />
+        <div ref="viewport" class="draggable-viewport">
+            <div ref="panzoomContainer" class="draggable-content">
+                <slot />
+            </div>
         </div>
-
     </UCard>
 </template>
 
@@ -20,10 +21,12 @@ const props = defineProps({
   }
 })
 
+const viewport = ref(null)
 const panzoomContainer = ref(null)
+let cleanupWheelListener = null
 
 onMounted(() => {
-    if (panzoomContainer.value) {
+    if (panzoomContainer.value && viewport.value) {
         const elem = panzoomContainer.value
         const panzoom = Panzoom(elem, {
             maxZoom: 3,
@@ -32,9 +35,31 @@ onMounted(() => {
             bounds: true,
             boundsPadding: 0.5,
         })
-        elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel)
+        const currentViewport = viewport.value
+        currentViewport.addEventListener('wheel', panzoom.zoomWithWheel, { passive: false })
+        cleanupWheelListener = () => currentViewport.removeEventListener('wheel', panzoom.zoomWithWheel)
     }
 })
 
+onBeforeUnmount(() => {
+    cleanupWheelListener?.()
+})
 
 </script>
+
+<style scoped>
+.draggable-viewport {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    touch-action: none;
+}
+
+.draggable-content {
+    display: inline-block;
+    min-width: max-content;
+    transform-origin: top left;
+    will-change: transform;
+}
+</style>
