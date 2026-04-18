@@ -13,6 +13,49 @@ function toPriceNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function normalizeUserId(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function cacheKeysForEvent(state, eventId) {
+  const keys = [toEventKey(eventId)]
+
+  if (Object.prototype.hasOwnProperty.call(state.bookingsByEvent, 'all')) {
+    keys.push('all')
+  }
+
+  return [...new Set(keys)]
+}
+
+function normalizeRealtimeBooking({ booking, seat }) {
+  if (!booking?.id || !seat?.id) return null
+
+  return {
+    id: booking.id,
+    user: booking.user ?? null,
+    user_id: booking.user_id ?? null,
+    user_details: booking.user_details ?? null,
+    seat: {
+      id: seat.id,
+      section: seat.section,
+      row: seat.row,
+      number: seat.number,
+      available: seat.available,
+      price: seat.price ?? null,
+    },
+    event: booking.event_id,
+    event_title: booking.event_title ?? null,
+    status: booking.status,
+    created_at: booking.created_at ?? booking.updated_at ?? null,
+    updated_at: booking.updated_at ?? null,
+    expires_at: booking.expires_at ?? null,
+    price_snapshot: booking.price_snapshot ?? seat.price ?? null,
+    is_paid: Boolean(booking.is_paid),
+    is_ticket_issued: Boolean(booking.is_ticket_issued),
+  }
+}
+
 function isActiveHeldBooking(booking) {
   if (booking?.status !== 'held') return false
   if (!booking.expires_at) return true
@@ -80,23 +123,53 @@ export const useBookingStore = defineStore('booking', {
     },
 
     removeBooking(eventId, bookingId) {
-      const eventKey = toEventKey(eventId)
-      const current = this.bookingsByEvent[eventKey] ?? []
-      this.bookingsByEvent[eventKey] = current.filter((item) => item.id !== bookingId)
+      for (const eventKey of cacheKeysForEvent(this, eventId)) {
+        const current = this.bookingsByEvent[eventKey] ?? []
+        this.bookingsByEvent[eventKey] = current.filter((item) => item.id !== bookingId)
+      }
     },
 
     upsertBooking(eventId, booking) {
-      const eventKey = toEventKey(eventId)
-      const current = [...(this.bookingsByEvent[eventKey] ?? [])]
-      const index = current.findIndex((item) => item.id === booking.id)
+      for (const eventKey of cacheKeysForEvent(this, eventId)) {
+        const current = [...(this.bookingsByEvent[eventKey] ?? [])]
+        const index = current.findIndex((item) => item.id === booking.id)
 
-      if (index === -1) {
-        current.unshift(booking)
-      } else {
-        current.splice(index, 1, booking)
+        if (index === -1) {
+          current.unshift(booking)
+        } else {
+          current.splice(index, 1, booking)
+        }
+
+        this.bookingsByEvent[eventKey] = current
+      }
+    },
+
+    applyRealtimeBookingChange({ eventId, action, booking, seat, currentUserId } = {}) {
+      const normalizedCurrentUserId = normalizeUserId(currentUserId)
+      const normalizedBookingUserId = normalizeUserId(booking?.user_id)
+      const normalizedEventId = booking?.event_id ?? eventId
+      const normalizedBooking = normalizeRealtimeBooking({ booking, seat })
+
+      if (!normalizedBooking?.id || !normalizedEventId) return
+
+      if (normalizedCurrentUserId == null || normalizedBookingUserId !== normalizedCurrentUserId) {
+        if (action === 'deleted') {
+          this.removeBooking(normalizedEventId, normalizedBooking.id)
+        }
+        return
       }
 
-      this.bookingsByEvent[eventKey] = current
+      if (action === 'deleted') {
+        this.removeBooking(normalizedEventId, normalizedBooking.id)
+        return
+      }
+
+      if (!['held', 'booked'].includes(normalizedBooking.status)) {
+        this.removeBooking(normalizedEventId, normalizedBooking.id)
+        return
+      }
+
+      this.upsertBooking(normalizedEventId, normalizedBooking)
     },
 
     async fetchEventBookings({ eventId, force = false, status = 'held,booked', activeOnly = true } = {}) {

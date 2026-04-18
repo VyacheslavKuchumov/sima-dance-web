@@ -22,9 +22,12 @@ def seatmap_change_payload(booking, action='upsert'):
             'event_id': booking.event_id,
             'user_id': booking.user_id,
             'status': booking.status,
+            'created_at': booking.created_at.isoformat() if booking.created_at else None,
             'expires_at': booking.expires_at.isoformat() if booking.expires_at else None,
             'updated_at': booking.updated_at.isoformat() if booking.updated_at else None,
             'price_snapshot': str(booking.price_snapshot) if booking.price_snapshot is not None else None,
+            'is_paid': booking.is_paid,
+            'is_ticket_issued': booking.is_ticket_issued,
         },
         'seat': {
             'id': seat.id,
@@ -32,6 +35,7 @@ def seatmap_change_payload(booking, action='upsert'):
             'row': seat.row,
             'number': seat.number,
             'available': seat.available,
+            'price': str(seat.price) if seat.price is not None else None,
         },
     }
 

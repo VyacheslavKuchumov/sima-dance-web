@@ -143,8 +143,6 @@ const currentUserId = computed(() => auth.userId ?? auth.user?.id ?? null)
 const isAdminMode = computed(() => auth.isSuperuser)
 const eventId = computed(() => String(props.eventId))
 const activeSeatId = ref(null)
-const isRefreshing = ref(false)
-const refreshQueuePending = ref(false)
 const adminDialogOpen = ref(false)
 const selectedSeat = ref(null)
 
@@ -156,7 +154,7 @@ const { data, pending, error, refresh } = useFetch(
   }
 )
 
-const seats = computed(() => data.value ?? [])
+const seats = computed(() => Array.isArray(data.value) ? data.value : [])
 const heldBookings = computed(() => bookingStore.heldBookingsForEvent(eventId.value))
 const bookedBookings = computed(() => bookingStore.bookedBookingsForEvent(eventId.value))
 const heldBookingsBySeat = computed(() => bookingStore.heldBookingMapForEvent(eventId.value))
@@ -171,32 +169,91 @@ watch(error, (value) => {
   })
 })
 
-async function syncBookings() {
-  if (isAdminMode.value) return []
-  await bookingStore.fetchEventBookings({ eventId: eventId.value, force: true })
+function replaceSeats(nextSeats) {
+  data.value = Array.isArray(nextSeats) ? nextSeats : []
 }
 
-async function refreshSeatMap({ syncCart = false } = {}) {
-  if (isRefreshing.value) {
-    refreshQueuePending.value = true
-    return
+function findSeatIndex(seatId) {
+  return seats.value.findIndex((item) => Number(item.id) === Number(seatId))
+}
+
+function findSeatById(seatId) {
+  const index = findSeatIndex(seatId)
+  return index === -1 ? null : seats.value[index]
+}
+
+function buildSeatState({ existingSeat = {}, seat, booking, action } = {}) {
+  const seatAvailable = Boolean(seat?.available ?? existingSeat.available)
+  const bookingStatus =
+    action !== 'deleted' && booking?.status === 'booked'
+      ? 'booked'
+      : action !== 'deleted' && booking?.status === 'held'
+        ? 'held'
+        : seatAvailable
+          ? 'available'
+          : 'unavailable'
+
+  const isActiveBooking = bookingStatus === 'held' || bookingStatus === 'booked'
+
+  return {
+    ...existingSeat,
+    ...(seat ?? {}),
+    available: seatAvailable && !isActiveBooking,
+    booking_status: bookingStatus,
+    user_id: isActiveBooking ? booking?.user_id ?? null : null,
+    held_until: bookingStatus === 'held' ? booking?.expires_at ?? null : null,
+    price: seat?.price ?? existingSeat.price ?? null,
   }
+}
 
-  isRefreshing.value = true
+function toSeatmapChangePayload(booking, action = 'updated') {
+  if (!booking?.seat?.id) return null
 
-  try {
-    const tasks = [refresh()]
-    if (syncCart) {
-      tasks.push(syncBookings())
-    }
-    await Promise.all(tasks)
-  } finally {
-    isRefreshing.value = false
+  return {
+    action,
+    booking: {
+      id: booking.id,
+      event_id: booking.event,
+      user_id: booking.user_id,
+      status: booking.status,
+      created_at: booking.created_at ?? null,
+      expires_at: booking.expires_at ?? null,
+      updated_at: booking.updated_at ?? null,
+      price_snapshot: booking.price_snapshot ?? null,
+      is_paid: booking.is_paid ?? false,
+      is_ticket_issued: booking.is_ticket_issued ?? false,
+    },
+    seat: {
+      id: booking.seat.id,
+      section: booking.seat.section,
+      row: booking.seat.row,
+      number: booking.seat.number,
+      available: booking.seat.available,
+      price: booking.seat.price ?? null,
+    },
+  }
+}
 
-    if (refreshQueuePending.value) {
-      refreshQueuePending.value = false
-      await refreshSeatMap({ syncCart: true })
-    }
+function applySeatChange(payload) {
+  if (!payload?.seat?.id) return
+
+  const index = findSeatIndex(payload.seat.id)
+  if (index === -1) return
+
+  const nextSeats = [...seats.value]
+  const existingSeat = nextSeats[index]
+  const nextSeat = buildSeatState({
+    existingSeat,
+    seat: payload.seat,
+    booking: payload.booking,
+    action: payload.action,
+  })
+
+  nextSeats.splice(index, 1, nextSeat)
+  replaceSeats(nextSeats)
+
+  if (selectedSeat.value && Number(selectedSeat.value.id) === Number(nextSeat.id)) {
+    selectedSeat.value = nextSeat
   }
 }
 
@@ -251,35 +308,45 @@ async function onSeatClick(seat) {
     return
   }
 
-  const status = seatStatus(seat)
-  activeSeatId.value = seat.id
+  const currentSeat = findSeatById(seat.id) ?? seat
+  const status = seatStatus(currentSeat)
+  activeSeatId.value = currentSeat.id
 
   try {
     if (status === 'available') {
-      await bookingStore.holdSeat({ eventId: eventId.value, seatId: seat.id })
-      await refreshSeatMap({ syncCart: true })
+      const latestSeat = findSeatById(currentSeat.id) ?? currentSeat
+      const latestStatus = seatStatus(latestSeat)
+
+      if (latestStatus !== 'available') {
+        toast.add({
+          title: 'Место уже обновилось',
+          description: 'Проверьте актуальный статус места на схеме.',
+          color: 'warning',
+        })
+        return
+      }
+
+      const booking = await bookingStore.holdSeat({ eventId: eventId.value, seatId: latestSeat.id })
+      const payload = toSeatmapChangePayload(booking, 'updated')
+      if (payload) applySeatChange(payload)
       return
     }
 
     if (status === 'held-current') {
-      let booking = heldBookingsBySeat.value[seat.id]
-
-      if (!booking) {
-        await syncBookings()
-        booking = heldBookingsBySeat.value[seat.id]
-      }
+      const booking = heldBookingsBySeat.value[currentSeat.id]
 
       if (!booking) {
         throw new Error('Не нашли удержание для выбранного места.')
       }
 
-      await bookingStore.releaseBooking({ eventId: eventId.value, bookingId: booking.id })
+      const releasedBooking = await bookingStore.releaseBooking({ eventId: eventId.value, bookingId: booking.id })
+      const payload = toSeatmapChangePayload(releasedBooking, 'deleted')
+      if (payload) applySeatChange(payload)
       toast.add({
         title: 'Удержание снято',
         description: 'Место снова доступно для бронирования.',
         color: 'success',
       })
-      await refreshSeatMap({ syncCart: true })
       return
     }
 
@@ -327,23 +394,35 @@ async function onSeatClick(seat) {
 }
 
 async function handleAdminSeatChanged() {
-  await refreshSeatMap({ syncCart: false })
   emit('admin-changed')
 }
 
 const { connectionState } = useSeatmapRealtimeSync({
   eventId,
-  onMessage: () => {
-    void refreshSeatMap({ syncCart: !isAdminMode.value })
-      .then(() => {
-        if (isAdminMode.value) {
-          emit('admin-changed')
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to refresh seatmap after websocket update', error)
-      })
+  onMessage: (payload) => {
+    applySeatChange(payload)
+
+    if (isAdminMode.value) {
+      emit('admin-changed')
+      return
+    }
+
+    bookingStore.applyRealtimeBookingChange({
+      eventId: eventId.value,
+      action: payload.action,
+      booking: payload.booking,
+      seat: payload.seat,
+      currentUserId: currentUserId.value,
+    })
   },
+})
+
+watch(connectionState, (nextState, previousState) => {
+  if (previousState !== 'reconnecting' || nextState !== 'connected') return
+
+  void refresh().catch((refreshError) => {
+    console.error('Failed to resync seatmap after websocket reconnect', refreshError)
+  })
 })
 
 const {
@@ -351,12 +430,6 @@ const {
   sortedRowKeys,
   seatStatus,
 } = useVenueSeats(seats, currentUserId)
-
-watch(eventId, () => {
-  void refreshSeatMap({ syncCart: !isAdminMode.value }).catch((error) => {
-    console.error('Failed to refresh seatmap after event change', error)
-  })
-})
 
 watch(
   () => [isAdminMode.value, eventId.value, heldBookings.value.length, bookedBookings.value.length],
@@ -370,7 +443,11 @@ onMounted(async () => {
   if (isAdminMode.value) return
 
   try {
-    await syncBookings()
+    await bookingStore.fetchBookings({
+      eventId: eventId.value,
+      statuses: ['held', 'booked'],
+      activeOnly: true,
+    })
   } catch (error) {
     console.error('Failed to sync bookings on mount', error)
     toast.add({
