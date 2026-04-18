@@ -65,53 +65,16 @@ set -a
 source "$env_file"
 set +a
 
-compose_cmd=(docker compose --env-file "$env_file" -f "$root_dir/docker-compose.yml")
+if [ "$skip_superuser" != true ]; then
+  bash "$root_dir/scripts/ensure_superuser_docker.sh" --env-file "$env_file"
+fi
 
 echo "Installing initial booking data..."
 bash "$root_dir/scripts/install_data.sh" \
   --api-base "https://${TRAEFIK_API_HOST}/api/booking" \
+  --insecure \
   --event-create-mode if-empty \
   "${set_prices_args[@]}"
 
 echo "Ensuring signup groups exist..."
 bash "$root_dir/scripts/set_groups.sh" --docker --env-file "$env_file" --skip-migrate
-
-if [ "$skip_superuser" != true ]; then
-  required_superuser_vars=(
-    DJANGO_SUPERUSER_USERNAME
-    DJANGO_SUPERUSER_EMAIL
-    DJANGO_SUPERUSER_PASSWORD
-  )
-
-  for var_name in "${required_superuser_vars[@]}"; do
-    if [ -z "${!var_name:-}" ]; then
-      echo "Required superuser variable is empty in $env_file: $var_name" >&2
-      exit 1
-    fi
-  done
-
-  echo "Ensuring Django superuser exists..."
-  "${compose_cmd[@]}" exec -T \
-    -e DJANGO_SUPERUSER_USERNAME="$DJANGO_SUPERUSER_USERNAME" \
-    -e DJANGO_SUPERUSER_EMAIL="$DJANGO_SUPERUSER_EMAIL" \
-    -e DJANGO_SUPERUSER_PASSWORD="$DJANGO_SUPERUSER_PASSWORD" \
-    backend python manage.py shell -c "
-from django.contrib.auth import get_user_model
-from django.db import transaction
-import os
-
-User = get_user_model()
-username = os.environ['DJANGO_SUPERUSER_USERNAME']
-email = os.environ['DJANGO_SUPERUSER_EMAIL']
-password = os.environ['DJANGO_SUPERUSER_PASSWORD']
-
-with transaction.atomic():
-    user, created = User.objects.get_or_create(username=username, defaults={'email': email})
-    user.email = email
-    user.is_staff = True
-    user.is_superuser = True
-    user.set_password(password)
-    user.save()
-    print('Created superuser' if created else 'Updated superuser')
-"
-fi

@@ -74,6 +74,7 @@ required_vars=(
 if [ "$run_set_prices" = true ]; then
   required_vars+=(
     DJANGO_SUPERUSER_USERNAME
+    DJANGO_SUPERUSER_EMAIL
     DJANGO_SUPERUSER_PASSWORD
   )
 fi
@@ -153,9 +154,12 @@ wait_for_http "https://${TRAEFIK_API_HOST}/api/booking/seats/" "$TRAEFIK_API_HOS
 wait_for_http "https://${TRAEFIK_WEB_HOST}/" "$TRAEFIK_WEB_HOST" "frontend" '^[23][0-9][0-9]$'
 
 if [ "$run_set_prices" = true ]; then
+  bash "$root_dir/scripts/ensure_superuser_docker.sh" --env-file "$env_file"
+
   echo "Applying seat prices..."
   bash "$root_dir/scripts/set_prices.sh" \
     --api-base "https://${TRAEFIK_API_HOST}/api/booking" \
+    --insecure \
     --skip-event-create
 fi
 

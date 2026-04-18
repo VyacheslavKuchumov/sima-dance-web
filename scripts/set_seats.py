@@ -132,12 +132,18 @@ def parse_args() -> argparse.Namespace:
         default=10.0,
         help="HTTP timeout in seconds.",
     )
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Disable TLS certificate verification for HTTPS requests.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     session = requests.Session()
+    set_prices.configure_session_tls(session, args.insecure)
     set_prices.authenticate_session(
         session=session,
         api_base=args.api_base.rstrip("/"),

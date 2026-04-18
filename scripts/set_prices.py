@@ -8,6 +8,7 @@ from datetime import date
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
+import urllib3
 
 
 DEFAULT_API_BASE = "http://127.0.0.1:8000/api/booking"
@@ -148,6 +149,12 @@ def authenticate_session(
 
     session.headers.update({"Authorization": f"Bearer {access}"})
     print(f"Authenticated as superuser {resolved_username}.")
+
+
+def configure_session_tls(session: requests.Session, insecure: bool) -> None:
+    session.verify = not insecure
+    if insecure:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def create_event(
@@ -348,12 +355,18 @@ def parse_args() -> argparse.Namespace:
         default=10.0,
         help="HTTP timeout in seconds.",
     )
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Disable TLS certificate verification for HTTPS requests.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     session = requests.Session()
+    configure_session_tls(session, args.insecure)
     api_base = args.api_base.rstrip("/")
     event_create_mode = "never" if args.skip_event_create else args.event_create_mode
 
