@@ -78,7 +78,8 @@
                     'seat-booked-current': !isAdminMode && seatStatus(seat) === 'booked-current',
                     'seat-held-admin': isAdminMode && ['held', 'held-current'].includes(seatStatus(seat)),
                     'seat-booked-admin': isAdminMode && ['booked', 'booked-current'].includes(seatStatus(seat)),
-                    'seat-unavailable': seatStatus(seat) === 'unavailable',
+                    'seat-unavailable': isAdminMode && seatStatus(seat) === 'unavailable',
+                    'seat-unavailable-user': !isAdminMode && seatStatus(seat) === 'unavailable',
                     'seat-busy': activeSeatId === seat.id,
                   }"
                   :disabled="activeSeatId === seat.id"
@@ -573,7 +574,8 @@ onBeforeUnmount(() => {
 }
 
 .seat-held,
-.seat-booked {
+.seat-booked,
+.seat-unavailable-user {
   background: #fecaca;
   border-color: #dc2626;
   color: #991b1b;
