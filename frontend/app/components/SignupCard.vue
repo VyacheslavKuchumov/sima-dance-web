@@ -16,7 +16,9 @@
           id="groupId"
           v-model="state.groupId"
           name="groupId"
-          class="w-full"
+          class="w-full rounded-md border bg-default px-3 py-2 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-75"
+          :class="groupSelectClasses"
+          :aria-invalid="!state.groupId"
           :disabled="loading || !signupGroups.length"
         >
           <option value="" disabled>
@@ -155,6 +157,11 @@ const state = reactive({
   password: '',
   confirmPassword: ''
 })
+
+const groupSelectClasses = computed(() => state.groupId
+  ? 'border-default focus:border-primary focus:ring-2 focus:ring-primary/20'
+  : 'border-error focus:border-error focus:ring-2 focus:ring-error/30'
+)
 
 onMounted(() => {
   void auth.fetchSignupGroups().catch((error) => {
