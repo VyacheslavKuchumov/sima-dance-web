@@ -152,6 +152,19 @@ class AdminUsersListView(APIView):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def post(self, request):
+        serializer = UserSignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        created_user = serializer.save()
+        created_user = User.objects.select_related('profile__group').annotate(
+            bookings_count=Count('bookings', distinct=True),
+        ).get(pk=created_user.pk)
+
+        return Response(
+            AdminUserSerializer(created_user).data,
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class AdminUserImpersonationView(APIView):
     permission_classes = [IsSuperUser]

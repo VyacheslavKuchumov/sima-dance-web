@@ -19,6 +19,15 @@
 
           <UButton
             color="primary"
+            icon="i-lucide-user-plus"
+            @click="openCreateUserModal"
+          >
+            Новый пользователь
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
             :loading="loading"
             @click="loadUsers"
           >
@@ -119,6 +128,104 @@
     </div>
   </UCard>
 
+  <UModal v-model:open="createUserModalOpen" title="Новый пользователь">
+    <template #body>
+      <UForm
+        id="admin-create-user-form"
+        :schema="createUserSchema"
+        :state="createUserForm"
+        class="space-y-4"
+        @submit="createUser"
+      >
+        <UFormField label="Группа" name="groupId" required>
+          <select
+            v-model="createUserForm.groupId"
+            name="groupId"
+            class="w-full rounded-md border bg-default px-3 py-2 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-75"
+            :class="createUserForm.groupId ? 'border-default focus:border-primary focus:ring-2 focus:ring-primary/20' : 'border-error focus:border-error focus:ring-2 focus:ring-error/30'"
+            :aria-invalid="!createUserForm.groupId"
+            :disabled="creatingUser || groupsLoading || !signupGroups.length"
+          >
+            <option value="" disabled>
+              {{ signupGroups.length ? 'Выберите группу' : 'Группы не найдены' }}
+            </option>
+            <option v-for="group in signupGroups" :key="group.id" :value="String(group.id)">
+              {{ group.name }}
+            </option>
+          </select>
+        </UFormField>
+
+        <UFormField label="Логин" name="username" required>
+          <UInput
+            v-model="createUserForm.username"
+            class="w-full"
+            placeholder="ivanov123"
+            :disabled="creatingUser"
+          />
+        </UFormField>
+
+        <UFormField label="Ваше ФИО" name="full_name" required>
+          <UInput
+            v-model="createUserForm.full_name"
+            class="w-full"
+            placeholder="Иванов Иван Иванович"
+            :disabled="creatingUser"
+          />
+        </UFormField>
+
+        <UFormField label="ФИО ребенка" name="child_full_name" required>
+          <UInput
+            v-model="createUserForm.child_full_name"
+            class="w-full"
+            placeholder="Иванов Петр Иванович"
+            :disabled="creatingUser"
+          />
+        </UFormField>
+
+        <UFormField label="Пароль" name="password" required>
+          <UInput
+            v-model="createUserForm.password"
+            class="w-full"
+            type="password"
+            placeholder="Придумайте пароль"
+            :disabled="creatingUser"
+          />
+        </UFormField>
+
+        <UFormField label="Подтверждение пароля" name="confirmPassword" required>
+          <UInput
+            v-model="createUserForm.confirmPassword"
+            class="w-full"
+            type="password"
+            placeholder="Подтвердите пароль"
+            :disabled="creatingUser"
+          />
+        </UFormField>
+      </UForm>
+    </template>
+
+    <template #footer>
+      <UButton
+        color="neutral"
+        variant="outline"
+        :disabled="creatingUser"
+        @click="closeCreateUserModal"
+      >
+        Отмена
+      </UButton>
+
+      <UButton
+        type="submit"
+        form="admin-create-user-form"
+        color="primary"
+        :loading="creatingUser"
+        :disabled="!createUserFormIsValid || !signupGroups.length"
+      >
+        Создать пользователя
+      </UButton>
+    </template>
+  </UModal>
+
   <UModal v-model:open="resetPasswordConfirmationOpen" title="Сбросить пароль?">
     <template #body>
       <div class="space-y-3">
@@ -193,12 +300,17 @@
 </template>
 
 <script setup>
+import * as v from 'valibot'
+
 const auth = useAuthStore()
 const router = useRouter()
 const { request } = useAdminApi()
 const toast = useAppToast()
 
 const loading = ref(false)
+const groupsLoading = ref(false)
+const creatingUser = ref(false)
+const createUserModalOpen = ref(false)
 const search = ref('')
 const users = ref([])
 const registeredUsersCount = ref(0)
@@ -208,6 +320,37 @@ const resetPasswordConfirmationOpen = ref(false)
 const resetPasswordResultOpen = ref(false)
 const userPendingPasswordReset = ref(null)
 const resetPasswordResult = ref(null)
+const signupGroups = computed(() => auth.signupGroups)
+
+const createUserSchema = v.pipe(
+  v.object({
+    groupId: v.pipe(v.string(), v.minLength(1, 'Выберите группу')),
+    username: v.pipe(v.string(), v.minLength(2, 'Логин должен содержать минимум 2 символа')),
+    full_name: v.pipe(v.string(), v.minLength(2, 'Укажите ФИО')),
+    child_full_name: v.pipe(v.string(), v.minLength(2, 'Укажите ФИО ребенка')),
+    password: v.pipe(v.string(), v.minLength(8, 'Пароль должен содержать минимум 8 символов')),
+    confirmPassword: v.string(),
+  }),
+  v.forward(
+    v.partialCheck(
+      [['password'], ['confirmPassword']],
+      (input) => input.password === input.confirmPassword,
+      'Пароли не совпадают',
+    ),
+    ['confirmPassword'],
+  ),
+)
+
+const createUserForm = reactive({
+  groupId: '',
+  username: '',
+  full_name: '',
+  child_full_name: '',
+  password: '',
+  confirmPassword: '',
+})
+
+const createUserFormIsValid = computed(() => v.safeParse(createUserSchema, createUserForm).success)
 
 function formatDateTime(value) {
   if (!value) return '—'
@@ -219,6 +362,47 @@ function formatDateTime(value) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function resetCreateUserForm() {
+  createUserForm.groupId = ''
+  createUserForm.username = ''
+  createUserForm.full_name = ''
+  createUserForm.child_full_name = ''
+  createUserForm.password = ''
+  createUserForm.confirmPassword = ''
+}
+
+async function loadSignupGroups() {
+  groupsLoading.value = true
+
+  try {
+    await auth.fetchSignupGroups()
+  } catch (error) {
+    console.error('Failed to load signup groups for admin users', error)
+    toast.add({
+      title: 'Не удалось загрузить группы',
+      description: error?.message ?? 'Попробуйте ещё раз.',
+      color: 'error',
+    })
+  } finally {
+    groupsLoading.value = false
+  }
+}
+
+function openCreateUserModal() {
+  resetCreateUserForm()
+  createUserModalOpen.value = true
+  if (!signupGroups.value.length) {
+    void loadSignupGroups()
+  }
+}
+
+function closeCreateUserModal() {
+  if (creatingUser.value) return
+
+  createUserModalOpen.value = false
+  resetCreateUserForm()
 }
 
 async function loadUsers() {
@@ -245,6 +429,43 @@ async function loadUsers() {
     })
   } finally {
     loading.value = false
+  }
+}
+
+async function createUser(event) {
+  creatingUser.value = true
+
+  try {
+    const response = await request('/api/backend/accounts/admin/users/', {
+      method: 'POST',
+      body: {
+        username: event.data.username.trim(),
+        password: event.data.password,
+        group: Number(event.data.groupId),
+        full_name: event.data.full_name.trim(),
+        child_full_name: event.data.child_full_name.trim(),
+      },
+    })
+
+    search.value = ''
+    await loadUsers()
+    createUserModalOpen.value = false
+    resetCreateUserForm()
+
+    toast.add({
+      title: 'Пользователь создан',
+      description: `Аккаунт ${response?.username ?? event.data.username} зарегистрирован.`,
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Failed to create user from admin panel', error)
+    toast.add({
+      title: 'Не удалось создать пользователя',
+      description: error?.data?.statusMessage ?? error?.message ?? 'Проверьте данные и повторите попытку.',
+      color: 'error',
+    })
+  } finally {
+    creatingUser.value = false
   }
 }
 
@@ -341,5 +562,6 @@ watch(resetPasswordResultOpen, (value) => {
 
 onMounted(() => {
   void loadUsers()
+  void loadSignupGroups()
 })
 </script>

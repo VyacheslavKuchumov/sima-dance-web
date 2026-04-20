@@ -166,6 +166,21 @@ class AccountsApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_admin_create_user_endpoint_requires_superuser(self):
+        response = self.client.post(
+            '/api/accounts/admin/users/',
+            {
+                'username': 'created-by-admin',
+                'password': 'StartPass123!',
+                'group': self.group.id,
+                'full_name': 'Админ Создал',
+                'child_full_name': 'Ребенок Админа',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_admin_impersonation_endpoint_requires_superuser(self):
         response = self.client.post(
             '/api/accounts/admin/impersonate/',
@@ -200,6 +215,39 @@ class AccountsApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'profile-user')
         self.assertIn('bookings_count', response.data[0])
+
+    def test_superuser_can_create_user_from_admin_panel(self):
+        token_response = self.client.post(
+            '/api/accounts/token/',
+            {'username': 'root-user', 'password': 'RootPass123!'},
+            format='json',
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {token_response.data['access']}"
+        )
+
+        response = self.client.post(
+            '/api/accounts/admin/users/',
+            {
+                'username': 'created-by-admin',
+                'password': 'StartPass123!',
+                'group': self.other_group.id,
+                'full_name': 'Админ Создал',
+                'child_full_name': 'Ребенок Админа',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'created-by-admin')
+        self.assertEqual(response.data['profile']['group']['id'], self.other_group.id)
+        self.assertEqual(response.data['profile']['full_name'], 'Админ Создал')
+        self.assertEqual(response.data['profile']['child_full_name'], 'Ребенок Админа')
+        self.assertEqual(response.data['bookings_count'], 0)
+
+        user = User.objects.get(username='created-by-admin')
+        self.assertTrue(user.check_password('StartPass123!'))
+        self.assertEqual(user.profile.group_id, self.other_group.id)
 
     def test_superuser_can_impersonate_user(self):
         token_response = self.client.post(
