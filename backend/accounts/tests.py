@@ -102,6 +102,23 @@ class AccountsApiTests(APITestCase):
         self.assertEqual(profile.full_name, 'Иван Иванов')
         self.assertEqual(profile.child_full_name, 'Петя Иванов')
 
+    def test_signup_allows_weak_password(self):
+        response = self.client.post(
+            '/api/accounts/signup/',
+            {
+                'username': 'weak-password-user',
+                'password': '123',
+                'group': self.group.id,
+                'full_name': 'Слабый Пароль',
+                'child_full_name': 'Ребенок Слабого Пароля',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username='weak-password-user')
+        self.assertTrue(user.check_password('123'))
+
     def test_patch_me_updates_profile_fields(self):
         response = self.client.patch(
             '/api/accounts/me/',
@@ -154,6 +171,20 @@ class AccountsApiTests(APITestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('BetterPass456!'))
         self.assertFalse(self.user.check_password('StartPass123!'))
+
+    def test_change_password_allows_weak_password(self):
+        response = self.client.post(
+            '/api/accounts/change-password/',
+            {
+                'current_password': 'StartPass123!',
+                'new_password': '123',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('123'))
 
     def test_me_endpoint_returns_superuser_flag(self):
         response = self.client.get('/api/accounts/me/')

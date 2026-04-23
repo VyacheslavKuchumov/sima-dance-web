@@ -1,9 +1,7 @@
 import secrets
 import string
 
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Case, Count, IntegerField, Q, Value, When
-from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -36,26 +34,16 @@ PASSWORD_RESET_RANDOM = secrets.SystemRandom()
 
 
 def generate_admin_reset_password(user):
-    for _ in range(PASSWORD_RESET_MAX_ATTEMPTS):
-        password_chars = [
-            secrets.choice(PASSWORD_RESET_LETTERS),
-            secrets.choice(PASSWORD_RESET_DIGITS),
-            *[
-                secrets.choice(PASSWORD_RESET_ALPHABET)
-                for _ in range(PASSWORD_RESET_LENGTH - 2)
-            ],
-        ]
-        PASSWORD_RESET_RANDOM.shuffle(password_chars)
-        password = ''.join(password_chars)
-
-        try:
-            validate_password(password, user=user)
-        except DjangoValidationError:
-            continue
-
-        return password
-
-    raise RuntimeError('Unable to generate a valid password for admin reset.')
+    password_chars = [
+        secrets.choice(PASSWORD_RESET_LETTERS),
+        secrets.choice(PASSWORD_RESET_DIGITS),
+        *[
+            secrets.choice(PASSWORD_RESET_ALPHABET)
+            for _ in range(PASSWORD_RESET_LENGTH - 2)
+        ],
+    ]
+    PASSWORD_RESET_RANDOM.shuffle(password_chars)
+    return ''.join(password_chars)
 
 
 class UserDetailView(APIView):

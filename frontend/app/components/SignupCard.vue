@@ -131,7 +131,6 @@ const schema = v.pipe(
     ),
     password: v.pipe(
       v.string(),
-      v.minLength(8, 'Пароль должен содержать минимум 8 символов')
     ),
     confirmPassword: v.pipe(
       v.string(),

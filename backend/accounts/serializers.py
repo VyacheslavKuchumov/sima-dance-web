@@ -1,7 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 
 from .models import UserGroup, UserProfile
 
@@ -144,12 +143,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError('Текущий пароль введен неверно.')
         return value
-
-    def validate_new_password(self, value):
-        user = self.context['request'].user
-        validate_password(value, user=user)
-        return value
-
 
 class UserSignupSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=UserGroup.objects.all())
