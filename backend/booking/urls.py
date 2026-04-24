@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
+    AdminConfirmBookingView,
     AdminSeatBookingView,
     EventViewSet,
     SeatViewSet,
@@ -24,5 +25,6 @@ urlpatterns = [
     # hold and confirm endpoints
     path("hold/", HoldSeatsView.as_view(), name="hold-seats"),
     path("confirm/", ConfirmBookingView.as_view(), name="confirm-booking"),
+    path("bookings/<int:booking_id>/confirm/admin/", AdminConfirmBookingView.as_view(), name="admin-confirm-booking"),
     path("bookings/<int:booking_id>/release/", ReleaseBookingView.as_view(), name="release-booking"),
 ]

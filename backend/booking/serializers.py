@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from django.utils import timezone
 from django.contrib.auth import get_user_model
-from .models import Event, Seat, Booking, DEFAULT_HOLD_SECONDS
+from .models import Event, Seat, Booking
 from accounts.serializers import UserSerializer
 
 User = get_user_model()
@@ -112,8 +111,8 @@ class BookingSerializer(serializers.ModelSerializer):
         # snapshot the price at booking time
         validated_data["price_snapshot"] = seat.price
 
-        # auto-expire after 30 minutes when the caller does not provide an explicit expiry
-        validated_data.setdefault("expires_at", timezone.now() + timezone.timedelta(seconds=DEFAULT_HOLD_SECONDS))
+        # Holds no longer expire automatically.
+        validated_data.setdefault("expires_at", None)
 
         return super().create(validated_data)
 
@@ -153,9 +152,4 @@ class AdminSeatAssignmentSerializer(serializers.Serializer):
         choices=[Booking.STATUS_HELD, Booking.STATUS_BOOKED],
         default=Booking.STATUS_BOOKED,
     )
-    hold_minutes = serializers.IntegerField(
-        min_value=1,
-        max_value=24 * 60,
-        required=False,
-        default=30,
-    )
+    hold_minutes = serializers.IntegerField(min_value=1, max_value=24 * 60, required=False)

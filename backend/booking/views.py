@@ -123,8 +123,7 @@ class SeatMapView(APIView):
                     "user_id": uid,
                     "expires_at": None,
                 }
-            elif st == STATUS_HELD and expires and expires > now:
-                # if not booked, keep held (only if not expired)
+            elif st == STATUS_HELD and (expires is None or expires > now):
                 if not existing or existing["status"] != STATUS_BOOKED:
                     booking_map[sid] = {
                         "status": STATUS_HELD,
@@ -207,13 +206,7 @@ class AdminSeatBookingView(APIView):
 
         requested_user = serializer.validated_data["user"]
         requested_status = serializer.validated_data["status"]
-        hold_minutes = serializer.validated_data["hold_minutes"]
         now = timezone.now()
-        expires_at = (
-            now + timezone.timedelta(minutes=hold_minutes)
-            if requested_status == Booking.STATUS_HELD
-            else None
-        )
 
         with transaction.atomic():
             locked_seat = Seat.objects.select_for_update().get(pk=seat.pk)
@@ -251,7 +244,7 @@ class AdminSeatBookingView(APIView):
                 seat=locked_seat,
                 event=event,
                 status=requested_status,
-                expires_at=expires_at,
+                expires_at=None,
                 price_snapshot=locked_seat.price,
             )
             created = True
@@ -344,20 +337,55 @@ class ConfirmBookingView(APIView):
 
             # Mark as booked
             for b in bookings:
-                b.status = Booking.STATUS_BOOKED
-                b.expires_at = None
-                b.save(update_fields=["status", "expires_at", "updated_at"])
+                b.confirm()
 
         serializer = BookingSerializer(bookings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminConfirmBookingView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def post(self, request, booking_id):
+        now = timezone.now()
+
+        with transaction.atomic():
+            booking = get_object_or_404(
+                Booking.objects.select_for_update().select_related("seat", "event", "user"),
+                pk=booking_id,
+            )
+
+            if booking.status != Booking.STATUS_HELD:
+                return Response(
+                    {"detail": "Only held bookings can be confirmed."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if booking.expires_at and booking.expires_at < now:
+                return Response(
+                    {"detail": "Hold already expired."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            if Booking.objects.filter(
+                seat=booking.seat,
+                event=booking.event,
+                status=Booking.STATUS_BOOKED,
+            ).exclude(pk=booking.pk).exists():
+                return Response(
+                    {"detail": f"Seat already booked: {booking.seat.id}"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            booking.confirm()
+
+        return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
 
 
 class ReleaseBookingView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, booking_id):
-        now = timezone.now()
-
         with transaction.atomic():
             queryset = Booking.objects.select_for_update().select_related(
                 "seat",
@@ -376,14 +404,6 @@ class ReleaseBookingView(APIView):
                 return Response(
                     {"detail": "Only held or booked bookings can be removed."},
                     status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if booking.status == Booking.STATUS_HELD and booking.expires_at and booking.expires_at < now:
-                booking.status = Booking.STATUS_EXPIRED
-                booking.save(update_fields=["status", "updated_at"])
-                return Response(
-                    {"detail": "Hold already expired."},
-                    status=status.HTTP_409_CONFLICT
                 )
 
             booking_data = BookingSerializer(booking).data

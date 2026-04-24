@@ -42,7 +42,7 @@
               <p><span class="font-semibold">ФИО:</span> {{ currentBooking.user_details?.profile?.full_name || '—' }}</p>
               <p><span class="font-semibold">ФИО ребенка:</span> {{ currentBooking.user_details?.profile?.child_full_name || '—' }}</p>
               <p><span class="font-semibold">Создано:</span> {{ formatDateTime(currentBooking.created_at) }}</p>
-              <p><span class="font-semibold">Действует до:</span> {{ formatDateTime(currentBooking.expires_at) }}</p>
+              <p><span class="font-semibold">Удержание:</span> {{ formatHoldState(currentBooking) }}</p>
             </div>
 
             <UAlert
@@ -134,7 +134,7 @@
                 </div>
               </article>
 
-              <div class="grid gap-3 lg:grid-cols-[220px_180px]">
+              <div class="grid gap-3 lg:grid-cols-[220px]">
                 <div>
                   <p class="mb-2 text-sm font-medium text-toned">Статус брони</p>
                   <select
@@ -145,18 +145,6 @@
                     <option value="held">Удержание</option>
                   </select>
                 </div>
-
-                <div v-if="selectedStatus === 'held'">
-                  <UFormField label="Держать место, минут">
-                    <UInput
-                      v-model="holdMinutes"
-                      class="w-full"
-                      type="number"
-                      min="1"
-                      max="1440"
-                    />
-                  </UFormField>
-                </div>
               </div>
             </div>
           </template>
@@ -166,9 +154,20 @@
 
     <template #footer>
       <UButton
+        v-if="currentBooking?.status === 'held'"
+        color="primary"
+        :loading="confirming"
+        :disabled="deleting"
+        @click="confirmCurrentBooking"
+      >
+        Подтвердить бронь
+      </UButton>
+
+      <UButton
         v-if="currentBooking"
         color="error"
         :loading="deleting"
+        :disabled="confirming"
         @click="openDeleteConfirmation"
       >
         Удалить бронь
@@ -255,11 +254,11 @@ const toast = useAppToast()
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const confirming = ref(false)
 const detail = ref(null)
 const selectedUser = ref(null)
 const selectedUserId = ref('')
 const selectedStatus = ref('booked')
-const holdMinutes = ref('30')
 const deleteConfirmationOpen = ref(false)
 const bookingPendingDeletion = ref(null)
 const userPickerOpen = ref(false)
@@ -301,6 +300,12 @@ function formatDateTime(value) {
 function formatPrice(value) {
   const amount = Number.parseFloat(value ?? 0)
   return `${new Intl.NumberFormat('ru-RU').format(Number.isFinite(amount) ? amount : 0)} ₽`
+}
+
+function formatHoldState(booking) {
+  if (booking?.status !== 'held') return '—'
+  if (!booking?.expires_at) return 'Без ограничения'
+  return formatDateTime(booking.expires_at)
 }
 
 function userLabel(booking) {
@@ -385,9 +390,6 @@ async function assignBooking() {
       body: {
         user_id: Number(selectedUserId.value),
         status: selectedStatus.value,
-        ...(selectedStatus.value === 'held'
-          ? { hold_minutes: Number.parseInt(holdMinutes.value || '30', 10) || 30 }
-          : {}),
       },
     })
 
@@ -408,6 +410,36 @@ async function assignBooking() {
     })
   } finally {
     saving.value = false
+  }
+}
+
+async function confirmCurrentBooking() {
+  if (!currentBooking.value?.id || currentBooking.value.status !== 'held') return
+
+  confirming.value = true
+
+  try {
+    await request(`/api/backend/booking/bookings/${currentBooking.value.id}/confirm/admin/`, {
+      method: 'POST',
+    })
+
+    await loadDetail()
+    syncFormFromDetail()
+    emit('changed')
+    toast.add({
+      title: 'Бронь подтверждена',
+      description: 'Место закреплено за пользователем.',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Failed to confirm admin booking', error)
+    toast.add({
+      title: 'Не удалось подтвердить бронь',
+      description: error?.message ?? 'Попробуйте ещё раз.',
+      color: 'error',
+    })
+  } finally {
+    confirming.value = false
   }
 }
 

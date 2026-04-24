@@ -88,7 +88,7 @@
                   {{ booking.event_title || `Событие #${booking.event}` }}
                 </p>
                 <p class="text-sm text-muted">
-                  Удержание до {{ formatDateTime(booking.expires_at) }}
+                  {{ holdStatusLabel(booking) }}
                 </p>
               </div>
 
@@ -345,6 +345,11 @@ function formatDateTime(value) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function holdStatusLabel(booking) {
+  if (!booking?.expires_at) return 'Ожидает подтверждения'
+  return `Удержание до ${formatDateTime(booking.expires_at)}`
 }
 
 async function refreshCart(showToast = false) {

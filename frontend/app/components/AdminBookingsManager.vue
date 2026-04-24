@@ -115,7 +115,7 @@
               <p><span class="font-semibold">Группа:</span> {{ booking.user_details?.profile?.group?.name || '—' }}</p>
               <p><span class="font-semibold">Место:</span> {{ seatLabel(booking) }}</p>
               <p><span class="font-semibold">Создано:</span> {{ formatDateTime(booking.created_at) }}</p>
-              <p><span class="font-semibold">Действует до:</span> {{ formatDateTime(booking.expires_at) }}</p>
+              <p><span class="font-semibold">Удержание:</span> {{ formatHoldState(booking) }}</p>
               <p><span class="font-semibold">Стоимость:</span> {{ formatPrice(booking.price_snapshot) }}</p>
               <p><span class="font-semibold">ID брони:</span> {{ booking.id }}</p>
             </div>
@@ -143,6 +143,16 @@
                 >
               </label>
             </div>
+
+            <UButton
+              v-if="booking.status === 'held'"
+              color="primary"
+              variant="soft"
+              :loading="isConfirmingBooking(booking.id)"
+              @click="confirmBooking(booking)"
+            >
+              Подтвердить
+            </UButton>
 
             <UButton
               color="neutral"
@@ -218,6 +228,7 @@ const groups = ref([])
 const deleteConfirmationOpen = ref(false)
 const bookingPendingDeletion = ref(null)
 const updatingBookingIds = reactive({})
+const confirmingBookingIds = reactive({})
 
 const filters = reactive({
   search: '',
@@ -256,6 +267,12 @@ function formatPrice(value) {
   return `${new Intl.NumberFormat('ru-RU').format(Number.isFinite(amount) ? amount : 0)} ₽`
 }
 
+function formatHoldState(booking) {
+  if (booking?.status !== 'held') return '—'
+  if (!booking?.expires_at) return 'Без ограничения'
+  return formatDateTime(booking.expires_at)
+}
+
 function seatLabel(booking) {
   if (!booking?.seat) return '—'
   return `${booking.seat.section}, ряд ${booking.seat.row}, место ${booking.seat.number}`
@@ -272,6 +289,10 @@ function userLabel(booking) {
 
 function isUpdatingBooking(bookingId) {
   return Boolean(updatingBookingIds[bookingId])
+}
+
+function isConfirmingBooking(bookingId) {
+  return Boolean(confirmingBookingIds[bookingId])
 }
 
 function matchesBooleanFilter(value, filterValue) {
@@ -442,6 +463,31 @@ async function updateBookingFlags(booking, updates) {
     })
   } finally {
     delete updatingBookingIds[booking.id]
+  }
+}
+
+async function confirmBooking(booking) {
+  confirmingBookingIds[booking.id] = true
+
+  try {
+    const updatedBooking = await request(`/api/backend/booking/bookings/${booking.id}/confirm/admin/`, {
+      method: 'POST',
+    })
+    replaceBookingInList(updatedBooking)
+    toast.add({
+      title: 'Бронь подтверждена',
+      description: 'Место закреплено за пользователем.',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Failed to confirm admin booking', error)
+    toast.add({
+      title: 'Не удалось подтвердить бронь',
+      description: error?.message ?? 'Попробуйте ещё раз.',
+      color: 'error',
+    })
+  } finally {
+    delete confirmingBookingIds[booking.id]
   }
 }
 

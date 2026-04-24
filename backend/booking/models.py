@@ -5,7 +5,6 @@ from django.utils import timezone
 from decimal import Decimal
 
 User = settings.AUTH_USER_MODEL
-DEFAULT_HOLD_SECONDS = 30 * 60
 
 class Event(models.Model):
     """An event (movie screening, flight, concert) that has seats (global seats used across events)."""
@@ -44,7 +43,7 @@ class Booking(models.Model):
     """Booking/Reservation record representing a user reserving one or more seats for an event."""
     STATUS_HELD = 'held'        # temporary hold awaiting payment / confirm
     STATUS_BOOKED = 'booked'    # confirmed (paid or finalized)
-    STATUS_EXPIRED = 'expired'  # hold expired by background job
+    STATUS_EXPIRED = 'expired'
 
     STATUS_CHOICES = [
         (STATUS_HELD, 'Удержание'),
@@ -58,7 +57,6 @@ class Booking(models.Model):
     status = models.CharField("Статус", max_length=16, choices=STATUS_CHOICES, default=STATUS_HELD)
     created_at = models.DateTimeField("Создано", auto_now_add=True)
     updated_at = models.DateTimeField("Обновлено", auto_now=True)
-    # expires_at: when a hold becomes invalid; null allowed only if you intentionally want indefinite hold
     expires_at = models.DateTimeField("Действует до", null=True, blank=True)
     # snapshot of seat price at time of hold/booking
     price_snapshot = models.DecimalField("Цена на момент бронирования", max_digits=10, decimal_places=2, null=True, blank=True)
@@ -85,7 +83,7 @@ class Booking(models.Model):
         return f"{self.user} - {self.seat} ({self.status})"
 
     @classmethod
-    def create_hold(cls, user, seat, event, hold_seconds=DEFAULT_HOLD_SECONDS):
+    def create_hold(cls, user, seat, event, hold_seconds=None):
         """
         Atomically create (or extend) a held booking for a single seat.
 
@@ -93,7 +91,7 @@ class Booking(models.Model):
             user: User instance placing the hold.
             seat: Seat instance to hold.
             event: Event instance for which the seat is being held.
-            hold_seconds: int seconds until the hold expires (default 1800).
+            hold_seconds: kept for backward compatibility and ignored.
 
         Returns:
             Booking instance (created or extended).
@@ -102,9 +100,6 @@ class Booking(models.Model):
             ValueError: if seat already BOOKED for this event or actively HELD by someone else.
             Seat.DoesNotExist: if seat.pk is invalid (propagated from .get()).
         """
-        now = timezone.now()
-        expires_at = now + timezone.timedelta(seconds=hold_seconds)
-
         # Use an atomic transaction and lock the seat row to avoid race conditions.
         with transaction.atomic():
             # Lock the seat row
@@ -124,7 +119,7 @@ class Booking(models.Model):
                 event=event,
                 status=cls.STATUS_HELD,
             ).exclude(user=user).filter(
-                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+                Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
             )
             if active_other_hold.exists():
                 raise ValueError(f"Seat currently held by someone else for this event: {locked_seat}")
@@ -136,17 +131,16 @@ class Booking(models.Model):
                 status=cls.STATUS_HELD,
                 user=user,
             ).filter(
-                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+                Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
             ).first()
 
             # Snapshot current seat price (safe fallback)
             price_snapshot = locked_seat.price if locked_seat.price is not None else Decimal("0.00")
 
             if existing_hold:
-                # Extend/refresh the existing hold
-                existing_hold.expires_at = expires_at
+                # Holds no longer expire automatically.
+                existing_hold.expires_at = None
                 existing_hold.price_snapshot = price_snapshot
-                # Only update the changed fields
                 existing_hold.save(update_fields=["expires_at", "price_snapshot"])
                 return existing_hold
 
@@ -156,7 +150,7 @@ class Booking(models.Model):
                 seat=locked_seat,
                 event=event,
                 status=cls.STATUS_HELD,
-                expires_at=expires_at,
+                expires_at=None,
                 price_snapshot=price_snapshot,
             )
 
@@ -182,6 +176,7 @@ class Booking(models.Model):
             if exists:
                 raise ValueError(f"Seat already booked for this event: {self.seat}")
             self.status = self.STATUS_BOOKED
+            self.expires_at = None
             self.updated_at = timezone.now()
-            self.save(update_fields=['status', 'updated_at'])
+            self.save(update_fields=['status', 'expires_at', 'updated_at'])
         return self
