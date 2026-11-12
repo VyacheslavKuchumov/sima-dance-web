@@ -50,11 +50,12 @@ const eventDateLabel = computed(() => {
     return 'Выберите места слева и завершите подтверждение через раздел «Мои брони».'
   }
 
-  return new Intl.DateTimeFormat('ru-RU', {
+  const date = new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
   }).format(new Date(event.value.starts_at))
+  return event.value.starts_time ? `${date} в ${event.value.starts_time.slice(0, 5)}` : date
 })
 </script>
 

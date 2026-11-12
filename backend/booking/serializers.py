@@ -18,6 +18,7 @@ class EventSerializer(serializers.ModelSerializer):
             "img_url",
             "archived",
             "starts_at",
+            "starts_time",
             "created_at",
             "total_seats_count",
             "active_bookings_count",

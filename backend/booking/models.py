@@ -12,6 +12,7 @@ class Event(models.Model):
     img_url = models.URLField("Ссылка на изображение", blank=True)
     archived = models.BooleanField("В архиве", default=False)
     starts_at = models.DateField("Дата начала")
+    starts_time = models.TimeField("Время начала", null=True, blank=True)
     created_at = models.DateTimeField("Создано", auto_now_add=True)
 
     class Meta:

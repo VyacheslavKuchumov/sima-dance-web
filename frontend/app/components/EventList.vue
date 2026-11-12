@@ -18,7 +18,7 @@
       </template>
 
       <p class="text-2xl">{{ event.title }}</p>
-      <p>{{ formatDate.isoToRu(event.starts_at) }}</p>
+      <p>{{ formatDate.isoToRu(event.starts_at) }}<template v-if="event.starts_time"> в {{ event.starts_time.slice(0, 5) }}</template></p>
 
       <template #footer>
         <div class="flex flex-col gap-2 sm:flex-row">

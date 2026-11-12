@@ -12,8 +12,8 @@ import urllib3
 
 
 DEFAULT_API_BASE = "http://127.0.0.1:8000/api/booking"
-PRICE_INCREASE = 50
-PARTER_FRONT_ROWS_PRICE = 700
+PRICE_INCREASE = 250
+PARTER_FRONT_ROWS_PRICE = 900
 
 
 def add_rule(

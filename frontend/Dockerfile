@@ -12,6 +12,8 @@ FROM node:24-alpine
 
 WORKDIR /app
 
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
 ENV NODE_ENV=production
 
 COPY --from=build /app/.output ./.output

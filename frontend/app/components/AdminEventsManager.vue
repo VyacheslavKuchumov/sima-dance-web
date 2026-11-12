@@ -62,7 +62,7 @@
               </div>
 
               <div class="space-y-1 text-sm text-toned">
-                <p><span class="font-semibold">Дата:</span> {{ formatDate(event.starts_at) }}</p>
+                <p><span class="font-semibold">Дата:</span> {{ formatDate(event.starts_at) }}<template v-if="event.starts_time"> в {{ event.starts_time.slice(0, 5) }}</template></p>
                 <p><span class="font-semibold">Занято мест:</span> {{ event.active_bookings_count ?? 0 }} из {{ event.total_seats_count ?? 0 }}</p>
                 <p><span class="font-semibold">Изображение:</span> {{ event.img_url || 'Стандартное изображение карточки' }}</p>
               </div>
@@ -108,6 +108,10 @@
               type="date"
               :disabled="saving"
             />
+          </UFormField>
+
+          <UFormField label="Время">
+            <UInput v-model="form.starts_time" class="w-full" type="time" :disabled="saving" />
           </UFormField>
 
           <UFormField label="Ссылка на изображение">
@@ -168,6 +172,7 @@ const events = ref([])
 const form = reactive({
   title: '',
   starts_at: '',
+  starts_time: '',
   img_url: '',
   archived: false,
 })
@@ -198,6 +203,7 @@ function formatDate(value) {
 function resetForm() {
   form.title = ''
   form.starts_at = ''
+  form.starts_time = ''
   form.img_url = ''
   form.archived = false
 }
@@ -221,6 +227,7 @@ function openEdit(event, syncQuery = true) {
   editingEventId.value = event.id
   form.title = event.title ?? ''
   form.starts_at = event.starts_at ?? ''
+  form.starts_time = event.starts_time?.slice(0, 5) ?? ''
   form.img_url = event.img_url ?? ''
   form.archived = Boolean(event.archived)
   modalOpen.value = true
@@ -277,6 +284,7 @@ async function saveEvent() {
     const payload = {
       title: form.title.trim(),
       starts_at: form.starts_at,
+      starts_time: form.starts_time || null,
       img_url: form.img_url.trim(),
       archived: Boolean(form.archived),
     }
