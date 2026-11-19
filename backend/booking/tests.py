@@ -426,3 +426,34 @@ class SeatRevenueTests(APITestCase):
         staff = User.objects.create_user(username="staff-revenue", is_staff=True)
         self.client.force_authenticate(staff)
         self.assertEqual(self.client.get(reverse("seat-revenue")).status_code, 403)
+
+
+    def test_revenue_occupancy_is_scoped_to_event_and_excludes_expired_holds(self):
+        admin = User.objects.create_superuser(username="occupancy-admin", password="test", email="admin@example.com")
+        event = Event.objects.create(title="Selected", starts_at=date(2026, 4, 1))
+        other = Event.objects.create(title="Other", starts_at=date(2026, 4, 2))
+        seats = [Seat.objects.create(section="Партер", row=1, number=n, price="900.00") for n in range(1, 6)]
+        Booking.objects.create(user=admin, event=event, seat=seats[0], status=Booking.STATUS_BOOKED)
+        Booking.objects.create(user=admin, event=event, seat=seats[1], status=Booking.STATUS_HELD)
+        Booking.objects.create(user=admin, event=event, seat=seats[2], status=Booking.STATUS_HELD, expires_at=timezone.now() - timedelta(minutes=1))
+        Booking.objects.create(user=admin, event=event, seat=seats[3], status=Booking.STATUS_EXPIRED)
+        Booking.objects.create(user=admin, event=other, seat=seats[4], status=Booking.STATUS_BOOKED)
+        self.client.force_authenticate(admin)
+        response = self.client.get(reverse("seat-revenue"), {"event_id": event.pk})
+        self.assertEqual(response.status_code, 200)
+        section = response.data["sections"][0]
+        self.assertEqual(section["reserved_count"], 2)
+        self.assertEqual(section["confirmed_count"], 1)
+        self.assertEqual(section["held_count"], 1)
+        self.assertEqual(section["free_count"], 3)
+        self.assertEqual(response.data["event_id"], event.pk)
+        self.assertEqual(self.client.get(reverse("seat-revenue"), {"event_id": other.pk}).data["reserved_count"], 1)
+        self.assertEqual(self.client.get(reverse("seat-revenue"), {"event_id": "bad"}).status_code, 400)
+
+    def test_revenue_without_events(self):
+        admin = User.objects.create_superuser(username="empty-admin", password="test", email="admin@example.com")
+        self.client.force_authenticate(admin)
+        response = self.client.get(reverse("seat-revenue"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["event_id"])
+        self.assertEqual(response.data["reserved_count"], 0)

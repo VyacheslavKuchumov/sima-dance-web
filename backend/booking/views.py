@@ -517,14 +517,46 @@ class SeatRevenueView(APIView):
     def get(self, request):
         from .models import SeatRevenue
 
+        events = list(Event.objects.order_by("archived", "-starts_at", "-id"))
+        event_id = request.query_params.get("event_id")
+        if event_id:
+            try:
+                event_id = int(event_id)
+            except (TypeError, ValueError):
+                raise ValidationError({"event_id": "Некорректное событие."})
+            event = get_object_or_404(Event, pk=event_id)
+        else:
+            event = events[0] if events else None
+
+        now = timezone.now()
+        active = Booking.objects.filter(event=event).filter(
+            Q(status=Booking.STATUS_BOOKED)
+            | (Q(status=Booking.STATUS_HELD) & (Q(expires_at__isnull=True) | Q(expires_at__gt=now)))
+        )
         reports = SeatRevenue.recalculate()
-        return Response({
-            "sections": [{
+        sections = []
+        for report in reports:
+            # Use seat identities so repeated holds cannot inflate occupancy.
+            bookings = active.filter(seat__section=report.section, seat__available=True)
+            occupied = bookings.values("seat_id").distinct().count()
+            confirmed = bookings.filter(status=Booking.STATUS_BOOKED).values("seat_id").distinct().count()
+            sections.append({
                 "section": report.section,
                 "seats_count": report.seats_count,
                 "unpriced_count": report.unpriced_count,
                 "total": format(report.total, ".2f"),
                 "calculated_at": report.calculated_at.isoformat(),
-            } for report in reports],
+                "reserved_count": occupied,
+                "confirmed_count": confirmed,
+                "held_count": occupied - confirmed,
+                "free_count": max(0, report.seats_count - occupied),
+            })
+        return Response({
+            "event_id": event.pk if event else None,
+            "events": [{"id": item.pk, "title": item.title, "starts_at": item.starts_at} for item in events],
+            "sections": sections,
             "total": format(sum(report.total for report in reports), ".2f"),
+            "reserved_count": sum(section["reserved_count"] for section in sections),
+            "seats_count": sum(section["seats_count"] for section in sections),
+            "free_count": sum(section["free_count"] for section in sections),
         })

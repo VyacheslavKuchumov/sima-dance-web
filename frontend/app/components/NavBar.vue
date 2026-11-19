@@ -87,6 +87,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
       ? [
           { label: 'Управление пользователями', icon: 'i-lucide-users', to: '/admin/users' },
           { label: 'Управление концертами', icon: 'i-lucide-music-4', to: '/admin/events' },
+          { label: 'Подсчёт выручки', icon: 'i-lucide-chart-no-axes-combined', to: '/admin/revenue' },
           { label: 'Управление бронями', icon: 'i-lucide-ticket', to: '/admin/bookings' },
         ]
       : []
