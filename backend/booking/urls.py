@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
+    SeatRevenueView,
     AdminConfirmBookingView,
     AdminSeatBookingView,
     EventViewSet,
@@ -18,6 +19,7 @@ router.register(r"seats", SeatViewSet, basename="seat")
 router.register(r"bookings", BookingViewSet, basename="booking")
 
 urlpatterns = [
+    path("revenue/", SeatRevenueView.as_view(), name="seat-revenue"),
     path("", include(router.urls)),
     # seat map for a single event
     path("events/<int:event_id>/seatmap/", SeatMapView.as_view(), name="seat-map"),

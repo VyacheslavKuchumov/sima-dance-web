@@ -86,12 +86,12 @@ def build_rules() -> list[dict[str, object]]:
     add_rule(rules, section, 2, 1, 18, PARTER_FRONT_ROWS_PRICE, True)
     add_rule(rules, section, 1, 1, 16, PARTER_FRONT_ROWS_PRICE, True)
 
-    add_rule(rules, "Балкон", 1, 13, 21, bumped(550), False)
+    add_rule(rules, "Балкон", 1, 15, 23, bumped(550), False)
     add_rule(rules, "Балкон", 2, 15, 23, bumped(500), False)
-    add_rule(rules, "Балкон", 3, 13, 16, bumped(500), False)
+    add_rule(rules, "Балкон", 1, 6, 8, bumped(550), False)
+
+    add_rule(rules, "Партер", 1, 9, 10, PARTER_FRONT_ROWS_PRICE, False)
     add_rule(rules, "Партер", 5, 10, 11, bumped(550), False)
-    add_rule(rules, "Партер", 11, 13, 16, bumped(550), False)
-    add_rule(rules, "Партер", 1, 9, 9, PARTER_FRONT_ROWS_PRICE, False)
 
     return rules
 

@@ -181,3 +181,42 @@ class Booking(models.Model):
             self.updated_at = timezone.now()
             self.save(update_fields=['status', 'expires_at', 'updated_at'])
         return self
+
+
+class SeatRevenue(models.Model):
+    section = models.CharField("Секция", max_length=32, unique=True)
+    seats_count = models.PositiveIntegerField("Доступных мест", default=0)
+    unpriced_count = models.PositiveIntegerField("Мест без цены", default=0)
+    total = models.DecimalField("Потенциальная выручка", max_digits=18, decimal_places=2, default=0)
+    calculated_at = models.DateTimeField("Дата расчёта", auto_now=True)
+
+    class Meta:
+        verbose_name = "Потенциальная выручка"
+        verbose_name_plural = "Потенциальная выручка по секциям"
+
+    def __str__(self):
+        return self.section
+
+    @classmethod
+    def recalculate(cls):
+        from django.db.models import Count, Sum
+
+        totals = {
+            row["section"]: row
+            for row in Seat.objects.filter(available=True).order_by().values("section").annotate(
+                seats_count=Count("id"),
+                unpriced_count=Count("id", filter=Q(price__isnull=True)),
+                total=Sum("price"),
+            )
+        }
+        reports = []
+        with transaction.atomic():
+            for section in ("Партер", "Балкон", "Амфитеатр"):
+                values = totals.get(section, {})
+                report, _ = cls.objects.update_or_create(section=section, defaults={
+                    "seats_count": values.get("seats_count", 0),
+                    "unpriced_count": values.get("unpriced_count", 0),
+                    "total": values.get("total") or Decimal("0.00"),
+                })
+                reports.append(report)
+        return reports

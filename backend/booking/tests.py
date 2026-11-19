@@ -396,3 +396,33 @@ class BookingFlowTests(APITestCase):
         self.assertEqual(event_data["total_seats_count"], 2)
         self.assertEqual(event_data["active_bookings_count"], 2)
         self.assertEqual(other_event_data["active_bookings_count"], 0)
+
+
+class SeatRevenueTests(APITestCase):
+    def test_report_counts_all_sellable_seats_and_persists_recalculation(self):
+        from .models import SeatRevenue
+
+        admin = User.objects.create_superuser(username="revenue-admin", password="test", email="admin@example.com")
+        user = User.objects.create_user(username="buyer")
+        event = Event.objects.create(title="Concert", starts_at=date(2026, 4, 1))
+        seat = Seat.objects.create(section="Партер", row=1, number=1, price="900.25")
+        Booking.objects.create(user=user, event=event, seat=seat, status=Booking.STATUS_BOOKED)
+        Seat.objects.create(section="Партер", row=1, number=2, price="999.00", available=False)
+        Seat.objects.create(section="Балкон", row=1, number=1, price="750.50")
+        Seat.objects.create(section="Амфитеатр", row=1, number=1, price=None)
+        self.client.force_authenticate(admin)
+        response = self.client.get(reverse("seat-revenue"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["total"], "1650.75")
+        self.assertEqual(SeatRevenue.objects.get(section="Партер").seats_count, 1)
+        self.assertEqual(SeatRevenue.objects.get(section="Амфитеатр").unpriced_count, 1)
+        Seat.objects.filter(pk=seat.pk).update(available=False)
+        self.client.get(reverse("seat-revenue"))
+        self.assertEqual(SeatRevenue.objects.get(section="Партер").total, 0)
+        self.assertEqual(SeatRevenue.objects.count(), 3)
+
+    def test_report_is_restricted_to_superusers(self):
+        self.assertIn(self.client.get(reverse("seat-revenue")).status_code, (401, 403))
+        staff = User.objects.create_user(username="staff-revenue", is_staff=True)
+        self.client.force_authenticate(staff)
+        self.assertEqual(self.client.get(reverse("seat-revenue")).status_code, 403)

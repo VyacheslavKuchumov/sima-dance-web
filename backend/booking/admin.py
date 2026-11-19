@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
-from .models import Event, Seat, Booking
+from .models import Event, Seat, Booking, SeatRevenue
 
 
 # Register your models here.
@@ -95,3 +95,20 @@ class BookingAdmin(admin.ModelAdmin):
     def mark_ticket_not_issued(self, request, queryset):
         updated = queryset.update(is_ticket_issued=False, updated_at=timezone.now())
         self.message_user(request, f"Снята отметка выписки билета: {updated}")
+
+
+@admin.register(SeatRevenue)
+class SeatRevenueAdmin(admin.ModelAdmin):
+    list_display = ("section", "seats_count", "unpriced_count", "total", "calculated_at")
+    readonly_fields = list_display
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        if self.has_view_or_change_permission(request):
+            SeatRevenue.recalculate()
+        return super().changelist_view(request, extra_context)

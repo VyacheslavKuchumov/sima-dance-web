@@ -509,3 +509,22 @@ class BookingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Creation through API should be via HoldSeatsView — but support direct create if needed
         serializer.save(user=self.request.user)
+
+
+class SeatRevenueView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def get(self, request):
+        from .models import SeatRevenue
+
+        reports = SeatRevenue.recalculate()
+        return Response({
+            "sections": [{
+                "section": report.section,
+                "seats_count": report.seats_count,
+                "unpriced_count": report.unpriced_count,
+                "total": format(report.total, ".2f"),
+                "calculated_at": report.calculated_at.isoformat(),
+            } for report in reports],
+            "total": format(sum(report.total for report in reports), ".2f"),
+        })
