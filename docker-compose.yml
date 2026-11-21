@@ -20,6 +20,17 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sima-base.rule=Host(`${TRAEFIK_BASE_HOST:-simadancing.site}`)
+      - traefik.http.routers.sima-base.entrypoints=websecure
+      - traefik.http.routers.sima-base.tls=true
+      - traefik.http.routers.sima-base.tls.certresolver=letsencrypt
+      - traefik.http.routers.sima-base.service=noop@internal
+      - traefik.http.routers.sima-base.middlewares=sima-base-to-booking
+      - traefik.http.middlewares.sima-base-to-booking.redirectregex.regex=^https?://[^/]+/(.*)
+      - traefik.http.middlewares.sima-base-to-booking.redirectregex.replacement=https://${TRAEFIK_WEB_HOST:-sima.local}/$${1}
+      - traefik.http.middlewares.sima-base-to-booking.redirectregex.permanent=true
 
   postgres:
     image: postgres:16-alpine

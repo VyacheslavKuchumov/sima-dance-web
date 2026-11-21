@@ -165,7 +165,7 @@ watch(error, (value) => {
 
   toast.add({
     title: 'Не удалось загрузить схему',
-    description: value.message ?? 'Попробуйте обновить страницу.',
+    description: getApiErrorMessage(value, 'Попробуйте обновить страницу.'),
     color: 'error',
   })
 })
@@ -386,7 +386,7 @@ async function onSeatClick(seat) {
   } catch (err) {
     toast.add({
       title: 'Не удалось изменить бронь',
-      description: err?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(err, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {

@@ -371,7 +371,7 @@ async function loadDialog() {
     console.error('Failed to load admin seat dialog', error)
     toast.add({
       title: 'Не удалось загрузить место',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -405,7 +405,7 @@ async function assignBooking() {
     console.error('Failed to assign admin booking', error)
     toast.add({
       title: 'Не удалось назначить бронь',
-      description: error?.message ?? 'Проверьте выбранного пользователя и повторите попытку.',
+      description: getApiErrorMessage(error, 'Проверьте выбранного пользователя и повторите попытку.'),
       color: 'error',
     })
   } finally {
@@ -435,7 +435,7 @@ async function confirmCurrentBooking() {
     console.error('Failed to confirm admin booking', error)
     toast.add({
       title: 'Не удалось подтвердить бронь',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -466,7 +466,7 @@ async function deleteCurrentBooking() {
     console.error('Failed to delete admin booking', error)
     toast.add({
       title: 'Не удалось удалить бронь',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {

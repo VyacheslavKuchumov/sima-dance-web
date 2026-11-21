@@ -397,7 +397,7 @@ async function loadBookings() {
     console.error('Failed to load admin bookings', error)
     toast.add({
       title: 'Не удалось загрузить брони',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -458,7 +458,7 @@ async function updateBookingFlags(booking, updates) {
     console.error('Failed to update admin booking flags', error)
     toast.add({
       title: 'Не удалось обновить флаги брони',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -483,7 +483,7 @@ async function confirmBooking(booking) {
     console.error('Failed to confirm admin booking', error)
     toast.add({
       title: 'Не удалось подтвердить бронь',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -512,7 +512,7 @@ async function confirmRemoveBooking() {
     console.error('Failed to remove admin booking', error)
     toast.add({
       title: 'Не удалось удалить бронь',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {

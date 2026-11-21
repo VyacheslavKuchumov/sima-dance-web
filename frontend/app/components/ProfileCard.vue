@@ -143,7 +143,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     console.error(err)
     toast.add({
       title: 'Ошибка',
-      description: err instanceof Error ? err.message : 'Не удалось обновить профиль',
+      description: getApiErrorMessage(err, 'Не удалось обновить профиль'),
       color: 'error',
     })
   } finally {

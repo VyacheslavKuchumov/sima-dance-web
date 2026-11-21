@@ -372,7 +372,7 @@ async function refreshCart(showToast = false) {
   } catch (err) {
     toast.add({
       title: 'Не удалось обновить брони',
-      description: err?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(err, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   }
@@ -390,7 +390,7 @@ async function release(bookingId) {
   } catch (err) {
     toast.add({
       title: 'Не удалось снять удержание',
-      description: err?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(err, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   }
@@ -424,7 +424,7 @@ async function cancelBookedBooking() {
   } catch (err) {
     toast.add({
       title: 'Не удалось удалить бронь',
-      description: err?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(err, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   }
@@ -450,7 +450,7 @@ async function confirmHeldSeats() {
   } catch (err) {
     toast.add({
       title: 'Подтверждение не удалось',
-      description: err?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(err, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   }

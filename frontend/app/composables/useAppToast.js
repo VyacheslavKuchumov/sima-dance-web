@@ -39,7 +39,7 @@ export function useAppToast() {
 
   function add(input) {
     const id = getToastId(input)
-    const duration = input.duration ?? DEFAULT_TOAST_DURATION
+    const duration = input.duration ?? (input.color === 'error' ? 8000 : DEFAULT_TOAST_DURATION)
     const payload = {
       ...input,
       id,
@@ -61,7 +61,7 @@ export function useAppToast() {
   }
 
   function update(id, input) {
-    const duration = input.duration ?? DEFAULT_TOAST_DURATION
+    const duration = input.duration ?? (input.color === 'error' ? 8000 : DEFAULT_TOAST_DURATION)
     toast.update(id, {
       ...input,
       open: true,

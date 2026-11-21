@@ -84,11 +84,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     router.push('/')
   } catch (err) {
     console.error(err)
-    if (err instanceof Error) {
-      toast.add({ title: 'Ошибка', description: err.message, color: 'error' })
-    } else {
-      toast.add({ title: 'Ошибка', description: 'Произошла непредвиденная ошибка', color: 'error' })
-    }
+    toast.add({ title: 'Ошибка', description: getApiErrorMessage(err), color: 'error' })
   } finally {
     loading.value = false
   }

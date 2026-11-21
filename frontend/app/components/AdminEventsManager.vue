@@ -259,7 +259,7 @@ async function loadEvents() {
     console.error('Failed to load admin events', error)
     toast.add({
       title: 'Не удалось загрузить концерты',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -312,7 +312,7 @@ async function saveEvent() {
     console.error('Failed to save event', error)
     toast.add({
       title: 'Не удалось сохранить концерт',
-      description: error?.message ?? 'Проверьте данные и повторите попытку.',
+      description: getApiErrorMessage(error, 'Проверьте данные и повторите попытку.'),
       color: 'error',
     })
   } finally {

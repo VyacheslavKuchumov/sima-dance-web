@@ -128,7 +128,7 @@ async function loadBookings() {
     console.error('Failed to load recent admin bookings', error)
     toast.add({
       title: 'Не удалось загрузить последние брони',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {

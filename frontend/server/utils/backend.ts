@@ -1,4 +1,5 @@
 import { createError, getHeader, type H3Event } from 'h3'
+import { getApiErrorMessage } from '../../app/utils/apiErrors.js'
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -25,7 +26,7 @@ export async function callBackend(
   if (options.requireAuth) {
     const authHeader = getHeader(event, 'authorization')
     if (!authHeader) {
-      throw createError({ statusCode: 401, statusMessage: 'Missing Authorization header' })
+      throw createError({ statusCode: 401, data: { message: 'Пожалуйста, войдите в аккаунт.' } })
     }
     headers.Authorization = authHeader
   }
@@ -38,19 +39,10 @@ export async function callBackend(
       headers
     })
   } catch (error: any) {
-    const statusCode = Number(error?.statusCode || error?.status || error?.response?.status) || 500
-    const payload = error?.data || error?.response?._data || {}
-    const statusMessage =
-      payload?.detail ||
-      payload?.error ||
-      payload?.message ||
-      error?.statusMessage ||
-      error?.message ||
-      'Backend request failed'
-
+    const statusCode = Number(error?.statusCode || error?.status || error?.response?.status) || 502
     throw createError({
       statusCode,
-      statusMessage
+      data: { message: getApiErrorMessage(error) }
     })
   }
 }

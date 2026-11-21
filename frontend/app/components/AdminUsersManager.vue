@@ -382,7 +382,7 @@ async function loadSignupGroups() {
     console.error('Failed to load signup groups for admin users', error)
     toast.add({
       title: 'Не удалось загрузить группы',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -424,7 +424,7 @@ async function loadUsers() {
     console.error('Failed to load admin users', error)
     toast.add({
       title: 'Не удалось загрузить пользователей',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -461,7 +461,7 @@ async function createUser(event) {
     console.error('Failed to create user from admin panel', error)
     toast.add({
       title: 'Не удалось создать пользователя',
-      description: error?.data?.statusMessage ?? error?.message ?? 'Проверьте данные и повторите попытку.',
+      description: getApiErrorMessage(error, 'Проверьте данные и повторите попытку.'),
       color: 'error',
     })
   } finally {
@@ -484,7 +484,7 @@ async function impersonate(user) {
     console.error('Failed to impersonate user', error)
     toast.add({
       title: 'Не удалось войти за пользователя',
-      description: error?.data?.user_id?.[0] ?? error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {
@@ -534,7 +534,7 @@ async function confirmResetPassword() {
     console.error('Failed to reset user password', error)
     toast.add({
       title: 'Не удалось сбросить пароль',
-      description: error?.data?.user_id?.[0] ?? error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {

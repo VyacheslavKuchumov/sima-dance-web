@@ -62,7 +62,7 @@ watch(error, (value) => {
 
   toast.add({
     title: 'Ошибка',
-    description: value.message ?? 'Не удалось загрузить события.',
+    description: getApiErrorMessage(value, 'Не удалось загрузить события.'),
     color: 'error',
   })
 })

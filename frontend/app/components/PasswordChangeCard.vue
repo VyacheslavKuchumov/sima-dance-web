@@ -103,7 +103,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     console.error(err)
     toast.add({
       title: 'Ошибка',
-      description: err instanceof Error ? err.message : 'Не удалось сменить пароль',
+      description: getApiErrorMessage(err, 'Не удалось сменить пароль'),
       color: 'error',
     })
   } finally {

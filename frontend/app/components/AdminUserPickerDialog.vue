@@ -165,7 +165,7 @@ async function loadUsers() {
     console.error('Failed to load users for picker', error)
     toast.add({
       title: 'Не удалось загрузить пользователей',
-      description: error?.message ?? 'Попробуйте ещё раз.',
+      description: getApiErrorMessage(error, 'Попробуйте ещё раз.'),
       color: 'error',
     })
   } finally {

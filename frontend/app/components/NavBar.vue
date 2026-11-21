@@ -130,7 +130,7 @@ async function stopImpersonation() {
     console.error('Failed to restore admin session', error)
     toast.add({
       title: 'Не удалось восстановить админскую сессию',
-      description: error?.message ?? 'Пожалуйста, войдите снова.',
+      description: getApiErrorMessage(error, 'Пожалуйста, войдите снова.'),
       color: 'error',
     })
   }
